@@ -1,6 +1,6 @@
 import { AuthGuard } from "~/components";
-import { Welcome } from "../welcome/welcome";
-import type { Route } from "./+types/home";
+import { Home as HomeElement } from "../home/Home";
+import type { Route } from "./+types/Home";
 
 export const meta = (_args: Route.MetaArgs) => {
   return [{ title: "ホーム - Tsunagaru" }, { name: "description", content: "Tsunagaru へようこそ！" }];
@@ -9,7 +9,7 @@ export const meta = (_args: Route.MetaArgs) => {
 const Home = () => {
   return (
     <AuthGuard>
-      <Welcome />
+      <HomeElement />
     </AuthGuard>
   );
 };

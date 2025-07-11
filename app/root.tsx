@@ -28,7 +28,11 @@ const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const colorScheme = useAtomValue(colorSchemeAtom);
 
   return (
-    <MantineProvider theme={theme} defaultColorScheme={colorScheme}>
+    <MantineProvider
+      theme={theme}
+      defaultColorScheme="auto"
+      forceColorScheme={typeof window !== "undefined" ? (colorScheme === "auto" ? undefined : colorScheme) : undefined}
+    >
       {children}
     </MantineProvider>
   );
@@ -36,7 +40,7 @@ const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <html lang="en">
+    <html lang="en" style={{ height: "100%", margin: 0, padding: 0 }}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -44,9 +48,11 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
         <Meta />
         <Links />
       </head>
-      <body>
+      <body style={{ margin: 0, padding: 0, width: "100%", height: "100%" }}>
         <Provider>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <div style={{ width: "100%", minHeight: "100vh" }}>{children}</div>
+          </ThemeProvider>
         </Provider>
         <ScrollRestoration />
         <Scripts />

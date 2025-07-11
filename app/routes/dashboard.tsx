@@ -1,6 +1,6 @@
 import { Container, Paper, Stack, Text, Title } from "@mantine/core";
 import { AuthGuard } from "~/components";
-import type { Route } from "./+types/dashboard";
+import type { Route } from "./+types/Dashboard";
 
 export const meta = (_args: Route.MetaArgs) => {
   return [{ title: "ダッシュボード - Tsunagaru" }, { name: "description", content: "ダッシュボードページ" }];

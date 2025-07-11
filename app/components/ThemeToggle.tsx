@@ -19,7 +19,7 @@ export const ThemeToggle = () => {
 
   return (
     <Tooltip label={`${colorScheme === "dark" ? "ライト" : "ダーク"}テーマに切り替え`}>
-      <ActionIcon onClick={toggleColorScheme} variant="subtle" size="lg" aria-label="テーマ切り替え">
+      <ActionIcon onClick={toggleColorScheme} variant="subtle" color="white" size="lg" aria-label="テーマ切り替え">
         {colorScheme === "dark" ? <IconSun size={18} /> : <IconMoon size={18} />}
       </ActionIcon>
     </Tooltip>

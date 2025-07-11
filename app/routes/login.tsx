@@ -3,7 +3,7 @@ import { useAtom } from "jotai";
 import { useState } from "react";
 import { Navigate } from "react-router";
 import { isAuthenticatedAtom, loginAtom } from "~/states";
-import type { Route } from "./+types/login";
+import type { Route } from "./+types/Login";
 
 export const meta = (_args: Route.MetaArgs) => {
   return [{ title: "ログイン - Tsunagaru" }, { name: "description", content: "Tsunagaru にログイン" }];
