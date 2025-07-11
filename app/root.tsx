@@ -1,7 +1,10 @@
 import "@mantine/core/styles.css";
 
-import { ColorSchemeScript, MantineProvider } from "@mantine/core";
+import { ColorSchemeScript, Container, createTheme, MantineProvider, Stack, Text, Title } from "@mantine/core";
+import { Provider, useAtomValue } from "jotai";
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
+import { AppLayout } from "~/components";
+import { colorSchemeAtom } from "~/states";
 import type { Route } from "./+types/root";
 
 export const links: Route.LinksFunction = () => [
@@ -17,18 +20,34 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
+const theme = createTheme({
+  // Theme customizations can be added here
+});
+
+const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
+  const colorScheme = useAtomValue(colorSchemeAtom);
+
+  return (
+    <MantineProvider theme={theme} defaultColorScheme={colorScheme}>
+      {children}
+    </MantineProvider>
+  );
+};
+
 export const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <ColorSchemeScript />
+        <ColorSchemeScript defaultColorScheme="auto" />
         <Meta />
         <Links />
       </head>
       <body>
-        <MantineProvider>{children}</MantineProvider>
+        <Provider>
+          <ThemeProvider>{children}</ThemeProvider>
+        </Provider>
         <ScrollRestoration />
         <Scripts />
       </body>
@@ -37,7 +56,11 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
 };
 
 const App = () => {
-  return <Outlet />;
+  return (
+    <AppLayout>
+      <Outlet />
+    </AppLayout>
+  );
 };
 
 export default App;
@@ -56,14 +79,16 @@ export const ErrorBoundary = ({ error }: Route.ErrorBoundaryProps) => {
   }
 
   return (
-    <main className="pt-16 p-4 container mx-auto">
-      <h1>{message}</h1>
-      <p>{details}</p>
-      {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
-          <code>{stack}</code>
-        </pre>
-      )}
-    </main>
+    <Container size="md" pt={64} p="md">
+      <Stack gap="md">
+        <Title order={1}>{message}</Title>
+        <Text>{details}</Text>
+        {stack && (
+          <pre style={{ width: "100%", padding: 16, overflow: "auto" }}>
+            <code>{stack}</code>
+          </pre>
+        )}
+      </Stack>
+    </Container>
   );
 };
