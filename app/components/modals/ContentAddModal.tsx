@@ -32,7 +32,7 @@ export const ContentAddModal = ({ opened, onClose, onFileSubmit, onUrlSubmit }: 
 
   const handleClose = () => {
     if (loading) return;
-    
+
     // 状態をリセット
     setMode("file");
     setSelectedFiles([]);
@@ -41,7 +41,7 @@ export const ContentAddModal = ({ opened, onClose, onFileSubmit, onUrlSubmit }: 
     setName("");
     setTitle("");
     setDescription("");
-    
+
     onClose();
   };
 
@@ -105,18 +105,10 @@ export const ContentAddModal = ({ opened, onClose, onFileSubmit, onUrlSubmit }: 
   };
 
   const isFileMode = mode === "file";
-  const canSubmit = isFileMode 
-    ? selectedFiles.length > 0 
-    : url.trim().length > 0;
+  const canSubmit = isFileMode ? selectedFiles.length > 0 : url.trim().length > 0;
 
   return (
-    <Modal 
-      opened={opened} 
-      onClose={handleClose} 
-      title="コンテンツを追加" 
-      centered 
-      size="lg"
-    >
+    <Modal opened={opened} onClose={handleClose} title="コンテンツを追加" centered size="lg">
       <Stack gap="md">
         {/* モード切り替え */}
         <SegmentedControl
@@ -146,72 +138,69 @@ export const ContentAddModal = ({ opened, onClose, onFileSubmit, onUrlSubmit }: 
         />
 
         {/* ファイルアップロードモード */}
-        {isFileMode && (
-          <>
-            {selectedFiles.length === 0 ? (
-              <Dropzone
-                onDrop={handleFileDrop}
-                accept={getAllAcceptedMimeTypes()}
-                maxSize={500 * 1024 * 1024} // 500MB
-                multiple
-              >
-                <Group justify="center" gap="xl" mih={220} style={{ pointerEvents: "none" }}>
-                  <Dropzone.Accept>
-                    <IconCloudUpload size={50} stroke={1.5} />
-                  </Dropzone.Accept>
-                  <Dropzone.Reject>
-                    <IconX size={50} stroke={1.5} />
-                  </Dropzone.Reject>
-                  <Dropzone.Idle>
-                    <IconCloudUpload size={50} stroke={1.5} />
-                  </Dropzone.Idle>
+        {isFileMode &&
+          (selectedFiles.length === 0 ? (
+            <Dropzone
+              onDrop={handleFileDrop}
+              accept={getAllAcceptedMimeTypes()}
+              maxSize={500 * 1024 * 1024} // 500MB
+              multiple
+            >
+              <Group justify="center" gap="xl" mih={220} style={{ pointerEvents: "none" }}>
+                <Dropzone.Accept>
+                  <IconCloudUpload size={50} stroke={1.5} />
+                </Dropzone.Accept>
+                <Dropzone.Reject>
+                  <IconX size={50} stroke={1.5} />
+                </Dropzone.Reject>
+                <Dropzone.Idle>
+                  <IconCloudUpload size={50} stroke={1.5} />
+                </Dropzone.Idle>
 
-                  <div>
-                    <Text size="xl" inline>
-                      ファイルをドラッグ&ドロップするか、クリックして選択
+                <div>
+                  <Text size="xl" inline>
+                    ファイルをドラッグ&ドロップするか、クリックして選択
+                  </Text>
+                  <Text size="sm" c="dimmed" inline mt={7}>
+                    動画、画像、テキストファイルをアップロードできます（最大500MB）
+                  </Text>
+                </div>
+              </Group>
+            </Dropzone>
+          ) : (
+            <Stack gap="sm">
+              <Text size="sm" fw={500}>
+                選択されたファイル ({selectedFiles.length}個)
+              </Text>
+              {selectedFiles.map((file, index) => (
+                <Group key={`${file.name}-${index}`} gap="sm" align="flex-start">
+                  <IconFile size={20} />
+                  <Box style={{ flex: 1 }}>
+                    <TextInput
+                      label="表示名"
+                      value={fileNames[index] || ""}
+                      onChange={(event) => handleFileNameChange(index, event.currentTarget.value)}
+                      placeholder="ファイルの表示名を入力"
+                      size="sm"
+                    />
+                    <Text size="xs" c="dimmed" mt="xs">
+                      {file.name} ({formatFileSize(file.size)})
                     </Text>
-                    <Text size="sm" c="dimmed" inline mt={7}>
-                      動画、画像、テキストファイルをアップロードできます（最大500MB）
-                    </Text>
-                  </div>
+                  </Box>
                 </Group>
-              </Dropzone>
-            ) : (
-              <Stack gap="sm">
-                <Text size="sm" fw={500}>
-                  選択されたファイル ({selectedFiles.length}個)
-                </Text>
-                {selectedFiles.map((file, index) => (
-                  <Group key={`${file.name}-${index}`} gap="sm" align="flex-start">
-                    <IconFile size={20} />
-                    <Box style={{ flex: 1 }}>
-                      <TextInput
-                        label="表示名"
-                        value={fileNames[index] || ""}
-                        onChange={(event) => handleFileNameChange(index, event.currentTarget.value)}
-                        placeholder="ファイルの表示名を入力"
-                        size="sm"
-                      />
-                      <Text size="xs" c="dimmed" mt="xs">
-                        {file.name} ({formatFileSize(file.size)})
-                      </Text>
-                    </Box>
-                  </Group>
-                ))}
-                <Button
-                  variant="subtle"
-                  size="xs"
-                  onClick={() => {
-                    setSelectedFiles([]);
-                    setFileNames([]);
-                  }}
-                >
-                  ファイル選択をやり直す
-                </Button>
-              </Stack>
-            )}
-          </>
-        )}
+              ))}
+              <Button
+                variant="subtle"
+                size="xs"
+                onClick={() => {
+                  setSelectedFiles([]);
+                  setFileNames([]);
+                }}
+              >
+                ファイル選択をやり直す
+              </Button>
+            </Stack>
+          ))}
 
         {/* URL追加モード */}
         {!isFileMode && (

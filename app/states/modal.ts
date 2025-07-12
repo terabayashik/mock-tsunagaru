@@ -11,6 +11,14 @@ export const playlistCreateModalAtom = atom<boolean>(false);
 export const layoutCreateModalAtom = atom<boolean>(false);
 
 /**
+ * レイアウト編集モーダルの状態
+ */
+export const layoutEditModalAtom = atom<{ opened: boolean; layoutId: string | null }>({
+  opened: false,
+  layoutId: null,
+});
+
+/**
  * モーダル操作のアクション
  */
 export const modalActionsAtom = atom(
@@ -22,7 +30,9 @@ export const modalActionsAtom = atom(
       | { type: "OPEN_PLAYLIST_CREATE" }
       | { type: "CLOSE_PLAYLIST_CREATE" }
       | { type: "OPEN_LAYOUT_CREATE" }
-      | { type: "CLOSE_LAYOUT_CREATE" },
+      | { type: "CLOSE_LAYOUT_CREATE" }
+      | { type: "OPEN_LAYOUT_EDIT"; layoutId: string }
+      | { type: "CLOSE_LAYOUT_EDIT" },
   ) => {
     switch (action.type) {
       case "OPEN_PLAYLIST_CREATE":
@@ -36,6 +46,12 @@ export const modalActionsAtom = atom(
         break;
       case "CLOSE_LAYOUT_CREATE":
         set(layoutCreateModalAtom, false);
+        break;
+      case "OPEN_LAYOUT_EDIT":
+        set(layoutEditModalAtom, { opened: true, layoutId: action.layoutId });
+        break;
+      case "CLOSE_LAYOUT_EDIT":
+        set(layoutEditModalAtom, { opened: false, layoutId: null });
         break;
     }
   },

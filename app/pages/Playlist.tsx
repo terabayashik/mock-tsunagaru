@@ -1,4 +1,5 @@
 import { ActionIcon, Alert, Box, Button, Group, LoadingOverlay, Table, Text } from "@mantine/core";
+import { modals } from "@mantine/modals";
 import { IconEdit, IconExclamationCircle, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useAtom } from "jotai";
 import { useEffect } from "react";
@@ -41,16 +42,20 @@ export default function PlaylistPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("このプレイリストを削除しますか？")) {
-      return;
-    }
-
-    try {
-      await deletePlaylist(id);
-      dispatch({ type: "REMOVE_PLAYLIST", id });
-    } catch (error) {
-      dispatch({ type: "SET_ERROR", error: error instanceof Error ? error.message : "削除に失敗しました" });
-    }
+    modals.openConfirmModal({
+      title: "プレイリストを削除",
+      children: <Text size="sm">このプレイリストを削除しますか？この操作は元に戻せません。</Text>,
+      labels: { confirm: "削除", cancel: "キャンセル" },
+      confirmProps: { color: "red" },
+      onConfirm: async () => {
+        try {
+          await deletePlaylist(id);
+          dispatch({ type: "REMOVE_PLAYLIST", id });
+        } catch (error) {
+          dispatch({ type: "SET_ERROR", error: error instanceof Error ? error.message : "削除に失敗しました" });
+        }
+      },
+    });
   };
 
   const handleCreate = () => {

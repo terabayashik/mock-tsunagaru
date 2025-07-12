@@ -1,6 +1,6 @@
 import { SimpleGrid, Text } from "@mantine/core";
-import { LayoutPreview } from "./LayoutPreview";
 import type { LayoutIndex } from "~/types/layout";
+import { LayoutPreview } from "./LayoutPreview";
 
 interface LayoutGridViewProps {
   layouts: LayoutIndex[];
@@ -10,12 +10,18 @@ interface LayoutGridViewProps {
   onLayoutDelete?: (layout: LayoutIndex) => void;
 }
 
-export const LayoutGridView = ({ layouts, loading, onLayoutClick, onLayoutEdit, onLayoutDelete }: LayoutGridViewProps) => {
+export const LayoutGridView = ({
+  layouts,
+  loading,
+  onLayoutClick,
+  onLayoutEdit,
+  onLayoutDelete,
+}: LayoutGridViewProps) => {
   if (loading) {
     return (
       <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="md">
-        {Array.from({ length: 8 }).map((_, index) => (
-          <div key={index} style={{ height: "200px", background: "#f8f9fa", borderRadius: "8px" }} />
+        {Array.from({ length: 8 }, () => crypto.randomUUID()).map((id) => (
+          <div key={id} style={{ height: "200px", background: "#f8f9fa", borderRadius: "8px" }} />
         ))}
       </SimpleGrid>
     );

@@ -121,7 +121,7 @@ export class VideoThumbnailGenerator {
               try {
                 // アスペクト比を維持してリサイズ
                 const aspectRatio = video.videoWidth / video.videoHeight;
-                
+
                 if (width && !height) {
                   // 幅のみ指定：アスペクト比を保持して高さを計算
                   canvas.width = width;

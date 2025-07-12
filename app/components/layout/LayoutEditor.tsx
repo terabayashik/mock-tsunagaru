@@ -55,7 +55,7 @@ const generateGridLines = (canvasWidth: number, canvasHeight: number, scale: num
   const gridColor = isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.1)";
 
   // 縦のグリッドライン
-  for (let x = GRID_LINE_SPACING; x < CANVAS_WIDTH; x += GRID_LINE_SPACING) {
+  for (let x = 0; x <= CANVAS_WIDTH; x += GRID_LINE_SPACING) {
     lines.push(
       <div
         key={`vertical-${x}`}
@@ -73,7 +73,7 @@ const generateGridLines = (canvasWidth: number, canvasHeight: number, scale: num
   }
 
   // 横のグリッドライン
-  for (let y = GRID_LINE_SPACING; y < CANVAS_HEIGHT; y += GRID_LINE_SPACING) {
+  for (let y = 0; y <= CANVAS_HEIGHT; y += GRID_LINE_SPACING) {
     lines.push(
       <div
         key={`horizontal-${y}`}
@@ -103,7 +103,7 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
     width: 0,
     height: 0,
   });
-  const [containerSize, setContainerSize] = useState({ width: 800, height: 450 });
+  const [containerSize, setContainerSize] = useState({ width: 600, height: 338 });
   const [freeTransform, setFreeTransform] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [_dragStartSelection, setDragStartSelection] = useState<string | null>(null);
@@ -111,8 +111,13 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
   const containerRef = useRef<HTMLDivElement>(null);
   const outerContainerRef = useRef<HTMLDivElement>(null);
 
-  // コンテナサイズを監視
+  // コンテナサイズを監視（固定サイズが指定されていない場合のみ）
   useEffect(() => {
+    // 固定サイズが指定されている場合は動的サイズ計算をスキップ
+    if (canvasWidth && canvasHeight) {
+      return;
+    }
+
     const updateSize = () => {
       if (outerContainerRef.current) {
         const rect = outerContainerRef.current.getBoundingClientRect();
@@ -128,15 +133,23 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
       }
     };
 
-    // 初期サイズ設定を少し遅らせる（レイアウト完了後）
-    const timeoutId = setTimeout(updateSize, 100);
+    // ResizeObserverを使用して即座にサイズ検出
+    const resizeObserver = new ResizeObserver(() => {
+      updateSize();
+    });
+
+    if (outerContainerRef.current) {
+      resizeObserver.observe(outerContainerRef.current);
+      // 初期サイズを即座に設定
+      updateSize();
+    }
 
     window.addEventListener("resize", updateSize);
     return () => {
       window.removeEventListener("resize", updateSize);
-      clearTimeout(timeoutId);
+      resizeObserver.disconnect();
     };
-  }, []);
+  }, [canvasWidth, canvasHeight]);
 
   // 提供されたサイズまたは動的サイズを使用
   const actualCanvasWidth = canvasWidth || containerSize.width;

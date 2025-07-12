@@ -1,5 +1,6 @@
 import { ActionIcon, Alert, Badge, Box, Button, Group, LoadingOverlay, Table, Text } from "@mantine/core";
 import type { FileWithPath } from "@mantine/dropzone";
+import { modals } from "@mantine/modals";
 import {
   IconBrandYoutube,
   IconExclamationCircle,
@@ -66,16 +67,20 @@ export default function ContentsPage() {
 
   // コンテンツ関連のハンドラー
   const handleContentDelete = async (id: string) => {
-    if (!confirm("このコンテンツを削除しますか？")) {
-      return;
-    }
-
-    try {
-      await deleteContent(id);
-      contentDispatch({ type: "REMOVE_CONTENT", id });
-    } catch (error) {
-      contentDispatch({ type: "SET_ERROR", error: error instanceof Error ? error.message : "削除に失敗しました" });
-    }
+    modals.openConfirmModal({
+      title: "コンテンツを削除",
+      children: <Text size="sm">このコンテンツを削除しますか？この操作は元に戻せません。</Text>,
+      labels: { confirm: "削除", cancel: "キャンセル" },
+      confirmProps: { color: "red" },
+      onConfirm: async () => {
+        try {
+          await deleteContent(id);
+          contentDispatch({ type: "REMOVE_CONTENT", id });
+        } catch (error) {
+          contentDispatch({ type: "SET_ERROR", error: error instanceof Error ? error.message : "削除に失敗しました" });
+        }
+      },
+    });
   };
 
   const handleContentAdd = () => {

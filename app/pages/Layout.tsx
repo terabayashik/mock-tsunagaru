@@ -1,12 +1,20 @@
 import { ActionIcon, Alert, Badge, Box, Button, Group, LoadingOverlay, Table, Text } from "@mantine/core";
+import { modals } from "@mantine/modals";
 import { IconEdit, IconExclamationCircle, IconLayoutGrid, IconList, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useAtom } from "jotai";
 import { useEffect } from "react";
 import { LayoutGridView } from "~/components/layout/LayoutGridView";
 import { LayoutCreateModal } from "~/components/modals/LayoutCreateModal";
+import { LayoutEditModal } from "~/components/modals/LayoutEditModal";
 import { useLayout } from "~/hooks/useLayout";
-import { layoutActionsAtom, layoutsAtom, layoutsErrorAtom, layoutsLoadingAtom, layoutViewModeAtom } from "~/states/layout";
-import { layoutCreateModalAtom, modalActionsAtom } from "~/states/modal";
+import {
+  layoutActionsAtom,
+  layoutsAtom,
+  layoutsErrorAtom,
+  layoutsLoadingAtom,
+  layoutViewModeAtom,
+} from "~/states/layout";
+import { layoutCreateModalAtom, layoutEditModalAtom, modalActionsAtom } from "~/states/modal";
 import type { Region } from "~/types/layout";
 
 export default function LayoutPage() {
@@ -15,9 +23,10 @@ export default function LayoutPage() {
   const [layoutsError] = useAtom(layoutsErrorAtom);
   const [layoutViewMode, setLayoutViewMode] = useAtom(layoutViewModeAtom);
   const [layoutCreateModalOpened] = useAtom(layoutCreateModalAtom);
+  const [layoutEditModal] = useAtom(layoutEditModalAtom);
   const [, layoutDispatch] = useAtom(layoutActionsAtom);
   const [, modalDispatch] = useAtom(modalActionsAtom);
-  const { getLayoutsIndex, deleteLayout, createLayout } = useLayout();
+  const { getLayoutsIndex, deleteLayout, createLayout, updateLayout } = useLayout();
 
   // レイアウト一覧を読み込み
   useEffect(() => {
@@ -42,21 +51,24 @@ export default function LayoutPage() {
   }, [getLayoutsIndex, layoutDispatch]);
 
   const handleLayoutEdit = (id: string) => {
-    console.log("Edit layout:", id);
-    // TODO: 編集機能を実装
+    modalDispatch({ type: "OPEN_LAYOUT_EDIT", layoutId: id });
   };
 
   const handleLayoutDelete = async (id: string) => {
-    if (!confirm("このレイアウトを削除しますか？")) {
-      return;
-    }
-
-    try {
-      await deleteLayout(id);
-      layoutDispatch({ type: "REMOVE_LAYOUT", id });
-    } catch (error) {
-      layoutDispatch({ type: "SET_ERROR", error: error instanceof Error ? error.message : "削除に失敗しました" });
-    }
+    modals.openConfirmModal({
+      title: "レイアウトを削除",
+      children: <Text size="sm">このレイアウトを削除しますか？この操作は元に戻せません。</Text>,
+      labels: { confirm: "削除", cancel: "キャンセル" },
+      confirmProps: { color: "red" },
+      onConfirm: async () => {
+        try {
+          await deleteLayout(id);
+          layoutDispatch({ type: "REMOVE_LAYOUT", id });
+        } catch (error) {
+          layoutDispatch({ type: "SET_ERROR", error: error instanceof Error ? error.message : "削除に失敗しました" });
+        }
+      },
+    });
   };
 
   const handleLayoutCreate = () => {
@@ -95,6 +107,42 @@ export default function LayoutPage() {
 
   const handleLayoutModalClose = () => {
     modalDispatch({ type: "CLOSE_LAYOUT_CREATE" });
+  };
+
+  const handleLayoutEditSubmit = async (data: {
+    name: string;
+    orientation: "portrait" | "landscape";
+    regions: Region[];
+  }) => {
+    if (!layoutEditModal.layoutId) return;
+
+    try {
+      const updatedLayout = await updateLayout(layoutEditModal.layoutId, {
+        name: data.name,
+        orientation: data.orientation,
+        regions: data.regions,
+      });
+      // LayoutIndexの形式に変換して更新
+      const layoutIndex = {
+        id: updatedLayout.id,
+        name: updatedLayout.name,
+        orientation: updatedLayout.orientation,
+        regionCount: updatedLayout.regions.length,
+        createdAt: updatedLayout.createdAt,
+        updatedAt: updatedLayout.updatedAt,
+      };
+      layoutDispatch({ type: "UPDATE_LAYOUT", layout: layoutIndex });
+    } catch (error) {
+      layoutDispatch({
+        type: "SET_ERROR",
+        error: error instanceof Error ? error.message : "レイアウトの更新に失敗しました",
+      });
+      throw error;
+    }
+  };
+
+  const handleLayoutEditModalClose = () => {
+    modalDispatch({ type: "CLOSE_LAYOUT_EDIT" });
   };
 
   return (
@@ -216,6 +264,13 @@ export default function LayoutPage() {
         opened={layoutCreateModalOpened}
         onClose={handleLayoutModalClose}
         onSubmit={handleLayoutCreateSubmit}
+      />
+
+      <LayoutEditModal
+        opened={layoutEditModal.opened}
+        layoutId={layoutEditModal.layoutId}
+        onClose={handleLayoutEditModalClose}
+        onSubmit={handleLayoutEditSubmit}
       />
     </Box>
   );

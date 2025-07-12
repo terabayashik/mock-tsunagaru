@@ -44,7 +44,7 @@ export const LayoutPreview = ({ layout, onClick, onEdit, onDelete }: LayoutPrevi
 
     // リサイズイベントリスナー
     window.addEventListener("resize", updateSize);
-    
+
     // ResizeObserver for more accurate container size changes
     const resizeObserver = new ResizeObserver(updateSize);
     if (containerRef.current) {
@@ -171,11 +171,10 @@ export const LayoutPreview = ({ layout, onClick, onEdit, onDelete }: LayoutPrevi
         >
           {renderRegions()}
         </Box>
-
       </Box>
 
       {/* レイアウト情報 */}
-      <Box p="xs" style={{ height: "60px", overflow: "hidden" }}>
+      <Box p="xs" h="60px" style={{ overflow: "hidden" }}>
         <Tooltip label={layout.name} disabled={layout.name.length <= 20}>
           <Text size="sm" fw={500} lineClamp={1}>
             {layout.name}
@@ -187,8 +186,8 @@ export const LayoutPreview = ({ layout, onClick, onEdit, onDelete }: LayoutPrevi
             <Text size="xs" c="dimmed">
               {new Date(layout.createdAt).toLocaleDateString("ja-JP")}
             </Text>
-            <Text 
-              size="xs" 
+            <Text
+              size="xs"
               style={{
                 color: getOrientationBadgeColor(),
                 fontWeight: 500,
@@ -197,7 +196,7 @@ export const LayoutPreview = ({ layout, onClick, onEdit, onDelete }: LayoutPrevi
               {layout.orientation === "landscape" ? "横向き" : "縦向き"}
             </Text>
           </Group>
-          
+
           <Group gap="xs">
             {onEdit && (
               <ActionIcon

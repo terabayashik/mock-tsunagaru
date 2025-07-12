@@ -47,11 +47,11 @@ export class ThumbnailGenerator {
     }
 
     if (file.type.startsWith("image/")) {
-      return await this.generateImageThumbnail(file, { width, height: height || Math.round(width * 3/4), quality });
+      return await this.generateImageThumbnail(file, { width, height: height || Math.round((width * 3) / 4), quality });
     }
 
     if (file.type.startsWith("text/") || file.type === "application/json") {
-      return await this.generateTextThumbnail(file, { width, height: height || Math.round(width * 3/4), quality });
+      return await this.generateTextThumbnail(file, { width, height: height || Math.round((width * 3) / 4), quality });
     }
 
     throw new Error(`Unsupported file type for thumbnail generation: ${file.type}`);
@@ -87,7 +87,11 @@ export class ThumbnailGenerator {
     } catch (error) {
       console.error("[ThumbnailGenerator] Video thumbnail generation failed:", error);
       // フォールバック: プレースホルダー画像を生成
-      return await this.generatePlaceholderThumbnail("動画", options.width, options.height || Math.round(options.width * 3/4));
+      return await this.generatePlaceholderThumbnail(
+        "動画",
+        options.width,
+        options.height || Math.round((options.width * 3) / 4),
+      );
     }
   }
 

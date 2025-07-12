@@ -12,8 +12,8 @@ export const Welcome = () => {
     <Container size="lg">
       <Stack align="center" gap="xl">
         <Container size={400} p="md">
-          <Image src={logoLight} alt="React Router" w="100%" style={{ display: "block" }} data-light-only />
-          <Image src={logoDark} alt="React Router" w="100%" style={{ display: "none" }} data-dark-only />
+          <Image src={logoLight} alt="React Router" w="100%" display="block" data-light-only />
+          <Image src={logoDark} alt="React Router" w="100%" display="none" data-dark-only />
         </Container>
 
         <Container size={300} w="100%">
