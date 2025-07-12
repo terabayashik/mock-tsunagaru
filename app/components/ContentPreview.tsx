@@ -1,4 +1,4 @@
-import { Box, Group, Image, Paper, Text, Tooltip } from "@mantine/core";
+import { Box, Flex, Group, Image, Paper, Text, Tooltip } from "@mantine/core";
 import {
   IconBrandYoutube,
   IconFile,
@@ -233,51 +233,46 @@ export const ContentPreview = ({ content, onClick, size = "md" }: ContentPreview
 
   if (previewState.loading) {
     return (
-      <Paper withBorder p="xs" style={{ width, height, cursor: onClick ? "pointer" : "default" }} onClick={onClick}>
-        <Box
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: "var(--mantine-color-gray-1)",
-          }}
-        >
+      <Paper
+        withBorder
+        p="xs"
+        w={width}
+        h={height}
+        style={{ cursor: onClick ? "pointer" : "default" }}
+        onClick={onClick}
+      >
+        <Flex w="100%" h="100%" align="center" justify="center" bg="gray.1">
           <Text size="sm" c="dimmed">
             読み込み中...
           </Text>
-        </Box>
+        </Flex>
       </Paper>
     );
   }
 
   if (previewState.error) {
     return (
-      <Paper withBorder p="xs" style={{ width, height, cursor: onClick ? "pointer" : "default" }} onClick={onClick}>
-        <Box
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: "var(--mantine-color-gray-1)",
-          }}
-        >
+      <Paper
+        withBorder
+        p="xs"
+        w={width}
+        h={height}
+        style={{ cursor: onClick ? "pointer" : "default" }}
+        onClick={onClick}
+      >
+        <Flex w="100%" h="100%" direction="column" align="center" justify="center" bg="gray.1">
           {getTypeIcon(content.type)}
           <Text size="xs" c="dimmed" mt="xs" ta="center">
             プレビュー未対応
           </Text>
-        </Box>
+        </Flex>
       </Paper>
     );
   }
 
   return (
-    <Paper withBorder p={0} style={{ width, cursor: onClick ? "pointer" : "default" }} onClick={onClick}>
-      <Box style={{ position: "relative" }}>
+    <Paper withBorder p={0} w={width} style={{ cursor: onClick ? "pointer" : "default" }} onClick={onClick}>
+      <Box pos="relative">
         {/* プレビュー画像 */}
         <Image
           src={previewState.previewUrl}
@@ -290,60 +285,49 @@ export const ContentPreview = ({ content, onClick, size = "md" }: ContentPreview
 
         {/* オーバーレイアイコン */}
         {(content.type === "video" || content.type === "youtube") && (
-          <Box
-            style={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              backgroundColor: "rgba(0, 0, 0, 0.7)",
-              borderRadius: "50%",
-              padding: "8px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
+          <Flex
+            pos="absolute"
+            top="50%"
+            left="50%"
+            style={{ transform: "translate(-50%, -50%)", borderRadius: "50%" }}
+            bg="rgba(0, 0, 0, 0.7)"
+            p="8px"
+            align="center"
+            justify="center"
           >
             <IconPlayerPlay size={24} color="white" />
-          </Box>
+          </Flex>
         )}
 
         {/* 時間表示（動画の場合） */}
         {(content.type === "video" || content.type === "youtube") && previewState.metadata?.duration && (
           <Box
-            style={{
-              position: "absolute",
-              bottom: "4px",
-              right: "4px",
-              backgroundColor: "rgba(0, 0, 0, 0.8)",
-              color: "white",
-              padding: "2px 6px",
-              borderRadius: "4px",
-              fontSize: "11px",
-            }}
+            pos="absolute"
+            bottom="4px"
+            right="4px"
+            bg="rgba(0, 0, 0, 0.8)"
+            c="white"
+            p="2px 6px"
+            style={{ borderRadius: "4px", fontSize: "11px" }}
           >
             {formatDuration(previewState.metadata.duration)}
           </Box>
         )}
 
         {/* タイプバッジ */}
-        <Box
-          style={{
-            position: "absolute",
-            top: "4px",
-            left: "4px",
-            backgroundColor: `var(--mantine-color-${getTypeColor(content.type)}-6)`,
-            color: "white",
-            padding: "2px 6px",
-            borderRadius: "4px",
-            fontSize: "10px",
-            display: "flex",
-            alignItems: "center",
-            gap: "4px",
-          }}
+        <Flex
+          pos="absolute"
+          top="4px"
+          left="4px"
+          bg={`${getTypeColor(content.type)}.6`}
+          c="white"
+          p="2px 6px"
+          style={{ borderRadius: "4px", fontSize: "10px" }}
+          align="center"
+          gap="4px"
         >
           {getTypeIcon(content.type)}
-        </Box>
+        </Flex>
       </Box>
 
       {/* コンテンツ情報 */}
@@ -361,7 +345,7 @@ export const ContentPreview = ({ content, onClick, size = "md" }: ContentPreview
             </Text>
           )}
           {content.url && !content.size && (
-            <Text size="xs" c="dimmed" lineClamp={1} style={{ maxWidth: "120px" }}>
+            <Text size="xs" c="dimmed" lineClamp={1} maw="120px">
               {new URL(content.url).hostname}
             </Text>
           )}

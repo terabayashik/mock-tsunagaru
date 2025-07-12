@@ -1,5 +1,6 @@
 import {
   ActionIcon,
+  Box,
   Button,
   Group,
   NumberInput,
@@ -300,7 +301,7 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
                 </Text>
 
                 {/* 編集ボタン */}
-                <div style={{ position: "absolute", top: 4, right: 4 }}>
+                <Box pos="absolute" top={4} right={4}>
                   <Group gap={2}>
                     <Popover
                       opened={editingRegion === region.id}
@@ -322,7 +323,7 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
                         </ActionIcon>
                       </Popover.Target>
                       <Popover.Dropdown>
-                        <Stack gap="xs" style={{ minWidth: 200, position: "relative" }}>
+                        <Stack gap="xs" miw={200} pos="relative">
                           {/* 閉じるボタン */}
                           <ActionIcon
                             size="xs"
@@ -402,7 +403,7 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
                       <IconTrash size={10} />
                     </ActionIcon>
                   </Group>
-                </div>
+                </Box>
               </button>
 
               {/* Moveable - 常に有効、選択時のみリサイズハンドルを表示 */}

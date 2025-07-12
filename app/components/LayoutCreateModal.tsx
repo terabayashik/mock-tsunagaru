@@ -1,4 +1,4 @@
-import { Button, Group, Modal, Select, Stack, TextInput } from "@mantine/core";
+import { Box, Button, Flex, Group, Modal, Select, Stack, Text, TextInput } from "@mantine/core";
 import { IconDeviceFloppy, IconX } from "@tabler/icons-react";
 import { useState } from "react";
 import { LayoutEditor } from "~/components/LayoutEditor";
@@ -91,9 +91,9 @@ export const LayoutCreateModal = ({ opened, onClose, onSubmit }: LayoutCreateMod
         },
       }}
     >
-      <div style={{ display: "flex", gap: "1rem", width: "100%" }}>
+      <Flex gap="1rem" w="100%">
         {/* 左側: フォーム */}
-        <form onSubmit={handleSubmit} style={{ minWidth: "300px", flex: "0 0 auto" }}>
+        <Box component="form" onSubmit={handleSubmit} miw="300px" style={{ flex: "0 0 auto" }}>
           <Stack gap="md">
             <TextInput
               label="レイアウト名"
@@ -118,7 +118,9 @@ export const LayoutCreateModal = ({ opened, onClose, onSubmit }: LayoutCreateMod
             />
 
             {errors.regions && (
-              <div style={{ color: "var(--mantine-color-red-6)", fontSize: "14px" }}>{errors.regions}</div>
+              <Text c="red.6" size="sm">
+                {errors.regions}
+              </Text>
             )}
 
             <Group justify="flex-end" mt="md">
@@ -130,13 +132,13 @@ export const LayoutCreateModal = ({ opened, onClose, onSubmit }: LayoutCreateMod
               </Button>
             </Group>
           </Stack>
-        </form>
+        </Box>
 
         {/* 右側: レイアウトエディター */}
-        <div style={{ flex: "1 1 auto", minWidth: "600px" }}>
+        <Box style={{ flex: "1 1 auto" }} miw="600px">
           <LayoutEditor regions={formData.regions} onRegionsChange={handleRegionsChange} />
-        </div>
-      </div>
+        </Box>
+      </Flex>
     </Modal>
   );
 };

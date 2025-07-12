@@ -78,7 +78,7 @@ export const ContentFilters = () => {
         }
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
-        style={{ flex: 1 }}
+        flex={1}
         miw={200}
       />
 

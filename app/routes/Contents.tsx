@@ -294,15 +294,7 @@ export default function ContentsPage() {
                     {content.size ? (
                       <Text size="sm">{formatFileSize(content.size)}</Text>
                     ) : content.url ? (
-                      <Text
-                        size="sm"
-                        style={{
-                          maxWidth: 200,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
+                      <Text size="sm" maw={200} truncate>
                         {content.url}
                       </Text>
                     ) : (

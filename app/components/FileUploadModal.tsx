@@ -1,4 +1,4 @@
-import { Button, Group, Modal, Stack, Text, TextInput } from "@mantine/core";
+import { Box, Button, Group, Modal, Stack, Text, TextInput } from "@mantine/core";
 import { Dropzone, type FileWithPath } from "@mantine/dropzone";
 import { IconCloudUpload, IconDeviceFloppy, IconFile, IconX } from "@tabler/icons-react";
 import { useState } from "react";
@@ -105,9 +105,9 @@ export const FileUploadModal = ({ opened, onClose, onSubmit }: FileUploadModalPr
               選択されたファイル ({selectedFiles.length}個)
             </Text>
             {selectedFiles.map((file, index) => (
-              <Group key={`${file.name}-${index}`} gap="sm" style={{ alignItems: "flex-start" }}>
+              <Group key={`${file.name}-${index}`} gap="sm" align="flex-start">
                 <IconFile size={20} />
-                <div style={{ flex: 1 }}>
+                <Box flex={1}>
                   <TextInput
                     label="表示名"
                     placeholder="ファイルの表示名を入力"
@@ -119,7 +119,7 @@ export const FileUploadModal = ({ opened, onClose, onSubmit }: FileUploadModalPr
                   <Text size="xs" c="dimmed" mt={2}>
                     {file.name} ({formatFileSize(file.size)})
                   </Text>
-                </div>
+                </Box>
               </Group>
             ))}
             <Button
