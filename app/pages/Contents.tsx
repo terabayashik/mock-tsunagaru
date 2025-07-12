@@ -19,6 +19,7 @@ import { useEffect } from "react";
 import { ContentFilters } from "~/components/content/ContentFilters";
 import { ContentGridView } from "~/components/content/ContentGridView";
 import { ContentAddModal } from "~/components/modals/ContentAddModal";
+import { ContentPreviewModal } from "~/components/modals/ContentPreviewModal";
 import { useContent } from "~/hooks/useContent";
 import {
   contentActionsAtom,
@@ -29,6 +30,7 @@ import {
   contentViewModeAtom,
   filteredContentsAtom,
 } from "~/states/content";
+import { contentPreviewModalAtom, modalActionsAtom } from "~/states/modal";
 import type { ContentType } from "~/types/content";
 
 export default function ContentsPage() {
@@ -40,6 +42,8 @@ export default function ContentsPage() {
   const [contentAddModalOpened] = useAtom(contentAddModalAtom);
   const [, contentDispatch] = useAtom(contentActionsAtom);
   const [, contentModalDispatch] = useAtom(contentModalActionsAtom);
+  const [contentPreviewModal] = useAtom(contentPreviewModalAtom);
+  const [, modalDispatch] = useAtom(modalActionsAtom);
 
   const { getContentsIndex, deleteContent, createFileContent, createUrlContent } = useContent();
 
@@ -85,6 +89,13 @@ export default function ContentsPage() {
 
   const handleContentAdd = () => {
     contentModalDispatch({ type: "OPEN_CONTENT_ADD" });
+  };
+
+  const handleContentClick = (contentId: string, contentType: ContentType) => {
+    // 動画と画像のみプレビューモーダルを開く
+    if (contentType === "video" || contentType === "image" || contentType === "youtube") {
+      modalDispatch({ type: "OPEN_CONTENT_PREVIEW", contentId });
+    }
   };
 
   const handleFileUploadSubmit = async (files: FileWithPath[], names?: string[]) => {
@@ -256,7 +267,16 @@ export default function ContentsPage() {
               </Table.Tr>
             ) : (
               contents.map((content) => (
-                <Table.Tr key={content.id}>
+                <Table.Tr
+                  key={content.id}
+                  style={{
+                    cursor:
+                      content.type === "video" || content.type === "image" || content.type === "youtube"
+                        ? "pointer"
+                        : "default",
+                  }}
+                  onClick={() => handleContentClick(content.id, content.type)}
+                >
                   <Table.Td>{getContentTypeBadge(content.type)}</Table.Td>
                   <Table.Td>
                     <Text fw={500}>{content.name}</Text>
@@ -291,7 +311,10 @@ export default function ContentsPage() {
                       variant="subtle"
                       color="red"
                       size="sm"
-                      onClick={() => handleContentDelete(content.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleContentDelete(content.id);
+                      }}
                       aria-label="削除"
                     >
                       <IconTrash size={16} />
@@ -307,13 +330,7 @@ export default function ContentsPage() {
           contents={contents}
           loading={contentsLoading}
           onContentClick={(content) => {
-            // コンテンツクリック時の処理
-            if (content.type === "youtube" || content.type === "url") {
-              if (content.url) {
-                window.open(content.url, "_blank", "noopener,noreferrer");
-              }
-            }
-            // 他のコンテンツタイプについては後で実装
+            handleContentClick(content.id, content.type);
           }}
         />
       )}
@@ -323,6 +340,46 @@ export default function ContentsPage() {
         onClose={handleContentAddModalClose}
         onFileSubmit={handleFileUploadSubmit}
         onUrlSubmit={handleUrlContentSubmit}
+      />
+
+      <ContentPreviewModal
+        opened={contentPreviewModal.opened}
+        onClose={() => modalDispatch({ type: "CLOSE_CONTENT_PREVIEW" })}
+        contentId={contentPreviewModal.contentId}
+        allContents={contents}
+        onContentDeleted={() => {
+          // コンテンツ一覧を再読み込み
+          const loadContents = async () => {
+            try {
+              const contentsData = await getContentsIndex();
+              contentDispatch({ type: "SET_CONTENTS", contents: contentsData });
+            } catch (error) {
+              contentDispatch({
+                type: "SET_ERROR",
+                error: error instanceof Error ? error.message : "不明なエラーが発生しました",
+              });
+            }
+          };
+          loadContents();
+        }}
+        onContentUpdated={() => {
+          // コンテンツ一覧を再読み込み
+          const loadContents = async () => {
+            try {
+              const contentsData = await getContentsIndex();
+              contentDispatch({ type: "SET_CONTENTS", contents: contentsData });
+            } catch (error) {
+              contentDispatch({
+                type: "SET_ERROR",
+                error: error instanceof Error ? error.message : "不明なエラーが発生しました",
+              });
+            }
+          };
+          loadContents();
+        }}
+        onContentChange={(newContentId) => {
+          modalDispatch({ type: "OPEN_CONTENT_PREVIEW", contentId: newContentId });
+        }}
       />
     </Box>
   );

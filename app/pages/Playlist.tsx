@@ -3,6 +3,7 @@ import { modals } from "@mantine/modals";
 import { IconEdit, IconExclamationCircle, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useAtom } from "jotai";
 import { useEffect } from "react";
+import type { PlaylistFormData } from "~/components/modals/PlaylistCreateModal";
 import { PlaylistCreateModal } from "~/components/modals/PlaylistCreateModal";
 import { usePlaylist } from "~/hooks/usePlaylist";
 import { modalActionsAtom, playlistCreateModalAtom } from "~/states/modal";
@@ -62,14 +63,29 @@ export default function PlaylistPage() {
     modalDispatch({ type: "OPEN_PLAYLIST_CREATE" });
   };
 
-  const handleCreateSubmit = async (data: { name: string; device: string; materialCount: number }) => {
+  const handleCreateSubmit = async (data: PlaylistFormData) => {
     try {
       const newPlaylist = await createPlaylist({
         name: data.name,
-        materialCount: data.materialCount,
+        layoutId: data.layoutId,
+        contentAssignments: data.contentAssignments,
         device: data.device,
       });
-      dispatch({ type: "ADD_PLAYLIST", playlist: newPlaylist });
+
+      // インデックス用のデータに変換
+      const playlistIndex = {
+        id: newPlaylist.id,
+        name: newPlaylist.name,
+        layoutId: newPlaylist.layoutId,
+        contentCount: newPlaylist.contentAssignments.reduce((total, assignment) => {
+          return total + assignment.contentIds.length;
+        }, 0),
+        device: newPlaylist.device,
+        createdAt: newPlaylist.createdAt,
+        updatedAt: newPlaylist.updatedAt,
+      };
+
+      dispatch({ type: "ADD_PLAYLIST", playlist: playlistIndex });
     } catch (error) {
       dispatch({
         type: "SET_ERROR",
@@ -104,7 +120,7 @@ export default function PlaylistPage() {
           <Table.Tr>
             <Table.Th>操作</Table.Th>
             <Table.Th>名前</Table.Th>
-            <Table.Th>素材数</Table.Th>
+            <Table.Th>コンテンツ数</Table.Th>
             <Table.Th>デバイス</Table.Th>
             <Table.Th>作成日時</Table.Th>
             <Table.Th>操作</Table.Th>
@@ -135,7 +151,7 @@ export default function PlaylistPage() {
                   <Text fw={500}>{playlist.name}</Text>
                 </Table.Td>
                 <Table.Td>
-                  <Text>{playlist.materialCount}</Text>
+                  <Text>{playlist.contentCount}</Text>
                 </Table.Td>
                 <Table.Td>
                   <Text>{playlist.device}</Text>

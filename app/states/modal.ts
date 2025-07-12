@@ -19,6 +19,14 @@ export const layoutEditModalAtom = atom<{ opened: boolean; layoutId: string | nu
 });
 
 /**
+ * コンテンツプレビューモーダルの状態
+ */
+export const contentPreviewModalAtom = atom<{ opened: boolean; contentId: string | null }>({
+  opened: false,
+  contentId: null,
+});
+
+/**
  * モーダル操作のアクション
  */
 export const modalActionsAtom = atom(
@@ -32,7 +40,9 @@ export const modalActionsAtom = atom(
       | { type: "OPEN_LAYOUT_CREATE" }
       | { type: "CLOSE_LAYOUT_CREATE" }
       | { type: "OPEN_LAYOUT_EDIT"; layoutId: string }
-      | { type: "CLOSE_LAYOUT_EDIT" },
+      | { type: "CLOSE_LAYOUT_EDIT" }
+      | { type: "OPEN_CONTENT_PREVIEW"; contentId: string }
+      | { type: "CLOSE_CONTENT_PREVIEW" },
   ) => {
     switch (action.type) {
       case "OPEN_PLAYLIST_CREATE":
@@ -52,6 +62,12 @@ export const modalActionsAtom = atom(
         break;
       case "CLOSE_LAYOUT_EDIT":
         set(layoutEditModalAtom, { opened: false, layoutId: null });
+        break;
+      case "OPEN_CONTENT_PREVIEW":
+        set(contentPreviewModalAtom, { opened: true, contentId: action.contentId });
+        break;
+      case "CLOSE_CONTENT_PREVIEW":
+        set(contentPreviewModalAtom, { opened: false, contentId: null });
         break;
     }
   },

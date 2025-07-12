@@ -91,10 +91,17 @@ export const usePlaylist = () => {
 
           // インデックスを更新
           const currentIndex = await getPlaylistsIndex();
+
+          // コンテンツ総数を計算
+          const contentCount = validated.contentAssignments.reduce((total, assignment) => {
+            return total + assignment.contentIds.length;
+          }, 0);
+
           const newIndex: PlaylistIndex = {
             id: validated.id,
             name: validated.name,
-            materialCount: validated.materialCount,
+            layoutId: validated.layoutId,
+            contentCount,
             device: validated.device,
             createdAt: validated.createdAt,
             updatedAt: validated.updatedAt,
@@ -139,12 +146,19 @@ export const usePlaylist = () => {
 
           // インデックスを更新
           const currentIndex = await getPlaylistsIndex();
+
+          // コンテンツ総数を計算
+          const contentCount = validated.contentAssignments.reduce((total, assignment) => {
+            return total + assignment.contentIds.length;
+          }, 0);
+
           const updatedIndex = currentIndex.map((item) =>
             item.id === id
               ? {
                   id: validated.id,
                   name: validated.name,
-                  materialCount: validated.materialCount,
+                  layoutId: validated.layoutId,
+                  contentCount,
                   device: validated.device,
                   createdAt: validated.createdAt,
                   updatedAt: validated.updatedAt,

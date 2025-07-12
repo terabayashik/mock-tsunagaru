@@ -1,62 +1,223 @@
-import { Button, Group, Modal, NumberInput, Stack, TextInput } from "@mantine/core";
-import { IconDeviceFloppy, IconX } from "@tabler/icons-react";
-import { useState } from "react";
+import {
+  Box,
+  Button,
+  Checkbox,
+  Divider,
+  Group,
+  Modal,
+  Paper,
+  Progress,
+  Select,
+  Stack,
+  Text,
+  TextInput,
+} from "@mantine/core";
+import { IconArrowLeft, IconArrowRight, IconDeviceFloppy, IconLayoutGrid, IconX } from "@tabler/icons-react";
+import { useCallback, useEffect, useState } from "react";
+import { ContentSelectionGrid } from "~/components/content/ContentSelectionGrid";
+import { InteractiveLayoutPreview } from "~/components/layout/InteractiveLayoutPreview";
+import { useContent } from "~/hooks/useContent";
+import { useLayout } from "~/hooks/useLayout";
+import type { ContentIndex } from "~/types/content";
+import type { LayoutIndex, LayoutItem, Orientation, Region } from "~/types/layout";
+import type { ContentAssignment } from "~/types/playlist";
+import { LayoutFormModal } from "./LayoutFormModal";
 
-interface PlaylistFormData {
+export interface PlaylistFormData {
   name: string;
   device: string;
-  materialCount: number;
+  layoutId: string;
+  contentAssignments: ContentAssignment[];
 }
 
 interface PlaylistCreateModalProps {
   opened: boolean;
   onClose: () => void;
-  onSubmit: (data: Omit<PlaylistFormData, "materialCount"> & { materialCount: number }) => Promise<void>;
+  onSubmit: (data: PlaylistFormData) => Promise<void>;
+}
+
+type Step = "basic" | "layout" | "content";
+
+interface StepInfo {
+  key: Step;
+  title: string;
+  description: string;
 }
 
 export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreateModalProps) => {
   const [loading, setLoading] = useState(false);
+  const [currentStep, setCurrentStep] = useState<Step>("basic");
   const [formData, setFormData] = useState<PlaylistFormData>({
     name: "",
     device: "",
-    materialCount: 0,
+    layoutId: "",
+    contentAssignments: [],
   });
   const [errors, setErrors] = useState<Partial<Record<keyof PlaylistFormData, string>>>({});
+  const [layouts, setLayouts] = useState<LayoutIndex[]>([]);
+  const [selectedLayout, setSelectedLayout] = useState<LayoutItem | null>(null);
+  const [contents, setContents] = useState<ContentIndex[]>([]);
+  const [createNewLayout, setCreateNewLayout] = useState(false);
+  const [showLayoutForm, setShowLayoutForm] = useState(false);
+  const [tempLayoutData, setTempLayoutData] = useState<{
+    name: string;
+    orientation: Orientation;
+    regions: Region[];
+  } | null>(null);
+  const [selectedRegionId, setSelectedRegionId] = useState<string | null>(null);
 
-  const validateForm = (): boolean => {
+  const { getLayoutsIndex, getLayoutById, createLayout } = useLayout();
+  const { getContentsIndex } = useContent();
+
+  const steps: StepInfo[] = [
+    { key: "basic", title: "基本情報", description: "プレイリスト名とデバイスを設定" },
+    { key: "layout", title: "レイアウト選択", description: "既存レイアウトを選択または新規作成" },
+    { key: "content", title: "コンテンツ割り当て", description: "各リージョンにコンテンツを割り当て" },
+  ];
+
+  const getCurrentStepIndex = () => steps.findIndex((step) => step.key === currentStep);
+  const getProgress = () => ((getCurrentStepIndex() + 1) / steps.length) * 100;
+
+  const loadLayouts = useCallback(async () => {
+    try {
+      const layoutsData = await getLayoutsIndex();
+      setLayouts(layoutsData);
+    } catch (error) {
+      console.error("Failed to load layouts:", error);
+    }
+  }, [getLayoutsIndex]);
+
+  const loadContents = useCallback(async () => {
+    try {
+      const contentsData = await getContentsIndex();
+      setContents(contentsData);
+    } catch (error) {
+      console.error("Failed to load contents:", error);
+    }
+  }, [getContentsIndex]);
+
+  // データ読み込み
+  useEffect(() => {
+    if (opened) {
+      loadLayouts();
+      loadContents();
+    }
+  }, [opened, loadLayouts, loadContents]);
+
+  const validateCurrentStep = (): boolean => {
     const newErrors: Partial<Record<keyof PlaylistFormData, string>> = {};
 
-    if (formData.name.trim().length === 0) {
-      newErrors.name = "プレイリスト名は必須です";
-    }
-    if (formData.device.trim().length === 0) {
-      newErrors.device = "デバイス名は必須です";
-    }
-    if (formData.materialCount < 0) {
-      newErrors.materialCount = "素材数は0以上である必要があります";
+    if (currentStep === "basic") {
+      if (formData.name.trim().length === 0) {
+        newErrors.name = "プレイリスト名は必須です";
+      }
+      if (formData.device.trim().length === 0) {
+        newErrors.device = "デバイス名は必須です";
+      }
+    } else if (currentStep === "layout") {
+      if (!createNewLayout && formData.layoutId.trim().length === 0) {
+        newErrors.layoutId = "レイアウトを選択してください";
+      }
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleNext = async () => {
+    if (!validateCurrentStep()) {
+      return;
+    }
 
-    if (!validateForm()) {
+    const currentIndex = getCurrentStepIndex();
+    if (currentIndex < steps.length - 1) {
+      const nextStep = steps[currentIndex + 1].key;
+
+      // レイアウト選択ステップからコンテンツステップに移る時
+      if (currentStep === "layout" && nextStep === "content") {
+        if (createNewLayout) {
+          // 新規レイアウト作成の場合
+          if (tempLayoutData) {
+            // 一時的なレイアウトデータからLayoutItemを作成
+            const tempLayout: LayoutItem = {
+              id: "temp-layout",
+              name: tempLayoutData.name,
+              orientation: tempLayoutData.orientation,
+              regions: tempLayoutData.regions,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            };
+            setSelectedLayout(tempLayout);
+
+            // contentAssignmentsを初期化
+            const assignments: ContentAssignment[] = tempLayoutData.regions.map((region) => ({
+              regionId: region.id,
+              contentIds: [],
+            }));
+            setFormData((prev) => ({ ...prev, contentAssignments: assignments }));
+          } else {
+            // レイアウトが作成されていない場合はレイアウト作成モーダルを表示
+            setShowLayoutForm(true);
+            return;
+          }
+        } else if (formData.layoutId) {
+          // 既存レイアウト選択の場合
+          try {
+            const layout = await getLayoutById(formData.layoutId);
+            setSelectedLayout(layout);
+
+            // レイアウトのリージョンに基づいてcontentAssignmentsを初期化
+            if (layout) {
+              const assignments: ContentAssignment[] = layout.regions.map((region) => ({
+                regionId: region.id,
+                contentIds: [],
+              }));
+              setFormData((prev) => ({ ...prev, contentAssignments: assignments }));
+            }
+          } catch (error) {
+            console.error("Failed to load layout:", error);
+            return;
+          }
+        }
+      }
+
+      setCurrentStep(nextStep);
+    }
+  };
+
+  const handlePrev = () => {
+    const currentIndex = getCurrentStepIndex();
+    if (currentIndex > 0) {
+      setCurrentStep(steps[currentIndex - 1].key);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!validateCurrentStep()) {
       return;
     }
 
     setLoading(true);
     try {
+      let layoutId = formData.layoutId;
+
+      // 新規レイアウトを作成する場合
+      if (createNewLayout && tempLayoutData) {
+        const newLayout = await createLayout({
+          name: tempLayoutData.name,
+          orientation: tempLayoutData.orientation,
+          regions: tempLayoutData.regions,
+        });
+        layoutId = newLayout.id;
+      }
+
       await onSubmit({
         name: formData.name.trim(),
         device: formData.device.trim(),
-        materialCount: formData.materialCount,
+        layoutId,
+        contentAssignments: formData.contentAssignments,
       });
-      setFormData({ name: "", device: "", materialCount: 0 });
-      setErrors({});
-      onClose();
+      handleClose();
     } catch (error) {
       console.error("プレイリスト作成エラー:", error);
     } finally {
@@ -65,54 +226,328 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
   };
 
   const handleClose = () => {
-    setFormData({ name: "", device: "", materialCount: 0 });
+    setCurrentStep("basic");
+    setFormData({ name: "", device: "", layoutId: "", contentAssignments: [] });
     setErrors({});
+    setSelectedLayout(null);
+    setCreateNewLayout(false);
+    setShowLayoutForm(false);
+    setTempLayoutData(null);
+    setSelectedRegionId(null);
     onClose();
   };
 
+  const handleContentAssignmentChange = (regionId: string, contentIds: string[]) => {
+    setFormData((prev) => ({
+      ...prev,
+      contentAssignments: prev.contentAssignments.map((assignment) =>
+        assignment.regionId === regionId ? { ...assignment, contentIds } : assignment,
+      ),
+    }));
+  };
+
+  const handleRegionSelect = (regionId: string) => {
+    setSelectedRegionId(regionId);
+  };
+
+  const getSelectedRegionAssignment = () => {
+    if (!selectedRegionId) return null;
+    return formData.contentAssignments.find((assignment) => assignment.regionId === selectedRegionId);
+  };
+
+  const getAssignedContentCounts = () => {
+    const counts: Record<string, number> = {};
+    formData.contentAssignments.forEach((assignment) => {
+      counts[assignment.regionId] = assignment.contentIds.length;
+    });
+    return counts;
+  };
+
+  const canGoNext = () => {
+    return getCurrentStepIndex() < steps.length - 1;
+  };
+
+  const canGoPrev = () => {
+    return getCurrentStepIndex() > 0;
+  };
+
+  const handleLayoutCreate = async (data: { name: string; orientation: Orientation; regions: Region[] }) => {
+    setTempLayoutData(data);
+    setShowLayoutForm(false);
+
+    // レイアウトが作成されたので、次のステップに進む
+    const tempLayout: LayoutItem = {
+      id: "temp-layout",
+      name: data.name,
+      orientation: data.orientation,
+      regions: data.regions,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setSelectedLayout(tempLayout);
+
+    // contentAssignmentsを初期化
+    const assignments: ContentAssignment[] = data.regions.map((region) => ({
+      regionId: region.id,
+      contentIds: [],
+    }));
+    setFormData((prev) => ({ ...prev, contentAssignments: assignments }));
+
+    // リージョン選択をリセット
+    setSelectedRegionId(null);
+
+    // コンテンツステップに移動
+    setCurrentStep("content");
+  };
+
+  const handleLayoutFormClose = () => {
+    setShowLayoutForm(false);
+  };
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case "basic":
+        return (
+          <Stack gap="md">
+            <TextInput
+              label="プレイリスト名"
+              placeholder="プレイリスト名を入力してください"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+              error={errors.name}
+            />
+            <TextInput
+              label="デバイス名"
+              placeholder="対象デバイス名を入力してください"
+              required
+              value={formData.device}
+              onChange={(e) => setFormData((prev) => ({ ...prev, device: e.target.value }))}
+              error={errors.device}
+            />
+          </Stack>
+        );
+
+      case "layout":
+        return (
+          <Stack gap="md">
+            <Checkbox
+              label="新しいレイアウトを作成する"
+              checked={createNewLayout}
+              onChange={(e) => {
+                setCreateNewLayout(e.currentTarget.checked);
+                if (e.currentTarget.checked) {
+                  setFormData((prev) => ({ ...prev, layoutId: "" }));
+                }
+              }}
+            />
+
+            {!createNewLayout && (
+              <Select
+                label="レイアウトを選択"
+                placeholder="レイアウトを選択してください"
+                required
+                data={layouts.map((layout) => ({
+                  value: layout.id,
+                  label: `${layout.name} (${layout.orientation === "portrait" ? "縦" : "横"}, ${layout.regionCount}リージョン)`,
+                }))}
+                value={formData.layoutId}
+                onChange={(value) => setFormData((prev) => ({ ...prev, layoutId: value || "" }))}
+                error={errors.layoutId}
+              />
+            )}
+
+            {createNewLayout && (
+              <Stack gap="sm">
+                <Paper p="md" withBorder>
+                  <Text size="sm" c="dimmed">
+                    新しいレイアウトを作成します。
+                  </Text>
+                </Paper>
+                {tempLayoutData ? (
+                  <Paper p="md" withBorder>
+                    <Text size="sm" fw={500}>
+                      作成済みレイアウト: {tempLayoutData.name}
+                    </Text>
+                    <Text size="xs" c="dimmed">
+                      {tempLayoutData.orientation === "portrait" ? "縦向き" : "横向き"} -{" "}
+                      {tempLayoutData.regions.length}リージョン
+                    </Text>
+                  </Paper>
+                ) : (
+                  <Button
+                    variant="light"
+                    onClick={() => setShowLayoutForm(true)}
+                    leftSection={<IconLayoutGrid size={16} />}
+                  >
+                    レイアウトを作成
+                  </Button>
+                )}
+              </Stack>
+            )}
+          </Stack>
+        );
+
+      case "content":
+        return (
+          <Stack gap="md">
+            {selectedLayout ? (
+              selectedLayout.regions.length === 0 ? (
+                <Paper p="md" withBorder>
+                  <Text c="dimmed" ta="center">
+                    このレイアウトにはリージョンがありません
+                  </Text>
+                </Paper>
+              ) : (
+                <Group align="flex-start" gap="xl" style={{ minHeight: "500px" }}>
+                  {/* 左側: レイアウトプレビュー */}
+                  <Box style={{ flex: "0 0 450px" }}>
+                    <InteractiveLayoutPreview
+                      layout={selectedLayout}
+                      selectedRegionId={selectedRegionId}
+                      onRegionClick={handleRegionSelect}
+                      assignedContentCounts={getAssignedContentCounts()}
+                      canvasWidth={450}
+                      canvasHeight={253}
+                    />
+                  </Box>
+
+                  {/* 右側: コンテンツ選択 */}
+                  <Box style={{ flex: 1 }}>
+                    {selectedRegionId ? (
+                      <>
+                        <Text fw={600} mb="sm">
+                          リージョン {selectedLayout.regions.findIndex((r) => r.id === selectedRegionId) + 1}{" "}
+                          のコンテンツを選択
+                        </Text>
+                        <ContentSelectionGrid
+                          contents={contents}
+                          selectedContentIds={getSelectedRegionAssignment()?.contentIds || []}
+                          onSelectionChange={(contentIds) => {
+                            if (selectedRegionId) {
+                              handleContentAssignmentChange(selectedRegionId, contentIds);
+                            }
+                          }}
+                          loading={false}
+                          maxItems={50}
+                        />
+                      </>
+                    ) : (
+                      <Paper p="xl" withBorder style={{ textAlign: "center" }}>
+                        <Text c="dimmed" mb="sm">
+                          左のレイアウトプレビューからリージョンを選択してください
+                        </Text>
+                        <Text size="sm" c="dimmed">
+                          選択したリージョンにコンテンツを割り当てることができます
+                        </Text>
+                      </Paper>
+                    )}
+                  </Box>
+                </Group>
+              )
+            ) : (
+              <Text c="dimmed">レイアウト情報を読み込み中...</Text>
+            )}
+          </Stack>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  // コンテンツ割り当てステップでは大きなモーダルサイズを使用
+  const getModalSize = () => {
+    if (currentStep === "content") {
+      return "95%";
+    }
+    return "lg";
+  };
+
+  const getModalStyles = () => {
+    if (currentStep === "content") {
+      return {
+        content: {
+          maxWidth: "1400px",
+        },
+      };
+    }
+    return undefined;
+  };
+
   return (
-    <Modal opened={opened} onClose={handleClose} title="新しいプレイリストを作成" centered size="md">
-      <form onSubmit={handleSubmit}>
-        <Stack gap="md">
-          <TextInput
-            label="プレイリスト名"
-            placeholder="プレイリスト名を入力してください"
-            required
-            value={formData.name}
-            onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-            error={errors.name}
-          />
+    <>
+      <Modal
+        opened={opened}
+        onClose={handleClose}
+        title="新しいプレイリストを作成"
+        centered
+        size={getModalSize()}
+        styles={getModalStyles()}
+      >
+        <Stack gap="lg">
+          {/* プログレスバー */}
+          <Box>
+            <Group justify="space-between" mb="xs">
+              <Text size="sm" fw={500}>
+                {steps[getCurrentStepIndex()].title}
+              </Text>
+              <Text size="xs" c="dimmed">
+                {getCurrentStepIndex() + 1} / {steps.length}
+              </Text>
+            </Group>
+            <Progress value={getProgress()} size="sm" />
+            <Text size="xs" c="dimmed" mt="xs">
+              {steps[getCurrentStepIndex()].description}
+            </Text>
+          </Box>
 
-          <TextInput
-            label="デバイス名"
-            placeholder="対象デバイス名を入力してください"
-            required
-            value={formData.device}
-            onChange={(e) => setFormData((prev) => ({ ...prev, device: e.target.value }))}
-            error={errors.device}
-          />
+          <Divider />
 
-          <NumberInput
-            label="初期素材数"
-            placeholder="0"
-            min={0}
-            value={formData.materialCount}
-            onChange={(value) =>
-              setFormData((prev) => ({ ...prev, materialCount: typeof value === "number" ? value : 0 }))
-            }
-            error={errors.materialCount}
-          />
+          {/* ステップコンテンツ */}
+          {renderStepContent()}
 
-          <Group justify="flex-end" mt="md">
-            <Button variant="subtle" leftSection={<IconX size={16} />} onClick={handleClose} disabled={loading}>
-              キャンセル
-            </Button>
-            <Button type="submit" leftSection={<IconDeviceFloppy size={16} />} loading={loading}>
-              作成
-            </Button>
+          {/* ナビゲーションボタン */}
+          <Group justify="space-between" mt="lg">
+            <Group>
+              <Button variant="subtle" leftSection={<IconX size={16} />} onClick={handleClose} disabled={loading}>
+                キャンセル
+              </Button>
+              {canGoPrev() && (
+                <Button
+                  variant="light"
+                  leftSection={<IconArrowLeft size={16} />}
+                  onClick={handlePrev}
+                  disabled={loading}
+                >
+                  戻る
+                </Button>
+              )}
+            </Group>
+
+            <Group>
+              {canGoNext() ? (
+                <Button rightSection={<IconArrowRight size={16} />} onClick={handleNext} disabled={loading}>
+                  次へ
+                </Button>
+              ) : (
+                <Button leftSection={<IconDeviceFloppy size={16} />} onClick={handleSubmit} loading={loading}>
+                  作成
+                </Button>
+              )}
+            </Group>
           </Group>
         </Stack>
-      </form>
-    </Modal>
+      </Modal>
+
+      {/* レイアウト作成モーダル */}
+      <LayoutFormModal
+        opened={showLayoutForm}
+        onClose={handleLayoutFormClose}
+        onSubmit={handleLayoutCreate}
+        title="新しいレイアウトを作成"
+        submitButtonText="作成"
+      />
+    </>
   );
 };
