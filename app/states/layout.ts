@@ -1,5 +1,5 @@
 import { atom } from "jotai";
-import type { LayoutIndex } from "~/schemas/layout";
+import type { LayoutIndex } from "~/types/layout";
 
 /**
  * レイアウト一覧の状態管理

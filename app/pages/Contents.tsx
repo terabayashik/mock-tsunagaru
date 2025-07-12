@@ -16,12 +16,12 @@ import {
 } from "@tabler/icons-react";
 import { useAtom } from "jotai";
 import { useEffect } from "react";
-import { ContentFilters } from "~/components/ContentFilters";
-import { ContentGridView } from "~/components/ContentGridView";
-import { FileUploadModal } from "~/components/FileUploadModal";
-import { UrlContentModal } from "~/components/UrlContentModal";
+import { ContentFilters } from "~/components/content/ContentFilters";
+import { ContentGridView } from "~/components/content/ContentGridView";
+import { FileUploadModal } from "~/components/modals/FileUploadModal";
+import { UrlContentModal } from "~/components/modals/UrlContentModal";
 import { useContent } from "~/hooks/useContent";
-import type { ContentType } from "~/schemas/content";
+import type { ContentType } from "~/types/content";
 import {
   contentActionsAtom,
   contentModalActionsAtom,

@@ -1,8 +1,8 @@
 import { useCallback } from "react";
-import type { PlaylistIndex, PlaylistItem } from "~/schemas/playlist";
-import { PlaylistItemSchema, PlaylistsIndexSchema } from "~/schemas/playlist";
-import { OPFSError, OPFSManager } from "~/utils/opfs";
-import { OPFSLock } from "~/utils/opfs-lock";
+import type { PlaylistIndex, PlaylistItem } from "~/types/playlist";
+import { PlaylistItemSchema, PlaylistsIndexSchema } from "~/types/playlist";
+import { OPFSError, OPFSManager } from "~/utils/storage/opfs";
+import { OPFSLock } from "~/utils/storage/opfs-lock";
 
 export const usePlaylist = () => {
   const opfs = OPFSManager.getInstance();

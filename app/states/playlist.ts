@@ -1,5 +1,5 @@
 import { atom } from "jotai";
-import type { PlaylistIndex } from "~/schemas/playlist";
+import type { PlaylistIndex } from "~/types/playlist";
 
 /**
  * プレイリスト一覧の状態管理

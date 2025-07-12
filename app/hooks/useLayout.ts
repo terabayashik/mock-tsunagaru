@@ -1,8 +1,8 @@
 import { useCallback } from "react";
-import type { LayoutIndex, LayoutItem } from "~/schemas/layout";
-import { LayoutItemSchema, LayoutsIndexSchema } from "~/schemas/layout";
-import { OPFSError, OPFSManager } from "~/utils/opfs";
-import { OPFSLock } from "~/utils/opfs-lock";
+import type { LayoutIndex, LayoutItem } from "~/types/layout";
+import { LayoutItemSchema, LayoutsIndexSchema } from "~/types/layout";
+import { OPFSError, OPFSManager } from "~/utils/storage/opfs";
+import { OPFSLock } from "~/utils/storage/opfs-lock";
 
 export const useLayout = () => {
   const opfs = OPFSManager.getInstance();

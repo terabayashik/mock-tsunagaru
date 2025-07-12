@@ -3,7 +3,7 @@ import { IconChartBar, IconDoorExit, IconHome, IconMenu2, IconSettings, IconUser
 import { useAtom } from "jotai";
 import { Link, useLocation } from "react-router";
 import { logoutAtom, userAtom } from "~/states";
-import { ThemeToggle } from "../ThemeToggle";
+import { ThemeToggle } from "../common/ThemeToggle";
 import { LoginLayout } from "./LoginLayout";
 
 interface AppLayoutProps {

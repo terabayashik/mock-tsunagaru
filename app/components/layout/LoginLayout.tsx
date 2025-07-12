@@ -1,6 +1,6 @@
 import { Anchor, Group, Title } from "@mantine/core";
 import { Link } from "react-router";
-import { ThemeToggle } from "../ThemeToggle";
+import { ThemeToggle } from "../common/ThemeToggle";
 
 interface LoginLayoutProps {
   children: React.ReactNode;

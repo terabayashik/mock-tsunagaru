@@ -13,7 +13,7 @@ import {
 import { IconEdit, IconPlus, IconTrash, IconX } from "@tabler/icons-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Moveable from "react-moveable";
-import type { Region } from "~/schemas/layout";
+import type { Region } from "~/types/layout";
 
 interface LayoutEditorProps {
   regions: Region[];

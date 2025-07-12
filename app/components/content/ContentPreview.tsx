@@ -10,7 +10,7 @@ import {
 } from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
 import { useContent } from "~/hooks/useContent";
-import type { ContentIndex, ContentType } from "~/schemas/content";
+import type { ContentIndex, ContentType } from "~/types/content";
 
 const extractYouTubeVideoId = (url: string): string | null => {
   const regex = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/;

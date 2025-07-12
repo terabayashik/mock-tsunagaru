@@ -1,9 +1,9 @@
 import { useCallback } from "react";
-import type { ContentIndex, ContentItem, ContentType } from "~/schemas/content";
-import { ContentItemSchema, ContentsIndexSchema, getContentTypeFromMimeType, isYouTubeUrl } from "~/schemas/content";
-import { OPFSError, OPFSManager } from "~/utils/opfs";
-import { OPFSLock } from "~/utils/opfs-lock";
-import { thumbnailGenerator } from "~/utils/thumbnail-generator";
+import type { ContentIndex, ContentItem, ContentType } from "~/types/content";
+import { ContentItemSchema, ContentsIndexSchema, getContentTypeFromMimeType, isYouTubeUrl } from "~/types/content";
+import { OPFSError, OPFSManager } from "~/utils/storage/opfs";
+import { OPFSLock } from "~/utils/storage/opfs-lock";
+import { thumbnailGenerator } from "~/utils/media/thumbnail-generator";
 
 export const useContent = () => {
   const opfs = OPFSManager.getInstance();

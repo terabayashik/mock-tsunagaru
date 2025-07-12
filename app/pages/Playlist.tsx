@@ -2,7 +2,7 @@ import { ActionIcon, Alert, Box, Button, Group, LoadingOverlay, Table, Text } fr
 import { IconEdit, IconExclamationCircle, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useAtom } from "jotai";
 import { useEffect } from "react";
-import { PlaylistCreateModal } from "~/components/PlaylistCreateModal";
+import { PlaylistCreateModal } from "~/components/modals/PlaylistCreateModal";
 import { usePlaylist } from "~/hooks/usePlaylist";
 import { modalActionsAtom, playlistCreateModalAtom } from "~/states/modal";
 import { playlistActionsAtom, playlistsAtom, playlistsErrorAtom, playlistsLoadingAtom } from "~/states/playlist";

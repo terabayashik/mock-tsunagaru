@@ -2,9 +2,9 @@ import { ActionIcon, Alert, Badge, Box, Button, Group, LoadingOverlay, Table, Te
 import { IconEdit, IconExclamationCircle, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useAtom } from "jotai";
 import { useEffect } from "react";
-import { LayoutCreateModal } from "~/components/LayoutCreateModal";
+import { LayoutCreateModal } from "~/components/modals/LayoutCreateModal";
 import { useLayout } from "~/hooks/useLayout";
-import type { Region } from "~/schemas/layout";
+import type { Region } from "~/types/layout";
 import { layoutActionsAtom, layoutsAtom, layoutsErrorAtom, layoutsLoadingAtom } from "~/states/layout";
 import { layoutCreateModalAtom, modalActionsAtom } from "~/states/modal";
 

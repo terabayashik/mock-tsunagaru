@@ -4,7 +4,7 @@ import { notifications } from "@mantine/notifications";
 import { IconDatabaseOff, IconExclamationCircle, IconTrash } from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
 import { AuthGuard } from "~/components";
-import { OPFSManager } from "~/utils/opfs";
+import { OPFSManager } from "~/utils/storage/opfs";
 import type { Route } from "./+types/Settings";
 
 export const meta = (_args: Route.MetaArgs) => {

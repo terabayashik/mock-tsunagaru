@@ -1,7 +1,7 @@
 import { Box, Flex, SimpleGrid, Text } from "@mantine/core";
 import { useViewportSize } from "@mantine/hooks";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ContentIndex } from "~/schemas/content";
+import type { ContentIndex } from "~/types/content";
 import { ContentPreview } from "./ContentPreview";
 
 interface ContentGridViewProps {

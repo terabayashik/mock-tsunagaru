@@ -1,4 +1,5 @@
-export * from "./AuthGuard";
-export * from "./layout/AppLayout";
-export * from "./layout/LoginLayout";
-export * from "./ThemeToggle";
+// Re-export from categorized folders
+export * from "./common";
+export * from "./content";
+export * from "./layout";
+export * from "./modals";

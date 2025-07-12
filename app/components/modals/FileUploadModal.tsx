@@ -2,7 +2,7 @@ import { Box, Button, Group, Modal, Stack, Text, TextInput } from "@mantine/core
 import { Dropzone, type FileWithPath } from "@mantine/dropzone";
 import { IconCloudUpload, IconDeviceFloppy, IconFile, IconX } from "@tabler/icons-react";
 import { useState } from "react";
-import { ACCEPTED_MIME_TYPES } from "~/schemas/content";
+import { ACCEPTED_MIME_TYPES } from "~/types/content";
 
 interface FileUploadModalProps {
   opened: boolean;

@@ -1,8 +1,8 @@
 import { Box, Button, Flex, Group, Modal, Select, Stack, Text, TextInput } from "@mantine/core";
 import { IconDeviceFloppy, IconX } from "@tabler/icons-react";
 import { useState } from "react";
-import { LayoutEditor } from "~/components/LayoutEditor";
-import type { Orientation, Region } from "~/schemas/layout";
+import { LayoutEditor } from "~/components/layout/LayoutEditor";
+import type { Orientation, Region } from "~/types/layout";
 
 interface LayoutFormData {
   name: string;

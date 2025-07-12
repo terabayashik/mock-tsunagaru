@@ -1,7 +1,7 @@
 import { Button, Group, Modal, Stack, Text, TextInput } from "@mantine/core";
 import { IconDeviceFloppy, IconLink, IconX } from "@tabler/icons-react";
 import { useState } from "react";
-import { isYouTubeUrl } from "~/schemas/content";
+import { isYouTubeUrl } from "~/types/content";
 
 interface UrlContentModalProps {
   opened: boolean;

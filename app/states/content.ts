@@ -1,6 +1,6 @@
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
-import type { ContentIndex, ContentType } from "~/schemas/content";
+import type { ContentIndex, ContentType } from "~/types/content";
 
 // コンテンツ一覧の状態
 export const contentsAtom = atom<ContentIndex[]>([]);

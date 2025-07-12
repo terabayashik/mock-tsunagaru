@@ -2,8 +2,8 @@ import { Container, Image, NavLink, Paper, Stack, Text } from "@mantine/core";
 import { IconBrandDiscord, IconFileText } from "@tabler/icons-react";
 import { useAtom } from "jotai";
 import { userAtom } from "~/states";
-import logoDark from "./logo-dark.svg";
-import logoLight from "./logo-light.svg";
+import logoDark from "~/assets/images/logo-dark.svg";
+import logoLight from "~/assets/images/logo-light.svg";
 
 export const Welcome = () => {
   const [user] = useAtom(userAtom);

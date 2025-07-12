@@ -10,7 +10,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { useAtom } from "jotai";
-import type { ContentType } from "~/schemas/content";
+import type { ContentType } from "~/types/content";
 import { contentSearchQueryAtom, contentTypeFilterAtom } from "~/states/content";
 
 export const ContentFilters = () => {
