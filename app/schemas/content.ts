@@ -15,6 +15,14 @@ export const FileContentSchema = z.object({
   size: z.number().min(0, "ファイルサイズは0以上である必要があります"),
   mimeType: z.string().min(1, "MIMEタイプは必須です"),
   storagePath: z.string().min(1, "ストレージパスは必須です"), // OPFSでのパス
+  thumbnailPath: z.string().optional(), // サムネイル画像のOPFSパス
+  metadata: z
+    .object({
+      width: z.number().optional(),
+      height: z.number().optional(),
+      duration: z.number().optional(), // 動画の場合
+    })
+    .optional(),
 });
 
 // URLコンテンツの詳細情報

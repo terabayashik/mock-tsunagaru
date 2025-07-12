@@ -71,20 +71,15 @@ export const ContentFilters = () => {
         leftSection={<IconSearch size={16} />}
         rightSection={
           searchQuery ? (
-            <Button
-              variant="subtle"
-              size="xs"
-              p={0}
-              onClick={() => setSearchQuery("")}
-              miw="auto" h="auto"
-            >
+            <Button variant="subtle" size="xs" p={0} onClick={() => setSearchQuery("")} miw="auto" h="auto">
               <IconX size={14} />
             </Button>
           ) : null
         }
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
-        style={{ flex: 1 }} miw={200}
+        style={{ flex: 1 }}
+        miw={200}
       />
 
       <SegmentedControl

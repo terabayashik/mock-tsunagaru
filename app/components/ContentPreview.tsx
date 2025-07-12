@@ -11,7 +11,6 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { useContent } from "~/hooks/useContent";
 import type { ContentIndex, ContentType } from "~/schemas/content";
-import { VideoThumbnailGenerator } from "~/utils/video-thumbnail";
 
 const extractYouTubeVideoId = (url: string): string | null => {
   const regex = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/;
@@ -38,7 +37,7 @@ interface PreviewState {
 
 export const ContentPreview = ({ content, onClick, size = "md" }: ContentPreviewProps) => {
   const [previewState, setPreviewState] = useState<PreviewState>({ loading: false });
-  const { getContentById, getFileContent } = useContent();
+  const { getThumbnailUrl } = useContent();
 
   const sizeConfig = {
     sm: { width: 150, height: 100 },
@@ -48,129 +47,52 @@ export const ContentPreview = ({ content, onClick, size = "md" }: ContentPreview
 
   const { width, height } = sizeConfig[size];
 
-  const generateVideoPreview = useCallback(async () => {
+  const generateFilePreview = useCallback(async () => {
     try {
-      // OPFSから動画ファイルを取得
-      const contentDetail = await getContentById(content.id);
-      if (!contentDetail?.fileInfo?.storagePath) {
-        throw new Error("動画ファイルが見つかりません");
-      }
+      // 事前生成されたサムネイルを取得
+      const thumbnailUrl = await getThumbnailUrl(content.id);
 
-      // OPFSからファイルデータを取得
-      const fileBuffer = await getFileContent(contentDetail.fileInfo.storagePath);
-
-      try {
-        // WebCodecs APIを使用してサムネイル生成
-        const generator = VideoThumbnailGenerator.getInstance();
-        const blob = new Blob([fileBuffer], { type: contentDetail.fileInfo.mimeType });
-
-        // Blobから一時的なFileオブジェクトを作成
-        const file = new File([blob], contentDetail.name || "video", { type: contentDetail.fileInfo.mimeType });
-        const { thumbnail, metadata } = await generator.generateThumbnail(file, {
-          timestamp: 0.1, // 10%地点
-          width,
-          height: height - 60,
-        });
-
+      if (thumbnailUrl) {
         setPreviewState({
           loading: false,
-          previewUrl: thumbnail,
-          metadata: { duration: metadata.duration },
+          previewUrl: thumbnailUrl,
+          metadata: {}, // メタデータは必要に応じて別途取得
         });
-      } catch (codecError) {
-        // WebCodecs API失敗時はプレースホルダーを表示
-        console.warn("WebCodecs API failed, using placeholder:", codecError);
-        setPreviewState({
-          loading: false,
-          previewUrl:
-            "data:image/svg+xml;base64," +
-            btoa(`
-            <svg width="${width}" height="${height - 60}" xmlns="http://www.w3.org/2000/svg">
-              <rect width="100%" height="100%" fill="#228be6"/>
-              <text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="white" font-size="14">
-                動画プレビュー
-              </text>
-            </svg>
-          `),
-          metadata: {
-            duration: contentDetail.fileInfo?.size ? Math.floor(contentDetail.fileInfo.size / 1000000) * 10 : 120,
-          },
-        });
+      } else {
+        // サムネイルが存在しない場合はプレースホルダー
+        throw new Error("サムネイルが見つかりません");
       }
-    } catch (error) {
-      setPreviewState({
-        loading: false,
-        error: error instanceof Error ? error.message : "動画プレビュー生成に失敗",
-      });
-    }
-  }, [content.id, width, height, getContentById, getFileContent]);
+    } catch (_error) {
+      // フォールバック: タイプ別プレースホルダー
+      const typeLabels = {
+        video: "動画",
+        image: "画像",
+        text: "テキスト",
+      };
+      const typeColors = {
+        video: "#228be6",
+        image: "#40c057",
+        text: "#fd7e14",
+      };
 
-  const generateImagePreview = useCallback(async () => {
-    try {
-      // OPFSから画像ファイルを取得
-      const contentDetail = await getContentById(content.id);
-      if (!contentDetail?.fileInfo?.storagePath) {
-        throw new Error("画像ファイルが見つかりません");
-      }
-
-      // OPFSからファイルデータを取得してBlob URLを生成
-      const fileBuffer = await getFileContent(contentDetail.fileInfo.storagePath);
-      const blob = new Blob([fileBuffer], { type: contentDetail.fileInfo.mimeType });
-      const blobUrl = URL.createObjectURL(blob);
-
-      setPreviewState({
-        loading: false,
-        previewUrl: blobUrl,
-      });
-    } catch (error) {
-      setPreviewState({
-        loading: false,
-        error: error instanceof Error ? error.message : "画像プレビュー生成に失敗",
-      });
-    }
-  }, [content.id, getContentById, getFileContent]);
-
-  const generateTextPreview = useCallback(async () => {
-    try {
-      // OPFSからテキストファイルを取得
-      const contentDetail = await getContentById(content.id);
-      if (!contentDetail?.fileInfo?.storagePath) {
-        throw new Error("テキストファイルが見つかりません");
-      }
-
-      // OPFSからファイルデータを取得してテキストを読み込み
-      const fileBuffer = await getFileContent(contentDetail.fileInfo.storagePath);
-      const textContent = new TextDecoder("utf-8").decode(fileBuffer);
-      const preview = textContent.slice(0, 100); // 最初の100文字
+      const label = typeLabels[content.type as keyof typeof typeLabels] || "ファイル";
+      const color = typeColors[content.type as keyof typeof typeColors] || "#6c757d";
 
       setPreviewState({
         loading: false,
         previewUrl:
           "data:image/svg+xml;base64," +
           btoa(`
-          <svg width="${width}" height="${height - 60}" xmlns="http://www.w3.org/2000/svg">
-            <rect width="100%" height="100%" fill="#fd7e14"/>
-            <text x="50%" y="20%" text-anchor="middle" dy=".3em" fill="white" font-size="12">
-              テキストファイル
-            </text>
-            <text x="50%" y="40%" text-anchor="middle" dy=".3em" fill="white" font-size="8">
-              ${content.name}
-            </text>
-            <foreignObject x="10" y="50%" width="${width - 20}" height="40%">
-              <div xmlns="http://www.w3.org/1999/xhtml" style="color: white; font-size: 8px; padding: 4px; word-wrap: break-word; overflow: hidden;">
-                ${preview.replace(/[<>&"']/g, (m) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&#39;" })[m] || m)}${textContent.length > 100 ? "..." : ""}
-              </div>
-            </foreignObject>
-          </svg>
-        `),
-      });
-    } catch (error) {
-      setPreviewState({
-        loading: false,
-        error: error instanceof Error ? error.message : "テキストプレビュー生成に失敗",
+            <svg width="${width}" height="${height - 60}" xmlns="http://www.w3.org/2000/svg">
+              <rect width="100%" height="100%" fill="${color}"/>
+              <text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="white" font-size="14">
+                ${label}プレビュー
+              </text>
+            </svg>
+          `),
       });
     }
-  }, [content.id, content.name, width, height, getContentById, getFileContent]);
+  }, [content.id, content.type, width, height, getThumbnailUrl]);
 
   const generateYouTubePreview = useCallback(async () => {
     try {
@@ -233,13 +155,9 @@ export const ContentPreview = ({ content, onClick, size = "md" }: ContentPreview
     try {
       switch (content.type) {
         case "video":
-          await generateVideoPreview();
-          break;
         case "image":
-          await generateImagePreview();
-          break;
         case "text":
-          await generateTextPreview();
+          await generateFilePreview();
           break;
         case "youtube":
           await generateYouTubePreview();
@@ -257,14 +175,7 @@ export const ContentPreview = ({ content, onClick, size = "md" }: ContentPreview
         error: error instanceof Error ? error.message : "プレビュー生成に失敗しました",
       });
     }
-  }, [
-    content.type,
-    generateVideoPreview,
-    generateImagePreview,
-    generateTextPreview,
-    generateYouTubePreview,
-    generateUrlPreview,
-  ]);
+  }, [content.type, generateFilePreview, generateYouTubePreview, generateUrlPreview]);
 
   useEffect(() => {
     generatePreview();

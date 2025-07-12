@@ -3,6 +3,7 @@ import type { ContentIndex, ContentItem, ContentType } from "~/schemas/content";
 import { ContentItemSchema, ContentsIndexSchema, getContentTypeFromMimeType, isYouTubeUrl } from "~/schemas/content";
 import { OPFSError, OPFSManager } from "~/utils/opfs";
 import { OPFSLock } from "~/utils/opfs-lock";
+import { thumbnailGenerator } from "~/utils/thumbnail-generator";
 
 export const useContent = () => {
   const opfs = OPFSManager.getInstance();
@@ -79,6 +80,25 @@ export const useContent = () => {
       const storagePath = `contents/files/${id}-${file.name}`;
       const fileArrayBuffer = await file.arrayBuffer();
 
+      // サムネイル生成
+      let thumbnailData: ArrayBuffer | undefined;
+      let metadata: { width?: number; height?: number; duration?: number } | undefined;
+
+      try {
+        const thumbnailResult = await thumbnailGenerator.generateThumbnail(file, {
+          width: 400,
+          height: 300,
+          quality: 0.8,
+        });
+        thumbnailData = thumbnailResult.thumbnailData;
+        metadata = thumbnailResult.metadata;
+      } catch (error) {
+        console.warn(`[Content] Failed to generate thumbnail for ${file.name}:`, error);
+        // サムネイル生成に失敗してもファイル作成は続行
+      }
+
+      const thumbnailPath = thumbnailData ? `contents/thumbnails/${id}.jpg` : undefined;
+
       const newContent: ContentItem = {
         id,
         name: name || file.name,
@@ -88,6 +108,8 @@ export const useContent = () => {
           size: file.size,
           mimeType: file.type,
           storagePath,
+          thumbnailPath,
+          metadata,
         },
         tags: [],
         createdAt: now,
@@ -101,6 +123,11 @@ export const useContent = () => {
         try {
           // ファイルを保存
           await opfs.writeFile(storagePath, fileArrayBuffer);
+
+          // サムネイルを保存
+          if (thumbnailData && thumbnailPath) {
+            await opfs.writeFile(thumbnailPath, thumbnailData);
+          }
 
           // メタデータを保存
           await opfs.writeJSON(`contents/content-${id}.json`, validated);
@@ -125,6 +152,9 @@ export const useContent = () => {
           // エラーが発生した場合はクリーンアップ
           try {
             await opfs.deleteFile(storagePath);
+            if (thumbnailPath) {
+              await opfs.deleteFile(thumbnailPath);
+            }
             await opfs.deleteFile(`contents/content-${id}.json`);
           } catch {
             // クリーンアップエラーは無視
@@ -269,6 +299,15 @@ export const useContent = () => {
             }
           }
 
+          // サムネイルファイルも削除
+          if (existingContent?.fileInfo?.thumbnailPath) {
+            try {
+              await opfs.deleteFile(existingContent.fileInfo.thumbnailPath);
+            } catch {
+              // サムネイルファイルが存在しない場合は無視
+            }
+          }
+
           // メタデータファイルを削除
           await opfs.deleteFile(`contents/content-${id}.json`);
 
@@ -302,6 +341,28 @@ export const useContent = () => {
     [opfs.readFile],
   );
 
+  /**
+   * サムネイルのBlob URLを取得
+   */
+  const getThumbnailUrl = useCallback(
+    async (contentId: string): Promise<string | null> => {
+      try {
+        const content = await getContentById(contentId);
+        if (!content?.fileInfo?.thumbnailPath) {
+          return null;
+        }
+
+        const thumbnailData = await opfs.readFile(content.fileInfo.thumbnailPath);
+        const blob = new Blob([thumbnailData], { type: "image/jpeg" });
+        return URL.createObjectURL(blob);
+      } catch (error) {
+        console.warn(`[Content] Failed to get thumbnail URL for ${contentId}:`, error);
+        return null;
+      }
+    },
+    [getContentById, opfs.readFile],
+  );
+
   return {
     getContentsIndex,
     getContentById,
@@ -310,5 +371,6 @@ export const useContent = () => {
     updateContent,
     deleteContent,
     getFileContent,
+    getThumbnailUrl,
   };
 };
