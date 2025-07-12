@@ -1,9 +1,10 @@
 import { Alert, Button, Container, Group, List, Paper, Stack, Text, Title } from "@mantine/core";
 import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
-import { IconDatabaseOff, IconExclamationCircle, IconTrash } from "@tabler/icons-react";
+import { IconDatabaseOff, IconExclamationCircle, IconPhoto, IconRefresh, IconTrash } from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
 import { AuthGuard } from "~/components";
+import { useContent } from "~/hooks/useContent";
 import { OPFSManager } from "~/utils/storage/opfs";
 import type { Route } from "./+types/Settings";
 
@@ -22,8 +23,10 @@ const Settings = () => {
   const [storageInfo, setStorageInfo] = useState<StorageInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
 
   const opfs = OPFSManager.getInstance();
+  const { regenerateAllThumbnails } = useContent();
 
   const loadStorageInfo = useCallback(async () => {
     try {
@@ -113,6 +116,69 @@ const Settings = () => {
     }
   };
 
+  const handleRegenerateThumbnails = () => {
+    modals.openConfirmModal({
+      title: "サムネイル一括再生成",
+      children: (
+        <Stack gap="md">
+          <Alert color="blue" icon={<IconPhoto size={16} />}>
+            <Text size="sm" fw={500}>
+              すべてのコンテンツのサムネイルを再生成します
+            </Text>
+          </Alert>
+          <Text size="sm">
+            この操作により、既存のサムネイル画像がすべて最新の設定で再生成されます。
+            アスペクト比の修正が適用され、動画のオリジナルアスペクト比が保持されます。
+          </Text>
+          <Text size="sm" c="dimmed">
+            処理時間はコンテンツ数に応じて数分かかる場合があります。
+          </Text>
+        </Stack>
+      ),
+      labels: { confirm: "再生成を開始", cancel: "キャンセル" },
+      confirmProps: { color: "blue", leftSection: <IconRefresh size={16} /> },
+      onConfirm: performRegenerateThumbnails,
+    });
+  };
+
+  const performRegenerateThumbnails = async () => {
+    try {
+      setRegenerating(true);
+
+      const results = await regenerateAllThumbnails();
+
+      if (results.failed.length > 0) {
+        notifications.show({
+          title: "一部のサムネイル再生成に失敗",
+          message: `${results.success}/${results.total} 件が成功しました。失敗: ${results.failed.join(", ")}`,
+          color: "yellow",
+          icon: <IconExclamationCircle size={16} />,
+          autoClose: 10000,
+        });
+      } else {
+        notifications.show({
+          title: "サムネイル再生成完了",
+          message: `${results.success} 件のサムネイルを再生成しました`,
+          color: "green",
+          icon: <IconPhoto size={16} />,
+        });
+      }
+
+      // ストレージ情報を再読み込み
+      await loadStorageInfo();
+    } catch (error) {
+      console.error("Failed to regenerate thumbnails:", error);
+      notifications.show({
+        title: "サムネイル再生成失敗",
+        message: "サムネイルの再生成中にエラーが発生しました",
+        color: "red",
+        icon: <IconExclamationCircle size={16} />,
+      });
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
   return (
     <AuthGuard>
       <Container size="lg">
@@ -183,6 +249,35 @@ const Settings = () => {
                   disabled={loading}
                 >
                   すべてのデータを削除
+                </Button>
+              </Group>
+            </Stack>
+          </Paper>
+
+          {/* サムネイル管理セクション */}
+          <Paper p="md" withBorder>
+            <Stack gap="md">
+              <Title order={2} size="h3">
+                サムネイル管理
+              </Title>
+
+              <Alert color="blue" icon={<IconPhoto size={16} />}>
+                <Text size="sm">
+                  コンテンツのサムネイル画像を一括で再生成できます。
+                  アスペクト比の修正や品質向上のために使用してください。
+                </Text>
+              </Alert>
+
+              <Group justify="flex-end">
+                <Button
+                  color="blue"
+                  variant="light"
+                  leftSection={<IconRefresh size={16} />}
+                  onClick={handleRegenerateThumbnails}
+                  loading={regenerating}
+                  disabled={loading || clearing}
+                >
+                  サムネイルを一括再生成
                 </Button>
               </Group>
             </Stack>

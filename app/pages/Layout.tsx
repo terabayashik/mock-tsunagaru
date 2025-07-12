@@ -4,9 +4,9 @@ import { useAtom } from "jotai";
 import { useEffect } from "react";
 import { LayoutCreateModal } from "~/components/modals/LayoutCreateModal";
 import { useLayout } from "~/hooks/useLayout";
-import type { Region } from "~/types/layout";
 import { layoutActionsAtom, layoutsAtom, layoutsErrorAtom, layoutsLoadingAtom } from "~/states/layout";
 import { layoutCreateModalAtom, modalActionsAtom } from "~/states/modal";
+import type { Region } from "~/types/layout";
 
 export default function LayoutPage() {
   const [layouts] = useAtom(layoutsAtom);

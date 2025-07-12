@@ -12,7 +12,6 @@ interface ContentGridViewProps {
 
 interface GridConfig {
   cols: number;
-  size: "sm" | "md" | "lg";
   spacing: string;
 }
 
@@ -26,18 +25,18 @@ export const ContentGridView = ({ contents, onContentClick, loading = false }: C
   // レスポンシブグリッド設定
   const getGridConfig = (viewportWidth: number): GridConfig => {
     if (viewportWidth >= 1200) {
-      return { cols: 6, size: "sm", spacing: "md" };
+      return { cols: 6, spacing: "md" };
     }
     if (viewportWidth >= 992) {
-      return { cols: 5, size: "sm", spacing: "md" };
+      return { cols: 5, spacing: "md" };
     }
     if (viewportWidth >= 768) {
-      return { cols: 4, size: "sm", spacing: "sm" };
+      return { cols: 4, spacing: "sm" };
     }
     if (viewportWidth >= 576) {
-      return { cols: 3, size: "sm", spacing: "sm" };
+      return { cols: 3, spacing: "sm" };
     }
-    return { cols: 2, size: "sm", spacing: "xs" };
+    return { cols: 2, spacing: "xs" };
   };
 
   const gridConfig = getGridConfig(width);
@@ -126,12 +125,7 @@ export const ContentGridView = ({ contents, onContentClick, loading = false }: C
     <Box>
       <SimpleGrid cols={gridConfig.cols} spacing={gridConfig.spacing} verticalSpacing={gridConfig.spacing}>
         {visibleContents.map((content) => (
-          <ContentPreview
-            key={content.id}
-            content={content}
-            size={gridConfig.size}
-            onClick={() => handleContentClick(content)}
-          />
+          <ContentPreview key={content.id} content={content} onClick={() => handleContentClick(content)} />
         ))}
       </SimpleGrid>
 
@@ -150,10 +144,12 @@ export const ContentGridView = ({ contents, onContentClick, loading = false }: C
           {Array.from({ length: LOAD_MORE_COUNT }, (_, index) => (
             <Flex
               key={`loading-skeleton-${Date.now()}-${index}`}
-              w={gridConfig.size === "sm" ? 150 : gridConfig.size === "md" ? 200 : 300}
-              h={gridConfig.size === "sm" ? 100 : gridConfig.size === "md" ? 133 : 200}
+              w="100%"
               bg="gray.1"
-              style={{ borderRadius: "4px" }}
+              style={{
+                borderRadius: "4px",
+                aspectRatio: (16 / 9).toString(),
+              }}
               align="center"
               justify="center"
             >

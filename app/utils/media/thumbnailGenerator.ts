@@ -3,7 +3,7 @@
  * 動画、画像、テキストファイル用の統合サムネイル生成機能
  */
 
-import { VideoThumbnailGenerator } from "./video-thumbnail";
+import { VideoThumbnailGenerator } from "./videoThumbnail";
 
 export interface ThumbnailGenerationOptions {
   width?: number;
@@ -40,18 +40,18 @@ export class ThumbnailGenerator {
    * ファイルタイプに応じてサムネイルを生成
    */
   async generateThumbnail(file: File, options: ThumbnailGenerationOptions = {}): Promise<ThumbnailResult> {
-    const { width = 400, height = 300, quality = 0.8, timestamp = 0.25 } = options;
+    const { width = 400, height, quality = 0.8, timestamp = 0.25 } = options;
 
     if (file.type.startsWith("video/")) {
       return await this.generateVideoThumbnail(file, { width, height, quality, timestamp });
     }
 
     if (file.type.startsWith("image/")) {
-      return await this.generateImageThumbnail(file, { width, height, quality });
+      return await this.generateImageThumbnail(file, { width, height: height || Math.round(width * 3/4), quality });
     }
 
     if (file.type.startsWith("text/") || file.type === "application/json") {
-      return await this.generateTextThumbnail(file, { width, height, quality });
+      return await this.generateTextThumbnail(file, { width, height: height || Math.round(width * 3/4), quality });
     }
 
     throw new Error(`Unsupported file type for thumbnail generation: ${file.type}`);
@@ -62,7 +62,7 @@ export class ThumbnailGenerator {
    */
   private async generateVideoThumbnail(
     file: File,
-    options: Required<ThumbnailGenerationOptions>,
+    options: ThumbnailGenerationOptions & { width: number },
   ): Promise<ThumbnailResult> {
     try {
       const { thumbnail, metadata } = await this.videoGenerator.generateThumbnail(file, {
@@ -87,7 +87,7 @@ export class ThumbnailGenerator {
     } catch (error) {
       console.error("[ThumbnailGenerator] Video thumbnail generation failed:", error);
       // フォールバック: プレースホルダー画像を生成
-      return await this.generatePlaceholderThumbnail("動画", options.width, options.height);
+      return await this.generatePlaceholderThumbnail("動画", options.width, options.height || Math.round(options.width * 3/4));
     }
   }
 

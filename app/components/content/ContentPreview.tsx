@@ -21,7 +21,7 @@ const extractYouTubeVideoId = (url: string): string | null => {
 interface ContentPreviewProps {
   content: ContentIndex;
   onClick?: () => void;
-  size?: "sm" | "md" | "lg";
+  aspectRatio?: number; // 幅対高さの比率 (デフォルト: 3:2)
 }
 
 interface PreviewState {
@@ -35,17 +35,14 @@ interface PreviewState {
   };
 }
 
-export const ContentPreview = ({ content, onClick, size = "md" }: ContentPreviewProps) => {
+export const ContentPreview = ({ content, onClick, aspectRatio = 16 / 9 }: ContentPreviewProps) => {
   const [previewState, setPreviewState] = useState<PreviewState>({ loading: false });
   const { getThumbnailUrl } = useContent();
 
-  const sizeConfig = {
-    sm: { width: 150, height: 100 },
-    md: { width: 200, height: 133 },
-    lg: { width: 300, height: 200 },
-  };
-
-  const { width, height } = sizeConfig[size];
+  // プレビュー画像は16:9のアスペクト比に固定
+  const previewImageAspectRatio = 16 / 9;
+  const imageHeight = `calc(100% / ${previewImageAspectRatio + 0.4})`; // 情報セクション分を考慮
+  const infoSectionHeight = "60px";
 
   const generateFilePreview = useCallback(async () => {
     try {
@@ -83,7 +80,7 @@ export const ContentPreview = ({ content, onClick, size = "md" }: ContentPreview
         previewUrl:
           "data:image/svg+xml;base64," +
           btoa(`
-            <svg width="${width}" height="${height - 60}" xmlns="http://www.w3.org/2000/svg">
+            <svg width="320" height="180" xmlns="http://www.w3.org/2000/svg">
               <rect width="100%" height="100%" fill="${color}"/>
               <text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="white" font-size="14">
                 ${label}プレビュー
@@ -92,7 +89,7 @@ export const ContentPreview = ({ content, onClick, size = "md" }: ContentPreview
           `),
       });
     }
-  }, [content.id, content.type, width, height, getThumbnailUrl]);
+  }, [content.id, content.type, getThumbnailUrl]);
 
   const generateYouTubePreview = useCallback(async () => {
     try {
@@ -127,7 +124,7 @@ export const ContentPreview = ({ content, onClick, size = "md" }: ContentPreview
         previewUrl:
           "data:image/svg+xml;base64," +
           btoa(`
-          <svg width="${width}" height="${height - 60}" xmlns="http://www.w3.org/2000/svg">
+          <svg width="320" height="180" xmlns="http://www.w3.org/2000/svg">
             <rect width="100%" height="100%" fill="#7950f2"/>
             <text x="50%" y="30%" text-anchor="middle" dy=".3em" fill="white" font-size="12">
               Webページ
@@ -147,7 +144,7 @@ export const ContentPreview = ({ content, onClick, size = "md" }: ContentPreview
         error: "URLプレビュー生成に失敗",
       });
     }
-  }, [content.url, width, height]);
+  }, [content.url]);
 
   const generatePreview = useCallback(async () => {
     setPreviewState({ loading: true });
@@ -236,9 +233,11 @@ export const ContentPreview = ({ content, onClick, size = "md" }: ContentPreview
       <Paper
         withBorder
         p="xs"
-        w={width}
-        h={height}
-        style={{ cursor: onClick ? "pointer" : "default" }}
+        w="100%"
+        style={{
+          cursor: onClick ? "pointer" : "default",
+          aspectRatio: previewImageAspectRatio.toString(),
+        }}
         onClick={onClick}
       >
         <Flex w="100%" h="100%" align="center" justify="center" bg="gray.1">
@@ -255,9 +254,11 @@ export const ContentPreview = ({ content, onClick, size = "md" }: ContentPreview
       <Paper
         withBorder
         p="xs"
-        w={width}
-        h={height}
-        style={{ cursor: onClick ? "pointer" : "default" }}
+        w="100%"
+        style={{
+          cursor: onClick ? "pointer" : "default",
+          aspectRatio: previewImageAspectRatio.toString(),
+        }}
         onClick={onClick}
       >
         <Flex w="100%" h="100%" direction="column" align="center" justify="center" bg="gray.1">
@@ -271,17 +272,40 @@ export const ContentPreview = ({ content, onClick, size = "md" }: ContentPreview
   }
 
   return (
-    <Paper withBorder p={0} w={width} style={{ cursor: onClick ? "pointer" : "default" }} onClick={onClick}>
+    <Paper
+      withBorder
+      p={0}
+      w="100%"
+      style={{
+        cursor: onClick ? "pointer" : "default",
+        aspectRatio: aspectRatio.toString(),
+      }}
+      onClick={onClick}
+    >
       <Box pos="relative">
         {/* プレビュー画像 */}
-        <Image
-          src={previewState.previewUrl}
-          alt={content.name}
-          width={width}
-          height={height - 60} // タイトル分の高さを確保
-          fit="cover"
-          fallbackSrc="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEzMyIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjFmM2Y0Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIiBmaWxsPSIjOWNhM2FmIiBmb250LXNpemU9IjE0Ij5ObyBQcmV2aWV3PC90ZXh0Pjwvc3ZnPg=="
-        />
+        <Box
+          style={{
+            height: imageHeight,
+            width: "100%",
+            overflow: "hidden",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "#f8f9fa",
+          }}
+        >
+          <Image
+            src={previewState.previewUrl}
+            alt={content.name}
+            style={{
+              maxWidth: "100%",
+              maxHeight: "100%",
+              objectFit: "contain",
+            }}
+            fallbackSrc="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjFmM2Y0Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIiBmaWxsPSIjOWNhM2FmIiBmb250LXNpemU9IjE0Ij5ObyBQcmV2aWV3PC90ZXh0Pjwvc3ZnPg=="
+          />
+        </Box>
 
         {/* オーバーレイアイコン */}
         {(content.type === "video" || content.type === "youtube") && (
@@ -331,7 +355,7 @@ export const ContentPreview = ({ content, onClick, size = "md" }: ContentPreview
       </Box>
 
       {/* コンテンツ情報 */}
-      <Box p="xs">
+      <Box p="xs" style={{ height: infoSectionHeight, overflow: "hidden" }}>
         <Tooltip label={content.name} disabled={content.name.length <= 20}>
           <Text size="sm" fw={500} lineClamp={1}>
             {content.name}

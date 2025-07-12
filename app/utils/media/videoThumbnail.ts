@@ -119,23 +119,24 @@ export class VideoThumbnailGenerator {
             "seeked",
             () => {
               try {
-                // キャンバスサイズを設定
-                const _targetWidth = width || video.videoWidth;
-                const _targetHeight = height || video.videoHeight;
-
                 // アスペクト比を維持してリサイズ
                 const aspectRatio = video.videoWidth / video.videoHeight;
+                
                 if (width && !height) {
+                  // 幅のみ指定：アスペクト比を保持して高さを計算
                   canvas.width = width;
                   canvas.height = width / aspectRatio;
                 } else if (height && !width) {
+                  // 高さのみ指定：アスペクト比を保持して幅を計算
                   canvas.width = height * aspectRatio;
                   canvas.height = height;
                 } else if (width && height) {
+                  // 両方指定された場合もアスペクト比を保持（幅を優先）
                   canvas.width = width;
-                  canvas.height = height;
+                  canvas.height = width / aspectRatio;
                 } else {
-                  canvas.width = Math.min(video.videoWidth, 400); // デフォルト最大幅
+                  // 未指定の場合：デフォルト最大幅でアスペクト比保持
+                  canvas.width = Math.min(video.videoWidth, 400);
                   canvas.height = canvas.width / aspectRatio;
                 }
 

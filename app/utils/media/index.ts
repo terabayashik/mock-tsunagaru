@@ -1,2 +1,2 @@
-export * from "./thumbnail-generator";
-export * from "./video-thumbnail";
+export * from "./thumbnailGenerator";
+export * from "./videoThumbnail";

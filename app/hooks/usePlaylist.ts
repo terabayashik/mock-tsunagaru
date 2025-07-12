@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import type { PlaylistIndex, PlaylistItem } from "~/types/playlist";
 import { PlaylistItemSchema, PlaylistsIndexSchema } from "~/types/playlist";
 import { OPFSError, OPFSManager } from "~/utils/storage/opfs";
-import { OPFSLock } from "~/utils/storage/opfs-lock";
+import { OPFSLock } from "~/utils/storage/opfsLock";
 
 export const usePlaylist = () => {
   const opfs = OPFSManager.getInstance();

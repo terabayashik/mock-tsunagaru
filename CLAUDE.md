@@ -40,3 +40,7 @@ This is a React Router v7 application with SSR disabled and prerendering enabled
 - Organize imports automatically
 - Use Mantine components over custom UI components
 - Follow React Router v7 patterns for data loading and mutations
+
+## Performance and Tooling
+
+- Prioritize using faster alternative implemented with Rust. For example, fd, rg and sd.

@@ -75,7 +75,7 @@ export const FileUploadModal = ({ opened, onClose, onSubmit }: FileUploadModalPr
           <Dropzone
             onDrop={handleFileDrop}
             accept={getAllAcceptedMimeTypes()}
-            maxSize={100 * 1024 * 1024} // 100MB
+            maxSize={500 * 1024 * 1024} // 500MB
             multiple
           >
             <Group justify="center" gap="xl" mih={220} style={{ pointerEvents: "none" }}>
@@ -94,7 +94,7 @@ export const FileUploadModal = ({ opened, onClose, onSubmit }: FileUploadModalPr
                   ファイルをドラッグ&ドロップするか、クリックして選択
                 </Text>
                 <Text size="sm" c="dimmed" inline mt={7}>
-                  動画、画像、テキストファイルをアップロードできます（最大100MB）
+                  動画、画像、テキストファイルをアップロードできます（最大500MB）
                 </Text>
               </div>
             </Group>

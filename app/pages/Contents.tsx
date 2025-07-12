@@ -21,7 +21,6 @@ import { ContentGridView } from "~/components/content/ContentGridView";
 import { FileUploadModal } from "~/components/modals/FileUploadModal";
 import { UrlContentModal } from "~/components/modals/UrlContentModal";
 import { useContent } from "~/hooks/useContent";
-import type { ContentType } from "~/types/content";
 import {
   contentActionsAtom,
   contentModalActionsAtom,
@@ -32,6 +31,7 @@ import {
   filteredContentsAtom,
   urlContentModalAtom,
 } from "~/states/content";
+import type { ContentType } from "~/types/content";
 
 export default function ContentsPage() {
   // コンテンツ関連の状態

@@ -1,9 +1,9 @@
 import { useCallback } from "react";
 import type { ContentIndex, ContentItem, ContentType } from "~/types/content";
 import { ContentItemSchema, ContentsIndexSchema, getContentTypeFromMimeType, isYouTubeUrl } from "~/types/content";
+import { thumbnailGenerator } from "~/utils/media/thumbnailGenerator";
 import { OPFSError, OPFSManager } from "~/utils/storage/opfs";
-import { OPFSLock } from "~/utils/storage/opfs-lock";
-import { thumbnailGenerator } from "~/utils/media/thumbnail-generator";
+import { OPFSLock } from "~/utils/storage/opfsLock";
 
 export const useContent = () => {
   const opfs = OPFSManager.getInstance();
@@ -86,8 +86,7 @@ export const useContent = () => {
 
       try {
         const thumbnailResult = await thumbnailGenerator.generateThumbnail(file, {
-          width: 400,
-          height: 300,
+          width: 400, // 幅のみ指定してアスペクト比を保持
           quality: 0.8,
         });
         thumbnailData = thumbnailResult.thumbnailData;
@@ -363,6 +362,85 @@ export const useContent = () => {
     [getContentById, opfs.readFile],
   );
 
+  /**
+   * 全コンテンツのサムネイルを一括再生成
+   */
+  const regenerateAllThumbnails = useCallback(async (): Promise<{
+    total: number;
+    success: number;
+    failed: string[];
+  }> => {
+    const results = {
+      total: 0,
+      success: 0,
+      failed: [] as string[],
+    };
+
+    try {
+      // 全コンテンツを取得
+      const allContents = await getContentsIndex();
+      results.total = allContents.length;
+
+      for (const contentIndex of allContents) {
+        try {
+          // 詳細情報を取得
+          const content = await getContentById(contentIndex.id);
+          if (!content?.fileInfo?.storagePath) {
+            // ファイルコンテンツでない場合はスキップ
+            continue;
+          }
+
+          // 元のファイルを取得
+          const fileData = await opfs.readFile(content.fileInfo.storagePath);
+          const file = new File([fileData], content.fileInfo.originalName, {
+            type: content.fileInfo.mimeType,
+          });
+
+          // サムネイル再生成
+          const thumbnailResult = await thumbnailGenerator.generateThumbnail(file, {
+            width: 400, // 幅のみ指定してアスペクト比を保持
+            quality: 0.8,
+          });
+
+          // 既存のサムネイルファイルを削除（存在する場合）
+          if (content.fileInfo.thumbnailPath) {
+            try {
+              await opfs.deleteFile(content.fileInfo.thumbnailPath);
+            } catch {
+              // 既存ファイルが存在しない場合は無視
+            }
+          }
+
+          // 新しいサムネイルを保存
+          const thumbnailPath = `contents/thumbnails/${content.id}.jpg`;
+          await opfs.writeFile(thumbnailPath, thumbnailResult.thumbnailData);
+
+          // メタデータを更新
+          const updatedContent = {
+            ...content,
+            fileInfo: {
+              ...content.fileInfo,
+              thumbnailPath,
+              metadata: thumbnailResult.metadata,
+            },
+            updatedAt: new Date().toISOString(),
+          };
+
+          await opfs.writeJSON(`contents/content-${content.id}.json`, updatedContent);
+
+          results.success++;
+        } catch (error) {
+          console.error(`[Content] Failed to regenerate thumbnail for ${contentIndex.id}:`, error);
+          results.failed.push(contentIndex.name);
+        }
+      }
+
+      return results;
+    } catch (error) {
+      throw new Error(`サムネイル一括再生成に失敗しました: ${error}`);
+    }
+  }, [getContentsIndex, getContentById, opfs.readFile, opfs.writeFile, opfs.deleteFile, opfs.writeJSON]);
+
   return {
     getContentsIndex,
     getContentById,
@@ -372,5 +450,6 @@ export const useContent = () => {
     deleteContent,
     getFileContent,
     getThumbnailUrl,
+    regenerateAllThumbnails,
   };
 };

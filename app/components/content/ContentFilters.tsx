@@ -10,8 +10,8 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { useAtom } from "jotai";
-import type { ContentType } from "~/types/content";
 import { contentSearchQueryAtom, contentTypeFilterAtom } from "~/states/content";
+import type { ContentType } from "~/types/content";
 
 export const ContentFilters = () => {
   const [typeFilter, setTypeFilter] = useAtom(contentTypeFilterAtom);
