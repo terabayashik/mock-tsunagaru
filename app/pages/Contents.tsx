@@ -1,8 +1,7 @@
-import { ActionIcon, Alert, Badge, Box, Button, Group, LoadingOverlay, Menu, Table, Text } from "@mantine/core";
+import { ActionIcon, Alert, Badge, Box, Button, Group, LoadingOverlay, Table, Text } from "@mantine/core";
 import type { FileWithPath } from "@mantine/dropzone";
 import {
   IconBrandYoutube,
-  IconCloudUpload,
   IconExclamationCircle,
   IconFile,
   IconFileText,
@@ -18,18 +17,16 @@ import { useAtom } from "jotai";
 import { useEffect } from "react";
 import { ContentFilters } from "~/components/content/ContentFilters";
 import { ContentGridView } from "~/components/content/ContentGridView";
-import { FileUploadModal } from "~/components/modals/FileUploadModal";
-import { UrlContentModal } from "~/components/modals/UrlContentModal";
+import { ContentAddModal } from "~/components/modals/ContentAddModal";
 import { useContent } from "~/hooks/useContent";
 import {
   contentActionsAtom,
+  contentAddModalAtom,
   contentModalActionsAtom,
   contentsErrorAtom,
   contentsLoadingAtom,
   contentViewModeAtom,
-  fileUploadModalAtom,
   filteredContentsAtom,
-  urlContentModalAtom,
 } from "~/states/content";
 import type { ContentType } from "~/types/content";
 
@@ -39,8 +36,7 @@ export default function ContentsPage() {
   const [contentsLoading] = useAtom(contentsLoadingAtom);
   const [contentsError] = useAtom(contentsErrorAtom);
   const [contentViewMode, setContentViewMode] = useAtom(contentViewModeAtom);
-  const [fileUploadModalOpened] = useAtom(fileUploadModalAtom);
-  const [urlContentModalOpened] = useAtom(urlContentModalAtom);
+  const [contentAddModalOpened] = useAtom(contentAddModalAtom);
   const [, contentDispatch] = useAtom(contentActionsAtom);
   const [, contentModalDispatch] = useAtom(contentModalActionsAtom);
 
@@ -82,12 +78,8 @@ export default function ContentsPage() {
     }
   };
 
-  const handleFileUpload = () => {
-    contentModalDispatch({ type: "OPEN_FILE_UPLOAD" });
-  };
-
-  const handleUrlAdd = () => {
-    contentModalDispatch({ type: "OPEN_URL_CONTENT" });
+  const handleContentAdd = () => {
+    contentModalDispatch({ type: "OPEN_CONTENT_ADD" });
   };
 
   const handleFileUploadSubmit = async (files: FileWithPath[], names?: string[]) => {
@@ -144,12 +136,8 @@ export default function ContentsPage() {
     }
   };
 
-  const handleFileUploadModalClose = () => {
-    contentModalDispatch({ type: "CLOSE_FILE_UPLOAD" });
-  };
-
-  const handleUrlContentModalClose = () => {
-    contentModalDispatch({ type: "CLOSE_URL_CONTENT" });
+  const handleContentAddModalClose = () => {
+    contentModalDispatch({ type: "CLOSE_CONTENT_ADD" });
   };
 
   const getContentTypeIcon = (type: ContentType) => {
@@ -216,42 +204,29 @@ export default function ContentsPage() {
         <ContentFilters />
         <Group gap="sm">
           {/* ビュー切り替えボタン */}
-          <Group gap={0}>
-            <ActionIcon
-              variant={contentViewMode === "table" ? "filled" : "subtle"}
+          <Button.Group>
+            <Button
+              variant={contentViewMode === "table" ? "filled" : "default"}
               color="blue"
-              size="lg"
               onClick={() => setContentViewMode("table")}
               aria-label="テーブルビュー"
             >
               <IconList size={18} />
-            </ActionIcon>
-            <ActionIcon
-              variant={contentViewMode === "grid" ? "filled" : "subtle"}
+            </Button>
+            <Button
+              variant={contentViewMode === "grid" ? "filled" : "default"}
               color="blue"
-              size="lg"
               onClick={() => setContentViewMode("grid")}
               aria-label="グリッドビュー"
             >
               <IconLayoutGrid size={18} />
-            </ActionIcon>
-          </Group>
+            </Button>
+          </Button.Group>
 
-          {/* コンテンツ追加メニュー */}
-          <Menu shadow="md" width={200}>
-            <Menu.Target>
-              <Button leftSection={<IconPlus size={16} />}>コンテンツを追加</Button>
-            </Menu.Target>
-
-            <Menu.Dropdown>
-              <Menu.Item leftSection={<IconCloudUpload size={14} />} onClick={handleFileUpload}>
-                ファイルをアップロード
-              </Menu.Item>
-              <Menu.Item leftSection={<IconLink size={14} />} onClick={handleUrlAdd}>
-                URLを追加
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
+          {/* コンテンツ追加ボタン */}
+          <Button leftSection={<IconPlus size={16} />} onClick={handleContentAdd}>
+            コンテンツを追加
+          </Button>
         </Group>
       </Group>
 
@@ -338,16 +313,11 @@ export default function ContentsPage() {
         />
       )}
 
-      <FileUploadModal
-        opened={fileUploadModalOpened}
-        onClose={handleFileUploadModalClose}
-        onSubmit={handleFileUploadSubmit}
-      />
-
-      <UrlContentModal
-        opened={urlContentModalOpened}
-        onClose={handleUrlContentModalClose}
-        onSubmit={handleUrlContentSubmit}
+      <ContentAddModal
+        opened={contentAddModalOpened}
+        onClose={handleContentAddModalClose}
+        onFileSubmit={handleFileUploadSubmit}
+        onUrlSubmit={handleUrlContentSubmit}
       />
     </Box>
   );

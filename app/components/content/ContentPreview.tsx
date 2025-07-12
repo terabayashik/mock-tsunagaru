@@ -41,8 +41,10 @@ export const ContentPreview = ({ content, onClick, aspectRatio = 16 / 9 }: Conte
 
   // プレビュー画像は16:9のアスペクト比に固定
   const previewImageAspectRatio = 16 / 9;
-  const imageHeight = `calc(100% / ${previewImageAspectRatio + 0.4})`; // 情報セクション分を考慮
-  const infoSectionHeight = "60px";
+  const infoSectionHeight = 60; // px
+  // 高さを固定計算: 幅200pxベースでの16:9比率 + 情報セクション
+  const totalHeight = Math.round(200 / previewImageAspectRatio) + infoSectionHeight;
+  const imageHeight = totalHeight - infoSectionHeight;
 
   const generateFilePreview = useCallback(async () => {
     try {
@@ -232,19 +234,97 @@ export const ContentPreview = ({ content, onClick, aspectRatio = 16 / 9 }: Conte
     return (
       <Paper
         withBorder
-        p="xs"
+        p={0}
         w="100%"
+        h={totalHeight}
         style={{
           cursor: onClick ? "pointer" : "default",
-          aspectRatio: previewImageAspectRatio.toString(),
         }}
         onClick={onClick}
       >
-        <Flex w="100%" h="100%" align="center" justify="center" bg="gray.1">
-          <Text size="sm" c="dimmed">
-            読み込み中...
-          </Text>
-        </Flex>
+        <Box pos="relative">
+          {/* ローディング表示 */}
+          <Box
+            style={{
+              height: `${imageHeight}px`,
+              width: "100%",
+              overflow: "hidden",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "#f8f9fa",
+            }}
+          >
+            <Text size="sm" c="dimmed">
+              読み込み中...
+            </Text>
+          </Box>
+
+          {/* タイプバッジ */}
+          <Flex
+            pos="absolute"
+            top="4px"
+            left="4px"
+            bg={`${getTypeColor(content.type)}.6`}
+            c="white"
+            p="2px 6px"
+            style={{ borderRadius: "4px", fontSize: "10px" }}
+            align="center"
+            gap="4px"
+          >
+            {getTypeIcon(content.type)}
+          </Flex>
+        </Box>
+
+        {/* コンテンツ情報 */}
+        <Box p="xs" style={{ height: `${infoSectionHeight}px`, overflow: "hidden" }}>
+          <Tooltip label={content.name} disabled={content.name.length <= 20}>
+            <Text size="sm" fw={500} lineClamp={1}>
+              {content.name}
+            </Text>
+          </Tooltip>
+
+          <Group justify="space-between" mt={4}>
+            {content.size && (
+              <Text size="xs" c="dimmed">
+                {formatFileSize(content.size)}
+              </Text>
+            )}
+            {content.url && !content.size && (
+              <Text size="xs" c="dimmed" lineClamp={1} maw="120px">
+                {new URL(content.url).hostname}
+              </Text>
+            )}
+            <Text size="xs" c="dimmed">
+              {new Date(content.createdAt).toLocaleDateString("ja-JP")}
+            </Text>
+          </Group>
+
+          {/* タグ表示 */}
+          {content.tags.length > 0 && (
+            <Group gap={4} mt={4}>
+              {content.tags.slice(0, 2).map((tag) => (
+                <Text
+                  key={tag}
+                  size="xs"
+                  style={{
+                    backgroundColor: "var(--mantine-color-gray-1)",
+                    padding: "1px 4px",
+                    borderRadius: "2px",
+                    color: "var(--mantine-color-gray-7)",
+                  }}
+                >
+                  {tag}
+                </Text>
+              ))}
+              {content.tags.length > 2 && (
+                <Text size="xs" c="dimmed">
+                  +{content.tags.length - 2}
+                </Text>
+              )}
+            </Group>
+          )}
+        </Box>
       </Paper>
     );
   }
@@ -253,20 +333,99 @@ export const ContentPreview = ({ content, onClick, aspectRatio = 16 / 9 }: Conte
     return (
       <Paper
         withBorder
-        p="xs"
+        p={0}
         w="100%"
+        h={totalHeight}
         style={{
           cursor: onClick ? "pointer" : "default",
-          aspectRatio: previewImageAspectRatio.toString(),
         }}
         onClick={onClick}
       >
-        <Flex w="100%" h="100%" direction="column" align="center" justify="center" bg="gray.1">
-          {getTypeIcon(content.type)}
-          <Text size="xs" c="dimmed" mt="xs" ta="center">
-            プレビュー未対応
-          </Text>
-        </Flex>
+        <Box pos="relative">
+          {/* プレビューエラー表示 */}
+          <Box
+            style={{
+              height: `${imageHeight}px`,
+              width: "100%",
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "#f8f9fa",
+            }}
+          >
+            {getTypeIcon(content.type)}
+            <Text size="xs" c="dimmed" mt="xs" ta="center">
+              プレビュー未対応
+            </Text>
+          </Box>
+
+          {/* タイプバッジ */}
+          <Flex
+            pos="absolute"
+            top="4px"
+            left="4px"
+            bg={`${getTypeColor(content.type)}.6`}
+            c="white"
+            p="2px 6px"
+            style={{ borderRadius: "4px", fontSize: "10px" }}
+            align="center"
+            gap="4px"
+          >
+            {getTypeIcon(content.type)}
+          </Flex>
+        </Box>
+
+        {/* コンテンツ情報 */}
+        <Box p="xs" style={{ height: `${infoSectionHeight}px`, overflow: "hidden" }}>
+          <Tooltip label={content.name} disabled={content.name.length <= 20}>
+            <Text size="sm" fw={500} lineClamp={1}>
+              {content.name}
+            </Text>
+          </Tooltip>
+
+          <Group justify="space-between" mt={4}>
+            {content.size && (
+              <Text size="xs" c="dimmed">
+                {formatFileSize(content.size)}
+              </Text>
+            )}
+            {content.url && !content.size && (
+              <Text size="xs" c="dimmed" lineClamp={1} maw="120px">
+                {new URL(content.url).hostname}
+              </Text>
+            )}
+            <Text size="xs" c="dimmed">
+              {new Date(content.createdAt).toLocaleDateString("ja-JP")}
+            </Text>
+          </Group>
+
+          {/* タグ表示 */}
+          {content.tags.length > 0 && (
+            <Group gap={4} mt={4}>
+              {content.tags.slice(0, 2).map((tag) => (
+                <Text
+                  key={tag}
+                  size="xs"
+                  style={{
+                    backgroundColor: "var(--mantine-color-gray-1)",
+                    padding: "1px 4px",
+                    borderRadius: "2px",
+                    color: "var(--mantine-color-gray-7)",
+                  }}
+                >
+                  {tag}
+                </Text>
+              ))}
+              {content.tags.length > 2 && (
+                <Text size="xs" c="dimmed">
+                  +{content.tags.length - 2}
+                </Text>
+              )}
+            </Group>
+          )}
+        </Box>
       </Paper>
     );
   }

@@ -1,4 +1,5 @@
 import { atom } from "jotai";
+import { atomWithStorage } from "jotai/utils";
 import type { LayoutIndex } from "~/types/layout";
 
 /**
@@ -15,6 +16,11 @@ export const layoutsLoadingAtom = atom<boolean>(false);
  * レイアウトエラー状態
  */
 export const layoutsErrorAtom = atom<string | null>(null);
+
+/**
+ * ビュー表示モード（テーブル or グリッド）
+ */
+export const layoutViewModeAtom = atomWithStorage<"table" | "grid">("layoutViewMode", "table");
 
 /**
  * レイアウト操作のatom
