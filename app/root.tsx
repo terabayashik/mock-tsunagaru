@@ -1,6 +1,19 @@
 import "@mantine/core/styles.css";
+import "@mantine/notifications/styles.css";
 
-import { ColorSchemeScript, Container, createTheme, MantineProvider, Stack, Text, Title } from "@mantine/core";
+import {
+  Box,
+  Code,
+  ColorSchemeScript,
+  Container,
+  createTheme,
+  MantineProvider,
+  Stack,
+  Text,
+  Title,
+} from "@mantine/core";
+import { ModalsProvider } from "@mantine/modals";
+import { Notifications } from "@mantine/notifications";
 import { Provider, useAtomValue } from "jotai";
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 import { AppLayout } from "~/components";
@@ -33,7 +46,10 @@ const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       defaultColorScheme="auto"
       forceColorScheme={typeof window !== "undefined" ? (colorScheme === "auto" ? undefined : colorScheme) : undefined}
     >
-      {children}
+      <ModalsProvider>
+        <Notifications />
+        {children}
+      </ModalsProvider>
     </MantineProvider>
   );
 };
@@ -51,7 +67,9 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
       <body style={{ margin: 0, padding: 0, width: "100%", height: "100%" }}>
         <Provider>
           <ThemeProvider>
-            <div style={{ width: "100%", minHeight: "100vh" }}>{children}</div>
+            <Box w="100%" mih="100vh">
+              {children}
+            </Box>
           </ThemeProvider>
         </Provider>
         <ScrollRestoration />
@@ -90,9 +108,9 @@ export const ErrorBoundary = ({ error }: Route.ErrorBoundaryProps) => {
         <Title order={1}>{message}</Title>
         <Text>{details}</Text>
         {stack && (
-          <pre style={{ width: "100%", padding: 16, overflow: "auto" }}>
-            <code>{stack}</code>
-          </pre>
+          <Code block w="100%" p="md" style={{ overflow: "auto" }}>
+            {stack}
+          </Code>
         )}
       </Stack>
     </Container>

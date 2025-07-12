@@ -1,7 +1,7 @@
-import { Button, Container, Paper, PasswordInput, TextInput, Title } from "@mantine/core";
+import { Button, Container, Paper, PasswordInput, Text, TextInput, Title } from "@mantine/core";
 import { useAtom } from "jotai";
-import { useState } from "react";
-import { Navigate } from "react-router";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import { isAuthenticatedAtom, loginAtom } from "~/states";
 import type { Route } from "./+types/Login";
 
@@ -15,10 +15,13 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [, login] = useAtom(loginAtom);
   const [isAuthenticated] = useAtom(isAuthenticatedAtom);
+  const navigate = useNavigate();
 
-  if (isAuthenticated) {
-    return <Navigate to="/" replace />;
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,9 +50,9 @@ const Login = () => {
   };
 
   return (
-    <Container size={420} my={40}>
+    <Container size={480} my={40}>
       <Title ta="center" mb="md">
-        Tsunagaru へようこそ
+        もっく！つながるサイネージ
       </Title>
 
       <Paper withBorder shadow="md" p={30} mt={30} radius="md">
@@ -73,6 +76,9 @@ const Login = () => {
           <Button type="submit" fullWidth loading={isLoading} disabled={!userId.trim() || !password.trim()}>
             ログイン
           </Button>
+          <Text size="sm" c="dimmed" mt="md">
+            デモページです。空欄以外のユーザーIDとパスワードでログインできます。
+          </Text>
         </form>
       </Paper>
     </Container>

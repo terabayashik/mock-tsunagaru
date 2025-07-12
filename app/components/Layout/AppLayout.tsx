@@ -1,4 +1,4 @@
-import { AppShell, Avatar, Button, Group, Menu, Text, Title, UnstyledButton } from "@mantine/core";
+import { Anchor, AppShell, Avatar, Button, Group, Menu, Text, Title, UnstyledButton } from "@mantine/core";
 import { IconChartBar, IconDoorExit, IconHome, IconMenu2, IconSettings, IconUser } from "@tabler/icons-react";
 import { useAtom } from "jotai";
 import { Link, useLocation } from "react-router";
@@ -34,11 +34,11 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
       <AppShell.Header bg="#0A529C">
         <Group h="100%" px="md" justify="space-between">
           <Group>
-            <Link to="/" style={{ textDecoration: "none" }}>
-              <Title order={3} c="white" style={{ cursor: "pointer" }}>
+            <Anchor component={Link} to="/" td="none">
+              <Title order={3} c="white">
                 もっく！つながる
               </Title>
-            </Link>
+            </Anchor>
           </Group>
 
           <Group gap="sm">

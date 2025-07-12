@@ -1,4 +1,4 @@
-import { Group, Title } from "@mantine/core";
+import { Anchor, Group, Title } from "@mantine/core";
 import { Link } from "react-router";
 import { ThemeToggle } from "../ThemeToggle";
 
@@ -10,11 +10,11 @@ export const LoginLayout = ({ children }: LoginLayoutProps) => {
   return (
     <>
       <Group justify="space-between" p="md">
-        <Link to="/" style={{ textDecoration: "none" }}>
-          <Title order={3} c="blue" style={{ cursor: "pointer" }}>
-            Tsunagaru
+        <Anchor component={Link} to="/" td="none">
+          <Title order={3} c="blue">
+            もっく！つながるサイネージ
           </Title>
-        </Link>
+        </Anchor>
         <ThemeToggle />
       </Group>
       {children}

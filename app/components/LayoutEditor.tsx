@@ -1,4 +1,14 @@
-import { ActionIcon, Button, Group, NumberInput, Popover, Stack, Switch, Text } from "@mantine/core";
+import {
+  ActionIcon,
+  Button,
+  Group,
+  NumberInput,
+  Popover,
+  Stack,
+  Switch,
+  Text,
+  useMantineColorScheme,
+} from "@mantine/core";
 import { IconEdit, IconPlus, IconTrash, IconX } from "@tabler/icons-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Moveable from "react-moveable";
@@ -39,8 +49,9 @@ const getRegionColor = (regionIndex: number, isSelected = false) => {
 };
 
 // グリッドラインを生成する関数
-const generateGridLines = (canvasWidth: number, canvasHeight: number, scale: number) => {
+const generateGridLines = (canvasWidth: number, canvasHeight: number, scale: number, isDark: boolean) => {
   const lines = [];
+  const gridColor = isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.1)";
 
   // 縦のグリッドライン
   for (let x = GRID_LINE_SPACING; x < CANVAS_WIDTH; x += GRID_LINE_SPACING) {
@@ -53,7 +64,7 @@ const generateGridLines = (canvasWidth: number, canvasHeight: number, scale: num
           top: 0,
           width: "1px",
           height: canvasHeight,
-          backgroundColor: "rgba(0, 0, 0, 0.1)",
+          backgroundColor: gridColor,
           pointerEvents: "none",
         }}
       />,
@@ -71,7 +82,7 @@ const generateGridLines = (canvasWidth: number, canvasHeight: number, scale: num
           top: y * scale,
           width: canvasWidth,
           height: "1px",
-          backgroundColor: "rgba(0, 0, 0, 0.1)",
+          backgroundColor: gridColor,
           pointerEvents: "none",
         }}
       />,
@@ -82,6 +93,7 @@ const generateGridLines = (canvasWidth: number, canvasHeight: number, scale: num
 };
 
 export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeight }: LayoutEditorProps) => {
+  const { colorScheme } = useMantineColorScheme();
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [editingRegion, setEditingRegion] = useState<string | null>(null);
   const [tempValues, setTempValues] = useState<{ x: number; y: number; width: number; height: number }>({
@@ -224,8 +236,8 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
           position: "relative",
           width: displayWidth,
           height: displayHeight,
-          border: "2px solid var(--mantine-color-gray-4)",
-          backgroundColor: "var(--mantine-color-gray-0)",
+          border: `2px solid ${colorScheme === "dark" ? "var(--mantine-color-dark-4)" : "var(--mantine-color-gray-4)"}`,
+          backgroundColor: colorScheme === "dark" ? "var(--mantine-color-dark-7)" : "var(--mantine-color-gray-0)",
           overflow: "hidden",
         }}
         onClick={() => setSelectedRegion(null)}
@@ -237,7 +249,7 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
         }}
       >
         {/* グリッドライン */}
-        {generateGridLines(displayWidth, displayHeight, scale)}
+        {generateGridLines(displayWidth, displayHeight, scale, colorScheme === "dark")}
 
         {regions.map((region, index) => {
           const isSelected = selectedRegion === region.id;
@@ -276,7 +288,14 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
                   }
                 }}
               >
-                <Text size="xs" c="white" fw={700}>
+                <Text
+                  size="xs"
+                  c={colorScheme === "dark" ? "white" : "white"}
+                  fw={700}
+                  style={{
+                    textShadow: colorScheme === "dark" ? "1px 1px 2px rgba(0,0,0,0.8)" : "1px 1px 2px rgba(0,0,0,0.6)",
+                  }}
+                >
                   リージョン {index + 1}
                 </Text>
 
@@ -463,12 +482,18 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
         style={{
           height: "40px",
           padding: "8px 12px",
-          backgroundColor: selectedRegionData ? "var(--mantine-color-blue-0)" : "var(--mantine-color-gray-0)",
+          backgroundColor: selectedRegionData
+            ? colorScheme === "dark"
+              ? "var(--mantine-color-blue-9)"
+              : "var(--mantine-color-blue-0)"
+            : colorScheme === "dark"
+              ? "var(--mantine-color-dark-6)"
+              : "var(--mantine-color-gray-0)",
           borderRadius: "4px",
           fontSize: "12px",
           display: "flex",
           alignItems: "center",
-          border: "1px solid var(--mantine-color-gray-3)",
+          border: `1px solid ${colorScheme === "dark" ? "var(--mantine-color-dark-4)" : "var(--mantine-color-gray-3)"}`,
         }}
       >
         <Text size="xs" fw={500} c={selectedRegionData ? undefined : "dimmed"}>
