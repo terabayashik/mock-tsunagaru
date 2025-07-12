@@ -4,7 +4,7 @@ export default [
   // ルートページ（playlistにリダイレクト）
   index("routes/Index.tsx"),
   // メインタブのレイアウト
-  layout("components/Layout/TabLayout.tsx", [
+  layout("components/layout/TabLayout.tsx", [
     route("/playlist", "routes/Playlist.tsx"),
     route("/schedule", "routes/Schedule.tsx"),
     route("/layout", "routes/Layout.tsx"),

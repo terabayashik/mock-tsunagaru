@@ -1,4 +1,4 @@
 export * from "./AuthGuard";
-export * from "./Layout/AppLayout";
-export * from "./Layout/LoginLayout";
+export * from "./layout/AppLayout";
+export * from "./layout/LoginLayout";
 export * from "./ThemeToggle";
