@@ -1,5 +1,5 @@
 import { Box, Button, Divider, Group, Modal, Paper, Progress, Stack, Text, TextInput } from "@mantine/core";
-import { type FileWithPath } from "@mantine/dropzone";
+import type { FileWithPath } from "@mantine/dropzone";
 import { modals } from "@mantine/modals";
 import { IconArrowLeft, IconArrowRight, IconDeviceFloppy, IconPlus, IconX } from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
@@ -100,16 +100,16 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
   // 変更があるかチェック
   const hasChanges = useCallback(() => {
     if (!originalData) return false;
-    
+
     // 基本情報の変更チェック
     if (formData.name !== originalData.name || formData.device !== originalData.device) {
       return true;
     }
-    
+
     // コンテンツ割り当ての変更チェック
     const currentAssignments = JSON.stringify(formData.contentAssignments);
     const originalAssignments = JSON.stringify(originalData.contentAssignments);
-    
+
     return currentAssignments !== originalAssignments;
   }, [formData, originalData]);
 
@@ -172,11 +172,7 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
     if (hasChanges()) {
       modals.openConfirmModal({
         title: "変更を破棄しますか？",
-        children: (
-          <Text size="sm">
-            保存されていない変更があります。本当に閉じてもよろしいですか？
-          </Text>
-        ),
+        children: <Text size="sm">保存されていない変更があります。本当に閉じてもよろしいですか？</Text>,
         labels: { confirm: "破棄して閉じる", cancel: "キャンセル" },
         confirmProps: { color: "red" },
         onConfirm: () => {
@@ -239,16 +235,13 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
 
   // コンテンツ追加ハンドラー
   const handleFileContentSubmit = async (files: FileWithPath[], names?: string[]) => {
-    await createFileContent(files, names);
+    for (let i = 0; i < files.length; i++) {
+      await createFileContent(files[i], names?.[i]);
+    }
     await loadContents(); // コンテンツリストを再読み込み
   };
 
-  const handleUrlContentSubmit = async (data: {
-    url: string;
-    name?: string;
-    title?: string;
-    description?: string;
-  }) => {
+  const handleUrlContentSubmit = async (data: { url: string; name?: string; title?: string; description?: string }) => {
     await createUrlContent(data.url, data.name, data.title, data.description);
     await loadContents(); // コンテンツリストを再読み込み
   };
@@ -334,7 +327,8 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                       <>
                         <Group justify="space-between" mb="sm">
                           <Text fw={600}>
-                            リージョン {layout.regions.findIndex((r) => r.id === selectedRegionId) + 1} のコンテンツを編集
+                            リージョン {layout.regions.findIndex((r) => r.id === selectedRegionId) + 1}{" "}
+                            のコンテンツを編集
                           </Text>
                           <Button
                             variant="light"
@@ -452,64 +446,69 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
         size={getModalSize()}
         styles={getModalStyles()}
       >
-      <Stack gap="lg">
-        {/* プログレスバー */}
-        <Box>
-          <Group justify="space-between" mb="xs">
-            <Text size="sm" fw={500}>
-              {steps[getCurrentStepIndex()].title}
+        <Stack gap="lg">
+          {/* プログレスバー */}
+          <Box>
+            <Group justify="space-between" mb="xs">
+              <Text size="sm" fw={500}>
+                {steps[getCurrentStepIndex()].title}
+              </Text>
+              <Text size="xs" c="dimmed">
+                {getCurrentStepIndex() + 1} / {steps.length}
+              </Text>
+            </Group>
+            <Progress value={getProgress()} size="sm" />
+            <Text size="xs" c="dimmed" mt="xs">
+              {steps[getCurrentStepIndex()].description}
             </Text>
-            <Text size="xs" c="dimmed">
-              {getCurrentStepIndex() + 1} / {steps.length}
-            </Text>
-          </Group>
-          <Progress value={getProgress()} size="sm" />
-          <Text size="xs" c="dimmed" mt="xs">
-            {steps[getCurrentStepIndex()].description}
-          </Text>
-        </Box>
+          </Box>
 
-        <Divider />
+          <Divider />
 
-        {/* ステップコンテンツ */}
-        {renderStepContent()}
+          {/* ステップコンテンツ */}
+          {renderStepContent()}
 
-        {/* ナビゲーションボタン */}
-        <Group justify="space-between" mt="lg">
-          <Group>
-            <Button variant="subtle" leftSection={<IconX size={16} />} onClick={handleClose} disabled={loading}>
-              キャンセル
-            </Button>
-            {canGoPrev() && (
-              <Button variant="light" leftSection={<IconArrowLeft size={16} />} onClick={handlePrev} disabled={loading}>
-                戻る
+          {/* ナビゲーションボタン */}
+          <Group justify="space-between" mt="lg">
+            <Group>
+              <Button variant="subtle" leftSection={<IconX size={16} />} onClick={handleClose} disabled={loading}>
+                キャンセル
               </Button>
-            )}
-          </Group>
+              {canGoPrev() && (
+                <Button
+                  variant="light"
+                  leftSection={<IconArrowLeft size={16} />}
+                  onClick={handlePrev}
+                  disabled={loading}
+                >
+                  戻る
+                </Button>
+              )}
+            </Group>
 
-          <Group>
-            {canGoNext() ? (
-              <Button rightSection={<IconArrowRight size={16} />} onClick={handleNext} disabled={loading}>
-                次へ
-              </Button>
-            ) : (
-              <Button leftSection={<IconDeviceFloppy size={16} />} onClick={handleSubmit} loading={loading}>
-                更新
-              </Button>
-            )}
+            <Group>
+              {canGoNext() ? (
+                <Button rightSection={<IconArrowRight size={16} />} onClick={handleNext} disabled={loading}>
+                  次へ
+                </Button>
+              ) : (
+                <Button leftSection={<IconDeviceFloppy size={16} />} onClick={handleSubmit} loading={loading}>
+                  更新
+                </Button>
+              )}
+            </Group>
           </Group>
-        </Group>
-      </Stack>
-    </Modal>
+        </Stack>
+      </Modal>
 
-    {/* コンテンツ追加モーダル */}
-    <ContentAddModal
-      opened={showContentAddModal}
-      onClose={() => setShowContentAddModal(false)}
-      onFileSubmit={handleFileContentSubmit}
-      onUrlSubmit={handleUrlContentSubmit}
-      onRichTextSubmit={handleRichTextContentSubmit}
-    />
+      {/* コンテンツ追加モーダル */}
+      <ContentAddModal
+        opened={showContentAddModal}
+        onClose={() => setShowContentAddModal(false)}
+        onFileSubmit={handleFileContentSubmit}
+        onUrlSubmit={handleUrlContentSubmit}
+        onRichTextSubmit={handleRichTextContentSubmit}
+      />
     </>
   );
 };

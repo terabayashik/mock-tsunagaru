@@ -12,7 +12,7 @@ import {
   Text,
   TextInput,
 } from "@mantine/core";
-import { type FileWithPath } from "@mantine/dropzone";
+import type { FileWithPath } from "@mantine/dropzone";
 import { modals } from "@mantine/modals";
 import { IconArrowLeft, IconArrowRight, IconDeviceFloppy, IconLayoutGrid, IconPlus, IconX } from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
@@ -112,14 +112,14 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
 
   // 変更を監視
   useEffect(() => {
-    const hasAnyChange = 
+    const hasAnyChange =
       formData.name.trim() !== "" ||
       formData.device.trim() !== "" ||
       formData.layoutId !== "" ||
-      formData.contentAssignments.some(assignment => assignment.contentIds.length > 0) ||
+      formData.contentAssignments.some((assignment) => assignment.contentIds.length > 0) ||
       createNewLayout ||
       tempLayoutData !== null;
-    
+
     setHasChanges(hasAnyChange);
   }, [formData, createNewLayout, tempLayoutData]);
 
@@ -249,11 +249,7 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
     if (hasChanges) {
       modals.openConfirmModal({
         title: "変更を破棄しますか？",
-        children: (
-          <Text size="sm">
-            保存されていない変更があります。本当に閉じてもよろしいですか？
-          </Text>
-        ),
+        children: <Text size="sm">保存されていない変更があります。本当に閉じてもよろしいですか？</Text>,
         labels: { confirm: "破棄して閉じる", cancel: "キャンセル" },
         confirmProps: { color: "red" },
         onConfirm: () => {
@@ -352,16 +348,13 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
 
   // コンテンツ追加ハンドラー
   const handleFileContentSubmit = async (files: FileWithPath[], names?: string[]) => {
-    await createFileContent(files, names);
+    for (let i = 0; i < files.length; i++) {
+      await createFileContent(files[i], names?.[i]);
+    }
     await loadContents(); // コンテンツリストを再読み込み
   };
 
-  const handleUrlContentSubmit = async (data: {
-    url: string;
-    name?: string;
-    title?: string;
-    description?: string;
-  }) => {
+  const handleUrlContentSubmit = async (data: { url: string; name?: string; title?: string; description?: string }) => {
     await createUrlContent(data.url, data.name, data.title, data.description);
     await loadContents(); // コンテンツリストを再読み込み
   };

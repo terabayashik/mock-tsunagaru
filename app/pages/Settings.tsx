@@ -299,8 +299,7 @@ const Settings = () => {
 
               <Alert color="blue" icon={<IconPalette size={16} />}>
                 <Text size="sm">
-                  アプリケーションの外観をカスタマイズできます。
-                  変更は自動的に保存され、リロード後も保持されます。
+                  アプリケーションの外観をカスタマイズできます。 変更は自動的に保存され、リロード後も保持されます。
                 </Text>
               </Alert>
 
