@@ -17,6 +17,8 @@ import { IconCloudUpload, IconDeviceFloppy, IconFile, IconLink, IconPencil, Icon
 import { useState } from "react";
 import { ACCEPTED_MIME_TYPES, FONT_FAMILIES, type RichTextContent } from "~/types/content";
 
+type ContentMode = "file" | "url" | "rich-text";
+
 interface ContentAddModalProps {
   opened: boolean;
   onClose: () => void;
@@ -24,6 +26,12 @@ interface ContentAddModalProps {
   onUrlSubmit: (data: { url: string; name?: string; title?: string; description?: string }) => Promise<void>;
   onRichTextSubmit: (data: { name: string; richTextInfo: RichTextContent }) => Promise<void>;
 }
+
+// 定数
+const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
+const DEFAULT_FONT_SIZE = 16;
+const MIN_FONT_SIZE = 8;
+const MAX_FONT_SIZE = 200;
 
 // 受け入れ可能なMIMEタイプを配列に変換
 const getAllAcceptedMimeTypes = () => {
@@ -37,7 +45,7 @@ export const ContentAddModal = ({
   onUrlSubmit,
   onRichTextSubmit,
 }: ContentAddModalProps) => {
-  const [mode, setMode] = useState<"file" | "url" | "rich-text">("file");
+  const [mode, setMode] = useState<ContentMode>("file");
   const [loading, setLoading] = useState(false);
 
   // ファイルアップロード関連の状態
@@ -58,7 +66,7 @@ export const ContentAddModal = ({
   const [textAlign, setTextAlign] = useState<"start" | "center" | "end">("start");
   const [color, setColor] = useState("#000000");
   const [backgroundColor, setBackgroundColor] = useState("#ffffff");
-  const [fontSize, setFontSize] = useState(16);
+  const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE);
 
   const handleClose = () => {
     if (loading) return;
@@ -78,7 +86,7 @@ export const ContentAddModal = ({
     setTextAlign("start");
     setColor("#000000");
     setBackgroundColor("#ffffff");
-    setFontSize(16);
+    setFontSize(DEFAULT_FONT_SIZE);
 
     onClose();
   };
@@ -222,7 +230,7 @@ export const ContentAddModal = ({
             <Dropzone
               onDrop={handleFileDrop}
               accept={getAllAcceptedMimeTypes()}
-              maxSize={500 * 1024 * 1024} // 500MB
+              maxSize={MAX_FILE_SIZE}
               multiple
             >
               <Group justify="center" gap="xl" mih={220} style={{ pointerEvents: "none" }}>
@@ -282,7 +290,7 @@ export const ContentAddModal = ({
           ))}
 
         {/* URL追加モード */}
-        {!isFileMode && (
+        {isUrlMode && (
           <Stack gap="md">
             <TextInput
               label="URL *"
@@ -375,9 +383,9 @@ export const ContentAddModal = ({
               <NumberInput
                 label="フォントサイズ"
                 value={fontSize}
-                onChange={(value) => setFontSize(Number(value) || 16)}
-                min={8}
-                max={200}
+                onChange={(value) => setFontSize(Number(value) || DEFAULT_FONT_SIZE)}
+                min={MIN_FONT_SIZE}
+                max={MAX_FONT_SIZE}
                 suffix="px"
               />
             </Group>
