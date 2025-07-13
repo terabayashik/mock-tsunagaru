@@ -12,16 +12,19 @@ import {
   Text,
   TextInput,
 } from "@mantine/core";
-import { IconArrowLeft, IconArrowRight, IconDeviceFloppy, IconLayoutGrid, IconX } from "@tabler/icons-react";
+import { type FileWithPath } from "@mantine/dropzone";
+import { modals } from "@mantine/modals";
+import { IconArrowLeft, IconArrowRight, IconDeviceFloppy, IconLayoutGrid, IconPlus, IconX } from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
 import { ContentSelectionGrid } from "~/components/content/ContentSelectionGrid";
 import { SelectedContentList } from "~/components/content/SelectedContentList";
 import { InteractiveLayoutPreview } from "~/components/layout/InteractiveLayoutPreview";
 import { useContent } from "~/hooks/useContent";
 import { useLayout } from "~/hooks/useLayout";
-import type { ContentIndex } from "~/types/content";
+import type { ContentIndex, RichTextContent } from "~/types/content";
 import type { LayoutIndex, LayoutItem, Orientation, Region } from "~/types/layout";
 import type { ContentAssignment } from "~/types/playlist";
+import { ContentAddModal } from "./ContentAddModal";
 import { LayoutFormModal } from "./LayoutFormModal";
 
 export interface PlaylistFormData {
@@ -66,9 +69,11 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
     regions: Region[];
   } | null>(null);
   const [selectedRegionId, setSelectedRegionId] = useState<string | null>(null);
+  const [showContentAddModal, setShowContentAddModal] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
   const { getLayoutsIndex, getLayoutById, createLayout } = useLayout();
-  const { getContentsIndex } = useContent();
+  const { getContentsIndex, createFileContent, createUrlContent, createRichTextContent } = useContent();
 
   const steps: StepInfo[] = [
     { key: "basic", title: "基本情報", description: "プレイリスト名とデバイスを設定" },
@@ -104,6 +109,19 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
       loadContents();
     }
   }, [opened, loadLayouts, loadContents]);
+
+  // 変更を監視
+  useEffect(() => {
+    const hasAnyChange = 
+      formData.name.trim() !== "" ||
+      formData.device.trim() !== "" ||
+      formData.layoutId !== "" ||
+      formData.contentAssignments.some(assignment => assignment.contentIds.length > 0) ||
+      createNewLayout ||
+      tempLayoutData !== null;
+    
+    setHasChanges(hasAnyChange);
+  }, [formData, createNewLayout, tempLayoutData]);
 
   const validateCurrentStep = (): boolean => {
     const newErrors: Partial<Record<keyof PlaylistFormData, string>> = {};
@@ -218,7 +236,8 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
         layoutId,
         contentAssignments: formData.contentAssignments,
       });
-      handleClose();
+      resetForm();
+      onClose();
     } catch (error) {
       console.error("プレイリスト作成エラー:", error);
     } finally {
@@ -227,6 +246,28 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
   };
 
   const handleClose = () => {
+    if (hasChanges) {
+      modals.openConfirmModal({
+        title: "変更を破棄しますか？",
+        children: (
+          <Text size="sm">
+            保存されていない変更があります。本当に閉じてもよろしいですか？
+          </Text>
+        ),
+        labels: { confirm: "破棄して閉じる", cancel: "キャンセル" },
+        confirmProps: { color: "red" },
+        onConfirm: () => {
+          resetForm();
+          onClose();
+        },
+      });
+    } else {
+      resetForm();
+      onClose();
+    }
+  };
+
+  const resetForm = () => {
     setCurrentStep("basic");
     setFormData({ name: "", device: "", layoutId: "", contentAssignments: [] });
     setErrors({});
@@ -235,7 +276,7 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
     setShowLayoutForm(false);
     setTempLayoutData(null);
     setSelectedRegionId(null);
-    onClose();
+    setHasChanges(false);
   };
 
   const handleContentAssignmentChange = (regionId: string, contentIds: string[]) => {
@@ -307,6 +348,27 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
 
   const handleLayoutFormClose = () => {
     setShowLayoutForm(false);
+  };
+
+  // コンテンツ追加ハンドラー
+  const handleFileContentSubmit = async (files: FileWithPath[], names?: string[]) => {
+    await createFileContent(files, names);
+    await loadContents(); // コンテンツリストを再読み込み
+  };
+
+  const handleUrlContentSubmit = async (data: {
+    url: string;
+    name?: string;
+    title?: string;
+    description?: string;
+  }) => {
+    await createUrlContent(data.url, data.name, data.title, data.description);
+    await loadContents(); // コンテンツリストを再読み込み
+  };
+
+  const handleRichTextContentSubmit = async (data: { name: string; richTextInfo: RichTextContent }) => {
+    await createRichTextContent(data.name, data.richTextInfo);
+    await loadContents(); // コンテンツリストを再読み込み
   };
 
   const renderStepContent = () => {
@@ -431,21 +493,49 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
                   <Box style={{ flex: "1 1 auto" }}>
                     {selectedRegionId ? (
                       <>
-                        <Text fw={600} mb="sm">
-                          リージョン {selectedLayout.regions.findIndex((r) => r.id === selectedRegionId) + 1}{" "}
-                          のコンテンツを選択
-                        </Text>
-                        <ContentSelectionGrid
-                          contents={contents}
-                          selectedContentIds={getSelectedRegionAssignment()?.contentIds || []}
-                          onSelectionChange={(contentIds) => {
-                            if (selectedRegionId) {
-                              handleContentAssignmentChange(selectedRegionId, contentIds);
-                            }
-                          }}
-                          loading={false}
-                          maxItems={20}
-                        />
+                        <Group justify="space-between" mb="sm">
+                          <Text fw={600}>
+                            リージョン {selectedLayout.regions.findIndex((r) => r.id === selectedRegionId) + 1}{" "}
+                            のコンテンツを選択
+                          </Text>
+                          <Button
+                            variant="light"
+                            size="xs"
+                            leftSection={<IconPlus size={14} />}
+                            onClick={() => setShowContentAddModal(true)}
+                          >
+                            コンテンツを追加
+                          </Button>
+                        </Group>
+                        {contents.length === 0 ? (
+                          <Paper p="xl" withBorder style={{ textAlign: "center" }}>
+                            <Text c="dimmed" mb="sm">
+                              利用可能なコンテンツがありません
+                            </Text>
+                            <Text size="sm" c="dimmed" mb="md">
+                              先にコンテンツを追加してください
+                            </Text>
+                            <Button
+                              variant="filled"
+                              leftSection={<IconPlus size={16} />}
+                              onClick={() => setShowContentAddModal(true)}
+                            >
+                              コンテンツを追加
+                            </Button>
+                          </Paper>
+                        ) : (
+                          <ContentSelectionGrid
+                            contents={contents}
+                            selectedContentIds={getSelectedRegionAssignment()?.contentIds || []}
+                            onSelectionChange={(contentIds) => {
+                              if (selectedRegionId) {
+                                handleContentAssignmentChange(selectedRegionId, contentIds);
+                              }
+                            }}
+                            loading={false}
+                            maxItems={20}
+                          />
+                        )}
                       </>
                     ) : (
                       <Paper p="xl" withBorder style={{ textAlign: "center" }}>
@@ -586,6 +676,15 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
         onSubmit={handleLayoutCreate}
         title="新しいレイアウトを作成"
         submitButtonText="作成"
+      />
+
+      {/* コンテンツ追加モーダル */}
+      <ContentAddModal
+        opened={showContentAddModal}
+        onClose={() => setShowContentAddModal(false)}
+        onFileSubmit={handleFileContentSubmit}
+        onUrlSubmit={handleUrlContentSubmit}
+        onRichTextSubmit={handleRichTextContentSubmit}
       />
     </>
   );

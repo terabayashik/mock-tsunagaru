@@ -1,10 +1,20 @@
-import { Alert, Button, Container, Group, List, Paper, Stack, Text, Title } from "@mantine/core";
+import { Alert, Button, ColorInput, Container, Group, List, Paper, Stack, Text, Title } from "@mantine/core";
 import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
-import { IconDatabaseOff, IconExclamationCircle, IconPhoto, IconRefresh, IconTrash } from "@tabler/icons-react";
+import {
+  IconDatabaseOff,
+  IconExclamationCircle,
+  IconPalette,
+  IconPhoto,
+  IconRefresh,
+  IconRefreshDot,
+  IconTrash,
+} from "@tabler/icons-react";
+import { useAtom } from "jotai";
 import { useCallback, useEffect, useState } from "react";
 import { AuthGuard } from "~/components";
 import { useContent } from "~/hooks/useContent";
+import { DEFAULT_HEADER_COLOR, headerColorAtom, resetHeaderColorAtom } from "~/states";
 import { OPFSManager } from "~/utils/storage/opfs";
 import type { Route } from "./+types/Settings";
 
@@ -26,6 +36,10 @@ const Settings = () => {
 
   const opfs = OPFSManager.getInstance();
   const { regenerateAllThumbnails } = useContent();
+
+  // ヘッダー色のstate
+  const [headerColor, setHeaderColor] = useAtom(headerColorAtom);
+  const [, resetHeaderColor] = useAtom(resetHeaderColorAtom);
 
   const loadStorageInfo = useCallback(async () => {
     try {
@@ -276,11 +290,62 @@ const Settings = () => {
             </Stack>
           </Paper>
 
+          {/* テーマ設定セクション */}
+          <Paper p="md" withBorder>
+            <Stack gap="md">
+              <Title order={2} size="h3">
+                テーマ設定
+              </Title>
+
+              <Alert color="blue" icon={<IconPalette size={16} />}>
+                <Text size="sm">
+                  アプリケーションの外観をカスタマイズできます。
+                  変更は自動的に保存され、リロード後も保持されます。
+                </Text>
+              </Alert>
+
+              <Stack gap="sm">
+                <Group align="end" gap="md">
+                  <ColorInput
+                    label="ヘッダー色"
+                    description="アプリケーションヘッダーの背景色を変更します"
+                    value={headerColor}
+                    onChange={setHeaderColor}
+                    format="hex"
+                    swatches={[
+                      DEFAULT_HEADER_COLOR,
+                      "#0A529C",
+                      "#1971C2",
+                      "#0C8599",
+                      "#087F5B",
+                      "#2F9E44",
+                      "#66A80F",
+                      "#E8590C",
+                      "#D9480F",
+                    ]}
+                    style={{ flex: 1 }}
+                  />
+                  <Button
+                    variant="light"
+                    leftSection={<IconRefreshDot size={16} />}
+                    onClick={() => resetHeaderColor()}
+                    disabled={headerColor === DEFAULT_HEADER_COLOR}
+                  >
+                    デフォルトに戻す
+                  </Button>
+                </Group>
+                <Text size="xs" c="dimmed">
+                  デフォルト色: {DEFAULT_HEADER_COLOR}
+                </Text>
+              </Stack>
+            </Stack>
+          </Paper>
+
           {/* その他の設定セクション */}
           <Paper p="md" withBorder>
             <Stack gap="md">
               <Title order={2} size="h3">
-                アプリケーション設定
+                その他の設定
               </Title>
               <Text size="sm" c="dimmed">
                 その他の設定項目は今後実装予定です。

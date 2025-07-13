@@ -2,7 +2,7 @@ import { Anchor, AppShell, Avatar, Button, Group, Menu, Text, Title, UnstyledBut
 import { IconChartBar, IconDoorExit, IconHome, IconMenu2, IconSettings, IconUser } from "@tabler/icons-react";
 import { useAtom } from "jotai";
 import { Link, useLocation } from "react-router";
-import { logoutAtom, userAtom } from "~/states";
+import { headerColorAtom, logoutAtom, userAtom } from "~/states";
 import { ThemeToggle } from "../common/ThemeToggle";
 import { LoginLayout } from "./LoginLayout";
 
@@ -19,6 +19,7 @@ const navigationItems = [
 export const AppLayout = ({ children }: AppLayoutProps) => {
   const [user] = useAtom(userAtom);
   const [, logout] = useAtom(logoutAtom);
+  const [headerColor] = useAtom(headerColorAtom);
   const location = useLocation();
 
   const handleLogout = () => {
@@ -31,7 +32,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
 
   return (
     <AppShell header={{ height: 60 }} padding="md">
-      <AppShell.Header bg="#0A529C">
+      <AppShell.Header bg={headerColor}>
         <Group h="100%" px="md" justify="space-between">
           <Group>
             <Anchor component={Link} to="/" td="none">

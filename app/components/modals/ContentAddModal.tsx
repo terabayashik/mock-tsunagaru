@@ -1,14 +1,28 @@
-import { Box, Button, Group, Modal, SegmentedControl, Stack, Text, TextInput } from "@mantine/core";
+import {
+  Box,
+  Button,
+  ColorInput,
+  Group,
+  Modal,
+  NumberInput,
+  SegmentedControl,
+  Select,
+  Stack,
+  Text,
+  Textarea,
+  TextInput,
+} from "@mantine/core";
 import { Dropzone, type FileWithPath } from "@mantine/dropzone";
-import { IconCloudUpload, IconDeviceFloppy, IconFile, IconLink, IconX } from "@tabler/icons-react";
+import { IconCloudUpload, IconDeviceFloppy, IconFile, IconLink, IconPencil, IconX } from "@tabler/icons-react";
 import { useState } from "react";
-import { ACCEPTED_MIME_TYPES } from "~/types/content";
+import { ACCEPTED_MIME_TYPES, FONT_FAMILIES, type RichTextContent } from "~/types/content";
 
 interface ContentAddModalProps {
   opened: boolean;
   onClose: () => void;
   onFileSubmit: (files: FileWithPath[], names?: string[]) => Promise<void>;
   onUrlSubmit: (data: { url: string; name?: string; title?: string; description?: string }) => Promise<void>;
+  onRichTextSubmit: (data: { name: string; richTextInfo: RichTextContent }) => Promise<void>;
 }
 
 // 受け入れ可能なMIMEタイプを配列に変換
@@ -16,8 +30,14 @@ const getAllAcceptedMimeTypes = () => {
   return [...ACCEPTED_MIME_TYPES.video, ...ACCEPTED_MIME_TYPES.image, ...ACCEPTED_MIME_TYPES.text];
 };
 
-export const ContentAddModal = ({ opened, onClose, onFileSubmit, onUrlSubmit }: ContentAddModalProps) => {
-  const [mode, setMode] = useState<"file" | "url">("file");
+export const ContentAddModal = ({
+  opened,
+  onClose,
+  onFileSubmit,
+  onUrlSubmit,
+  onRichTextSubmit,
+}: ContentAddModalProps) => {
+  const [mode, setMode] = useState<"file" | "url" | "rich-text">("file");
   const [loading, setLoading] = useState(false);
 
   // ファイルアップロード関連の状態
@@ -30,6 +50,16 @@ export const ContentAddModal = ({ opened, onClose, onFileSubmit, onUrlSubmit }: 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
+  // リッチテキスト関連の状態
+  const [richTextName, setRichTextName] = useState("");
+  const [richTextContent, setRichTextContent] = useState("");
+  const [writingMode, setWritingMode] = useState<"horizontal" | "vertical">("horizontal");
+  const [fontFamily, setFontFamily] = useState("Inter, sans-serif");
+  const [textAlign, setTextAlign] = useState<"start" | "center" | "end">("start");
+  const [color, setColor] = useState("#000000");
+  const [backgroundColor, setBackgroundColor] = useState("#ffffff");
+  const [fontSize, setFontSize] = useState(16);
+
   const handleClose = () => {
     if (loading) return;
 
@@ -41,6 +71,14 @@ export const ContentAddModal = ({ opened, onClose, onFileSubmit, onUrlSubmit }: 
     setName("");
     setTitle("");
     setDescription("");
+    setRichTextName("");
+    setRichTextContent("");
+    setWritingMode("horizontal");
+    setFontFamily("Inter, sans-serif");
+    setTextAlign("start");
+    setColor("#000000");
+    setBackgroundColor("#ffffff");
+    setFontSize(16);
 
     onClose();
   };
@@ -96,6 +134,31 @@ export const ContentAddModal = ({ opened, onClose, onFileSubmit, onUrlSubmit }: 
     }
   };
 
+  const handleRichTextSubmit = async () => {
+    if (!richTextName.trim() || !richTextContent.trim()) return;
+
+    setLoading(true);
+    try {
+      await onRichTextSubmit({
+        name: richTextName.trim(),
+        richTextInfo: {
+          content: richTextContent.trim(),
+          writingMode,
+          fontFamily,
+          textAlign,
+          color,
+          backgroundColor,
+          fontSize,
+        },
+      });
+      handleClose();
+    } catch (error) {
+      console.error("Rich text content creation failed:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return "0 B";
     const k = 1024;
@@ -105,7 +168,14 @@ export const ContentAddModal = ({ opened, onClose, onFileSubmit, onUrlSubmit }: 
   };
 
   const isFileMode = mode === "file";
-  const canSubmit = isFileMode ? selectedFiles.length > 0 : url.trim().length > 0;
+  const isUrlMode = mode === "url";
+  const isRichTextMode = mode === "rich-text";
+
+  const canSubmit = isFileMode
+    ? selectedFiles.length > 0
+    : isUrlMode
+      ? url.trim().length > 0
+      : richTextName.trim().length > 0 && richTextContent.trim().length > 0;
 
   return (
     <Modal opened={opened} onClose={handleClose} title="コンテンツを追加" centered size="lg">
@@ -113,7 +183,7 @@ export const ContentAddModal = ({ opened, onClose, onFileSubmit, onUrlSubmit }: 
         {/* モード切り替え */}
         <SegmentedControl
           value={mode}
-          onChange={(value) => setMode(value as "file" | "url")}
+          onChange={(value) => setMode(value as "file" | "url" | "rich-text")}
           data={[
             {
               label: (
@@ -132,6 +202,15 @@ export const ContentAddModal = ({ opened, onClose, onFileSubmit, onUrlSubmit }: 
                 </Group>
               ),
               value: "url",
+            },
+            {
+              label: (
+                <Group gap="xs" justify="center">
+                  <IconPencil size={16} />
+                  <Text size="sm">テキスト</Text>
+                </Group>
+              ),
+              value: "rich-text",
             },
           ]}
           fullWidth
@@ -233,18 +312,156 @@ export const ContentAddModal = ({ opened, onClose, onFileSubmit, onUrlSubmit }: 
           </Stack>
         )}
 
+        {/* リッチテキストモード */}
+        {isRichTextMode && (
+          <Stack gap="md">
+            <TextInput
+              label="コンテンツ名"
+              placeholder="テキストコンテンツの名前を入力してください"
+              required
+              value={richTextName}
+              onChange={(event) => setRichTextName(event.currentTarget.value)}
+            />
+
+            <Textarea
+              label="テキストコンテンツ"
+              placeholder="表示したいテキストを入力してください"
+              required
+              minRows={4}
+              value={richTextContent}
+              onChange={(event) => setRichTextContent(event.currentTarget.value)}
+            />
+
+            <Group grow>
+              <Select
+                label="書字方向"
+                value={writingMode}
+                onChange={(value) => setWritingMode(value as "horizontal" | "vertical")}
+                data={[
+                  { value: "horizontal", label: "横書き" },
+                  { value: "vertical", label: "縦書き" },
+                ]}
+              />
+
+              <Select
+                label="整列位置"
+                value={textAlign}
+                onChange={(value) => setTextAlign(value as "start" | "center" | "end")}
+                data={
+                  writingMode === "horizontal"
+                    ? [
+                        { value: "start", label: "左揃え" },
+                        { value: "center", label: "中央揃え" },
+                        { value: "end", label: "右揃え" },
+                      ]
+                    : [
+                        { value: "start", label: "上揃え" },
+                        { value: "center", label: "中央揃え" },
+                        { value: "end", label: "下揃え" },
+                      ]
+                }
+              />
+            </Group>
+
+            <Group grow>
+              <Select
+                label="フォント"
+                value={fontFamily}
+                onChange={(value) => setFontFamily(value || "Inter, sans-serif")}
+                data={FONT_FAMILIES}
+                searchable
+              />
+
+              <NumberInput
+                label="フォントサイズ"
+                value={fontSize}
+                onChange={(value) => setFontSize(Number(value) || 16)}
+                min={8}
+                max={200}
+                suffix="px"
+              />
+            </Group>
+
+            <Group grow>
+              <ColorInput
+                label="文字色"
+                value={color}
+                onChange={setColor}
+                format="hex"
+                swatches={["#000000", "#ffffff", "#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff", "#00ffff"]}
+              />
+
+              <ColorInput
+                label="背景色"
+                value={backgroundColor}
+                onChange={setBackgroundColor}
+                format="hex"
+                swatches={["#ffffff", "#000000", "#f5f5f5", "#e5e5e5", "#d4d4d4", "#a3a3a3", "#737373", "#525252"]}
+              />
+            </Group>
+
+            {/* プレビュー */}
+            <Box>
+              <Text size="sm" fw={500} mb="xs">
+                プレビュー
+              </Text>
+              <Box
+                p="md"
+                style={{
+                  backgroundColor,
+                  border: "1px solid #e5e5e5",
+                  borderRadius: "4px",
+                  minHeight: "100px",
+                  writingMode: writingMode === "vertical" ? "vertical-rl" : "horizontal-tb",
+                  textAlign,
+                  fontFamily,
+                  fontSize: `${fontSize}px`,
+                  color,
+                  display: "flex",
+                  alignItems:
+                    writingMode === "horizontal"
+                      ? textAlign === "start"
+                        ? "flex-start"
+                        : textAlign === "center"
+                          ? "center"
+                          : "flex-end"
+                      : "stretch",
+                  justifyContent:
+                    writingMode === "vertical"
+                      ? textAlign === "start"
+                        ? "flex-start"
+                        : textAlign === "center"
+                          ? "center"
+                          : "flex-end"
+                      : "stretch",
+                }}
+              >
+                {richTextContent || "プレビューテキスト"}
+              </Box>
+            </Box>
+          </Stack>
+        )}
+
         {/* アクションボタン */}
         <Group justify="flex-end">
           <Button variant="subtle" onClick={handleClose} disabled={loading}>
             キャンセル
           </Button>
           <Button
-            leftSection={isFileMode ? <IconDeviceFloppy size={16} /> : <IconLink size={16} />}
-            onClick={isFileMode ? handleFileSubmit : handleUrlSubmit}
+            leftSection={
+              isFileMode ? (
+                <IconDeviceFloppy size={16} />
+              ) : isUrlMode ? (
+                <IconLink size={16} />
+              ) : (
+                <IconPencil size={16} />
+              )
+            }
+            onClick={isFileMode ? handleFileSubmit : isUrlMode ? handleUrlSubmit : handleRichTextSubmit}
             loading={loading}
             disabled={!canSubmit}
           >
-            {isFileMode ? "アップロード" : "URLを追加"}
+            {isFileMode ? "アップロード" : isUrlMode ? "URLを追加" : "テキストを追加"}
           </Button>
         </Group>
       </Stack>

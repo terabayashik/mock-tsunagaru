@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import type { ContentIndex, ContentItem, ContentType } from "~/types/content";
+import type { ContentIndex, ContentItem, ContentType, RichTextContent } from "~/types/content";
 import { ContentItemSchema, ContentsIndexSchema, getContentTypeFromMimeType, isYouTubeUrl } from "~/types/content";
 import { thumbnailGenerator } from "~/utils/media/thumbnailGenerator";
 import { OPFSError, OPFSManager } from "~/utils/storage/opfs";
@@ -227,6 +227,61 @@ export const useContent = () => {
   );
 
   /**
+   * リッチテキストコンテンツを作成
+   */
+  const createRichTextContent = useCallback(
+    async (name: string, richTextInfo: RichTextContent): Promise<ContentItem> => {
+      const id = crypto.randomUUID();
+      const now = new Date().toISOString();
+
+      const newContent: ContentItem = {
+        id,
+        name,
+        type: "rich-text",
+        richTextInfo,
+        tags: [],
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      // Zodでバリデーション
+      const validated = ContentItemSchema.parse(newContent);
+
+      return await lock.withLock("contents-create", async () => {
+        try {
+          // メタデータを保存
+          await opfs.writeJSON(`contents/content-${id}.json`, validated);
+
+          // インデックスを更新
+          const currentIndex = await getContentsIndex();
+          const newIndex: ContentIndex = {
+            id: validated.id,
+            name: validated.name,
+            type: validated.type,
+            tags: validated.tags,
+            createdAt: validated.createdAt,
+            updatedAt: validated.updatedAt,
+          };
+
+          const updatedIndex = [...currentIndex, newIndex];
+          await opfs.writeJSON("contents/index.json", updatedIndex);
+
+          return validated;
+        } catch (error) {
+          // エラーが発生した場合はクリーンアップ
+          try {
+            await opfs.deleteFile(`contents/content-${id}.json`);
+          } catch {
+            // クリーンアップエラーは無視
+          }
+          throw new Error(`リッチテキストコンテンツの作成に失敗しました: ${error}`);
+        }
+      });
+    },
+    [getContentsIndex, lock.withLock, opfs.writeJSON, opfs.deleteFile],
+  );
+
+  /**
    * コンテンツを更新
    */
   const updateContent = useCallback(
@@ -446,6 +501,7 @@ export const useContent = () => {
     getContentById,
     createFileContent,
     createUrlContent,
+    createRichTextContent,
     updateContent,
     deleteContent,
     getFileContent,

@@ -33,7 +33,7 @@ import {
   filteredContentsAtom,
 } from "~/states/content";
 import { contentPreviewModalAtom, modalActionsAtom } from "~/states/modal";
-import type { ContentType } from "~/types/content";
+import type { ContentType, RichTextContent } from "~/types/content";
 
 export default function ContentsPage() {
   // コンテンツ関連の状態
@@ -47,7 +47,7 @@ export default function ContentsPage() {
   const [contentPreviewModal] = useAtom(contentPreviewModalAtom);
   const [, modalDispatch] = useAtom(modalActionsAtom);
 
-  const { getContentsIndex, deleteContent, createFileContent, createUrlContent } = useContent();
+  const { getContentsIndex, deleteContent, createFileContent, createUrlContent, createRichTextContent } = useContent();
 
   // コンテンツ一覧を読み込み
   useEffect(() => {
@@ -154,6 +154,30 @@ export default function ContentsPage() {
     }
   };
 
+  const handleRichTextContentSubmit = async (data: { name: string; richTextInfo: RichTextContent }) => {
+    try {
+      const newContent = await createRichTextContent(data.name, data.richTextInfo);
+
+      // インデックス形式に変換
+      const contentIndex = {
+        id: newContent.id,
+        name: newContent.name,
+        type: newContent.type,
+        tags: newContent.tags,
+        createdAt: newContent.createdAt,
+        updatedAt: newContent.updatedAt,
+      };
+
+      contentDispatch({ type: "ADD_CONTENT", content: contentIndex });
+    } catch (error) {
+      contentDispatch({
+        type: "SET_ERROR",
+        error: error instanceof Error ? error.message : "リッチテキストコンテンツの作成に失敗しました",
+      });
+      throw error;
+    }
+  };
+
   const handleContentAddModalClose = () => {
     contentModalDispatch({ type: "CLOSE_CONTENT_ADD" });
   };
@@ -165,6 +189,8 @@ export default function ContentsPage() {
       case "image":
         return <IconPhoto size={16} />;
       case "text":
+        return <IconFileText size={16} />;
+      case "rich-text":
         return <IconFileText size={16} />;
       case "youtube":
         return <IconBrandYoutube size={16} />;
@@ -180,6 +206,7 @@ export default function ContentsPage() {
       video: "blue",
       image: "green",
       text: "orange",
+      "rich-text": "teal",
       youtube: "red",
       url: "purple",
     };
@@ -188,6 +215,7 @@ export default function ContentsPage() {
       video: "動画",
       image: "画像",
       text: "テキスト",
+      "rich-text": "リッチテキスト",
       youtube: "YouTube",
       url: "URL",
     };
@@ -359,6 +387,7 @@ export default function ContentsPage() {
         onClose={handleContentAddModalClose}
         onFileSubmit={handleFileUploadSubmit}
         onUrlSubmit={handleUrlContentSubmit}
+        onRichTextSubmit={handleRichTextContentSubmit}
       />
 
       <ContentPreviewModal

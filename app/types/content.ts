@@ -5,6 +5,7 @@ export const ContentTypeSchema = z.enum([
   "video", // 動画ファイル
   "image", // 画像ファイル
   "text", // テキストファイル
+  "rich-text", // リッチテキスト（ユーザー入力）
   "youtube", // YouTubeのURL
   "url", // その他のURL
 ]);
@@ -33,14 +34,26 @@ export const UrlContentSchema = z.object({
   thumbnail: z.string().optional(), // サムネイルURL
 });
 
+// リッチテキストコンテンツの詳細情報
+export const RichTextContentSchema = z.object({
+  content: z.string().min(1, "テキストコンテンツは必須です"),
+  writingMode: z.enum(["horizontal", "vertical"], "書字方向を選択してください"),
+  fontFamily: z.string().min(1, "フォントファミリーは必須です"),
+  textAlign: z.enum(["start", "center", "end"], "テキスト整列を選択してください"),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "有効な色コードを入力してください"),
+  backgroundColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "有効な背景色コードを入力してください"),
+  fontSize: z.number().min(8).max(200).default(16), // フォントサイズ
+});
+
 // コンテンツアイテムのスキーマ
 export const ContentItemSchema = z.object({
   id: z.string().min(1, "IDは必須です"),
   name: z.string().min(1, "名前は必須です"),
   type: ContentTypeSchema,
-  // ファイルの場合はfileInfo、URLの場合はurlInfo
+  // ファイルの場合はfileInfo、URLの場合はurlInfo、リッチテキストの場合はrichTextInfo
   fileInfo: FileContentSchema.optional(),
   urlInfo: UrlContentSchema.optional(),
+  richTextInfo: RichTextContentSchema.optional(),
   tags: z.array(z.string()).default([]), // タグ
   createdAt: z.string().datetime("無効な作成日時です"),
   updatedAt: z.string().datetime("無効な更新日時です").optional(),
@@ -64,6 +77,7 @@ export const ContentsIndexSchema = z.array(ContentIndexSchema);
 export type ContentType = z.infer<typeof ContentTypeSchema>;
 export type FileContent = z.infer<typeof FileContentSchema>;
 export type UrlContent = z.infer<typeof UrlContentSchema>;
+export type RichTextContent = z.infer<typeof RichTextContentSchema>;
 export type ContentItem = z.infer<typeof ContentItemSchema>;
 export type ContentIndex = z.infer<typeof ContentIndexSchema>;
 
@@ -103,3 +117,18 @@ export const isYouTubeUrl = (url: string): boolean => {
   const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]+/;
   return youtubeRegex.test(url);
 };
+
+// 利用可能なフォントファミリー
+export const FONT_FAMILIES = [
+  { value: "Inter, sans-serif", label: "Inter（デフォルト）" },
+  { value: "Arial, sans-serif", label: "Arial" },
+  { value: "Helvetica, Arial, sans-serif", label: "Helvetica" },
+  { value: "Times, serif", label: "Times" },
+  { value: "Georgia, serif", label: "Georgia" },
+  { value: "Courier, monospace", label: "Courier" },
+  { value: "Monaco, monospace", label: "Monaco" },
+  { value: "Hiragino Sans, sans-serif", label: "ヒラギノ角ゴ" },
+  { value: "Yu Gothic, sans-serif", label: "游ゴシック" },
+  { value: "Meiryo, sans-serif", label: "メイリオ" },
+  { value: "MS Gothic, monospace", label: "ＭＳ ゴシック" },
+] as const;
