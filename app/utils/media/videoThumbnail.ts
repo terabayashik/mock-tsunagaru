@@ -237,7 +237,7 @@ export class VideoThumbnailGenerator {
         });
         results.push({ thumbnail, timestamp });
       } catch (error) {
-        console.error(`Failed to generate thumbnail at ${timestamp}:`, error);
+        logger.error("VideoThumbnail", `Failed to generate thumbnail at ${timestamp}`, error);
       }
     }
 

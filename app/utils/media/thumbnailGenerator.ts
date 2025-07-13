@@ -3,6 +3,7 @@
  * 動画、画像、テキストファイル用の統合サムネイル生成機能
  */
 
+import { logger } from "~/utils/logger";
 import { VideoThumbnailGenerator } from "./videoThumbnail";
 
 export interface ThumbnailGenerationOptions {
@@ -85,7 +86,7 @@ export class ThumbnailGenerator {
         },
       };
     } catch (error) {
-      console.error("[ThumbnailGenerator] Video thumbnail generation failed:", error);
+      logger.error("ThumbnailGenerator", "Video thumbnail generation failed", error);
       // フォールバック: プレースホルダー画像を生成
       return await this.generatePlaceholderThumbnail(
         "動画",
@@ -242,7 +243,7 @@ export class ThumbnailGenerator {
         );
       });
     } catch (error) {
-      console.error("[ThumbnailGenerator] Text thumbnail generation failed:", error);
+      logger.error("ThumbnailGenerator", "Text thumbnail generation failed", error);
       // フォールバック
       return await this.generatePlaceholderThumbnail("テキスト", options.width, options.height);
     }

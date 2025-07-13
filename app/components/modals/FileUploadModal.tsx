@@ -105,7 +105,7 @@ export const FileUploadModal = ({ opened, onClose, onSubmit }: FileUploadModalPr
               選択されたファイル ({selectedFiles.length}個)
             </Text>
             {selectedFiles.map((file, index) => (
-              <Group key={`${file.name}-${index}`} gap="sm" align="flex-start">
+              <Group key={`${file.name}-${file.size}-${file.lastModified}`} gap="sm" align="flex-start">
                 <IconFile size={20} />
                 <Box flex={1}>
                   <TextInput

@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import type { ContentIndex, ContentItem, ContentType, RichTextContent } from "~/types/content";
 import { ContentItemSchema, ContentsIndexSchema, getContentTypeFromMimeType, isYouTubeUrl } from "~/types/content";
+import { logger } from "~/utils/logger";
 import { thumbnailGenerator } from "~/utils/media/thumbnailGenerator";
 import { OPFSError, OPFSManager } from "~/utils/storage/opfs";
 import { OPFSLock } from "~/utils/storage/opfsLock";
@@ -92,7 +93,7 @@ export const useContent = () => {
         thumbnailData = thumbnailResult.thumbnailData;
         metadata = thumbnailResult.metadata;
       } catch (error) {
-        console.warn(`[Content] Failed to generate thumbnail for ${file.name}:`, error);
+        logger.warn("Content", `Failed to generate thumbnail for ${file.name}`, error);
         // サムネイル生成に失敗してもファイル作成は続行
       }
 
@@ -410,7 +411,7 @@ export const useContent = () => {
         const blob = new Blob([thumbnailData], { type: "image/jpeg" });
         return URL.createObjectURL(blob);
       } catch (error) {
-        console.warn(`[Content] Failed to get thumbnail URL for ${contentId}:`, error);
+        logger.warn("Content", `Failed to get thumbnail URL for ${contentId}`, error);
         return null;
       }
     },
@@ -485,7 +486,7 @@ export const useContent = () => {
 
           results.success++;
         } catch (error) {
-          console.error(`[Content] Failed to regenerate thumbnail for ${contentIndex.id}:`, error);
+          logger.error("Content", `Failed to regenerate thumbnail for ${contentIndex.id}`, error);
           results.failed.push(contentIndex.name);
         }
       }

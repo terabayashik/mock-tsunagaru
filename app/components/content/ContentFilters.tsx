@@ -10,10 +10,11 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { useAtom } from "jotai";
+import { memo } from "react";
 import { contentSearchQueryAtom, contentTypeFilterAtom } from "~/states/content";
 import type { ContentType } from "~/types/content";
 
-export const ContentFilters = () => {
+export const ContentFilters = memo(() => {
   const [typeFilter, setTypeFilter] = useAtom(contentTypeFilterAtom);
   const [searchQuery, setSearchQuery] = useAtom(contentSearchQueryAtom);
 
@@ -68,10 +69,19 @@ export const ContentFilters = () => {
     <Group gap="md" mb="md">
       <TextInput
         placeholder="コンテンツを検索..."
+        aria-label="コンテンツを検索"
         leftSection={<IconSearch size={16} />}
         rightSection={
           searchQuery ? (
-            <Button variant="subtle" size="xs" p={0} onClick={() => setSearchQuery("")} miw="auto" h="auto">
+            <Button
+              variant="subtle"
+              size="xs"
+              p={0}
+              onClick={() => setSearchQuery("")}
+              miw="auto"
+              h="auto"
+              aria-label="検索をクリア"
+            >
               <IconX size={14} />
             </Button>
           ) : null
@@ -87,7 +97,10 @@ export const ContentFilters = () => {
         onChange={(value) => setTypeFilter(value as ContentType | "all")}
         data={filterOptions}
         size="sm"
+        aria-label="コンテンツタイプフィルター"
       />
     </Group>
   );
-};
+});
+
+ContentFilters.displayName = "ContentFilters";

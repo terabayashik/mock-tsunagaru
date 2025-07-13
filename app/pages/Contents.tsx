@@ -37,6 +37,7 @@ import {
 } from "~/states/content";
 import { contentPreviewModalAtom, modalActionsAtom } from "~/states/modal";
 import type { ContentType, RichTextContent } from "~/types/content";
+import { logger } from "~/utils/logger";
 
 export default function ContentsPage() {
   // コンテンツ関連の状態
@@ -240,7 +241,7 @@ export default function ContentsPage() {
 
       contentDispatch({ type: "UPDATE_CONTENT", id: data.id, content: contentIndex });
     } catch (error) {
-      console.error("Content edit failed:", error);
+      logger.error("Contents", "Content edit failed", error);
       contentDispatch({ type: "SET_ERROR", error: `コンテンツの編集に失敗しました: ${error}` });
     }
   };

@@ -261,8 +261,9 @@ export class OPFSManager {
 
       // ルートディレクトリ内のすべてのエントリを取得
       const entries: string[] = [];
-      // @ts-ignore - AsyncIterator type issue
-      for await (const [name] of root.entries()) {
+      // FileSystemDirectoryHandle.entries() の型定義を正しく設定
+      const entriesIterator = root.entries() as AsyncIterableIterator<[string, FileSystemHandle]>;
+      for await (const [name] of entriesIterator) {
         entries.push(name);
       }
 
@@ -331,8 +332,8 @@ export class OPFSManager {
     directories: string[],
     files: string[],
   ): Promise<void> {
-    // @ts-ignore - AsyncIterator type issue
-    for await (const [name, handle] of directoryHandle.entries()) {
+    const entriesIterator = directoryHandle.entries() as AsyncIterableIterator<[string, FileSystemHandle]>;
+    for await (const [name, handle] of entriesIterator) {
       const fullPath = currentPath ? `${currentPath}/${name}` : name;
 
       if (handle.kind === "directory") {

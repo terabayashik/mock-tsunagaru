@@ -15,6 +15,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AuthGuard } from "~/components";
 import { useContent } from "~/hooks/useContent";
 import { DEFAULT_HEADER_COLOR, headerColorAtom, resetHeaderColorAtom } from "~/states";
+import { logger } from "~/utils/logger";
 import { OPFSManager } from "~/utils/storage/opfs";
 import type { Route } from "./+types/Settings";
 
@@ -47,7 +48,7 @@ const Settings = () => {
       const info = await opfs.getStorageInfo();
       setStorageInfo(info);
     } catch (error) {
-      console.error("Failed to load storage info:", error);
+      logger.error("Settings", "Failed to load storage info", error);
       notifications.show({
         title: "エラー",
         message: "ストレージ情報の読み込みに失敗しました",
@@ -117,7 +118,7 @@ const Settings = () => {
       // ストレージ情報を再読み込み
       await loadStorageInfo();
     } catch (error) {
-      console.error("Failed to clear OPFS:", error);
+      logger.error("Settings", "Failed to clear OPFS", error);
       notifications.show({
         title: "削除失敗",
         message: "データの削除中にエラーが発生しました",
@@ -180,7 +181,7 @@ const Settings = () => {
       // ストレージ情報を再読み込み
       await loadStorageInfo();
     } catch (error) {
-      console.error("Failed to regenerate thumbnails:", error);
+      logger.error("Settings", "Failed to regenerate thumbnails", error);
       notifications.show({
         title: "サムネイル再生成失敗",
         message: "サムネイルの再生成中にエラーが発生しました",

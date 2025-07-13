@@ -12,7 +12,7 @@ import {
   TextInput,
 } from "@mantine/core";
 import { IconDeviceFloppy } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { type ContentIndex, FONT_FAMILIES, type RichTextContent } from "~/types/content";
 
 interface ContentEditModalProps {
@@ -33,7 +33,7 @@ const DEFAULT_FONT_SIZE = 16;
 const MIN_FONT_SIZE = 8;
 const MAX_FONT_SIZE = 200;
 
-export const ContentEditModal = ({ opened, onClose, content, onSubmit }: ContentEditModalProps) => {
+export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: ContentEditModalProps) => {
   const [loading, setLoading] = useState(false);
 
   // 基本情報
@@ -141,6 +141,8 @@ export const ContentEditModal = ({ opened, onClose, content, onSubmit }: Content
           value={name}
           onChange={(event) => setName(event.currentTarget.value)}
           required
+          aria-required="true"
+          aria-label="コンテンツ名入力"
         />
 
         <TextInput
@@ -148,6 +150,7 @@ export const ContentEditModal = ({ opened, onClose, content, onSubmit }: Content
           placeholder="タグをカンマ区切りで入力してください（例: タグ1, タグ2, タグ3）"
           value={tags}
           onChange={(event) => setTags(event.currentTarget.value)}
+          aria-label="タグ入力"
         />
 
         {/* コンテンツタイプ情報 */}
@@ -207,6 +210,8 @@ export const ContentEditModal = ({ opened, onClose, content, onSubmit }: Content
               minRows={4}
               value={richTextContent}
               onChange={(event) => setRichTextContent(event.currentTarget.value)}
+              aria-required="true"
+              aria-label="テキストコンテンツ入力"
             />
 
             <Group grow>
@@ -218,6 +223,7 @@ export const ContentEditModal = ({ opened, onClose, content, onSubmit }: Content
                   { value: "horizontal", label: "横書き" },
                   { value: "vertical", label: "縦書き" },
                 ]}
+                aria-label="書字方向の選択"
               />
 
               <Select
@@ -336,7 +342,9 @@ export const ContentEditModal = ({ opened, onClose, content, onSubmit }: Content
       </Stack>
     </Modal>
   );
-};
+});
+
+ContentEditModal.displayName = "ContentEditModal";
 
 // ヘルパー関数
 const formatFileSize = (bytes: number): string => {

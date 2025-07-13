@@ -176,6 +176,8 @@ export const LayoutFormModal = ({
                 checkForChanges(newData);
               }}
               error={errors.name}
+              aria-required="true"
+              aria-label="レイアウト名入力"
             />
 
             <Select
@@ -194,6 +196,8 @@ export const LayoutFormModal = ({
                 { value: "portrait-left", label: "縦向き左回転 (1080x1920)" },
               ]}
               error={errors.orientation}
+              aria-required="true"
+              aria-label="画面向きの選択"
             />
 
             {errors.regions && (
