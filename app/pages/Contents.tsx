@@ -3,6 +3,7 @@ import type { FileWithPath } from "@mantine/dropzone";
 import { modals } from "@mantine/modals";
 import {
   IconBrandYoutube,
+  IconEdit,
   IconExclamationCircle,
   IconEye,
   IconFile,
@@ -21,11 +22,13 @@ import { ContentFilters } from "~/components/content/ContentFilters";
 import { ContentGridView } from "~/components/content/ContentGridView";
 import { ContentHoverCard } from "~/components/content/ContentHoverCard";
 import { ContentAddModal } from "~/components/modals/ContentAddModal";
+import { ContentEditModal } from "~/components/modals/ContentEditModal";
 import { ContentPreviewModal } from "~/components/modals/ContentPreviewModal";
 import { useContent } from "~/hooks/useContent";
 import {
   contentActionsAtom,
   contentAddModalAtom,
+  contentEditModalAtom,
   contentModalActionsAtom,
   contentsErrorAtom,
   contentsLoadingAtom,
@@ -42,12 +45,21 @@ export default function ContentsPage() {
   const [contentsError] = useAtom(contentsErrorAtom);
   const [contentViewMode, setContentViewMode] = useAtom(contentViewModeAtom);
   const [contentAddModalOpened] = useAtom(contentAddModalAtom);
+  const [contentEditModal] = useAtom(contentEditModalAtom);
   const [, contentDispatch] = useAtom(contentActionsAtom);
   const [, contentModalDispatch] = useAtom(contentModalActionsAtom);
   const [contentPreviewModal] = useAtom(contentPreviewModalAtom);
   const [, modalDispatch] = useAtom(modalActionsAtom);
 
-  const { getContentsIndex, deleteContent, createFileContent, createUrlContent, createRichTextContent } = useContent();
+  const {
+    getContentsIndex,
+    deleteContent,
+    createFileContent,
+    createUrlContent,
+    createRichTextContent,
+    updateContent,
+    getContentById,
+  } = useContent();
 
   // コンテンツ一覧を読み込み
   useEffect(() => {
@@ -182,6 +194,61 @@ export default function ContentsPage() {
     contentModalDispatch({ type: "CLOSE_CONTENT_ADD" });
   };
 
+  const handleContentEditSubmit = async (data: {
+    id: string;
+    name: string;
+    tags: string[];
+    richTextInfo?: RichTextContent;
+    urlInfo?: { title?: string; description?: string };
+  }) => {
+    try {
+      // 更新データを構築
+      const updateData: Parameters<typeof updateContent>[1] = {
+        name: data.name,
+        tags: data.tags,
+        updatedAt: new Date().toISOString(),
+      };
+
+      // コンテンツタイプに応じて追加情報を設定
+      if (data.richTextInfo) {
+        updateData.richTextInfo = data.richTextInfo;
+      }
+      if (data.urlInfo) {
+        // 既存のurlInfo取得のためコンテンツを再取得
+        const existingContent = await getContentById(data.id);
+        if (existingContent?.urlInfo) {
+          updateData.urlInfo = {
+            ...existingContent.urlInfo,
+            ...data.urlInfo,
+          };
+        }
+      }
+
+      const updatedContent = await updateContent(data.id, updateData);
+
+      // インデックス形式に変換して状態を更新
+      const contentIndex = {
+        id: updatedContent.id,
+        name: updatedContent.name,
+        type: updatedContent.type,
+        size: updatedContent.fileInfo?.size,
+        url: updatedContent.urlInfo?.url,
+        tags: updatedContent.tags,
+        createdAt: updatedContent.createdAt,
+        updatedAt: updatedContent.updatedAt,
+      };
+
+      contentDispatch({ type: "UPDATE_CONTENT", id: data.id, content: contentIndex });
+    } catch (error) {
+      console.error("Content edit failed:", error);
+      contentDispatch({ type: "SET_ERROR", error: `コンテンツの編集に失敗しました: ${error}` });
+    }
+  };
+
+  const handleContentEditModalClose = () => {
+    contentModalDispatch({ type: "CLOSE_CONTENT_EDIT" });
+  };
+
   const getContentTypeIcon = (type: ContentType) => {
     switch (type) {
       case "video":
@@ -281,18 +348,19 @@ export default function ContentsPage() {
         <Table striped highlightOnHover>
           <Table.Thead>
             <Table.Tr>
+              <Table.Th style={{ width: "60px" }}>編集</Table.Th>
               <Table.Th style={{ width: "40px" }} />
               <Table.Th>種別</Table.Th>
               <Table.Th>名前</Table.Th>
               <Table.Th>サイズ/URL</Table.Th>
               <Table.Th>作成日時</Table.Th>
-              <Table.Th>操作</Table.Th>
+              <Table.Th style={{ width: "60px" }}>操作</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
             {contents.length === 0 && !contentsLoading ? (
               <Table.Tr>
-                <Table.Td colSpan={6} ta="center" c="dimmed">
+                <Table.Td colSpan={7} ta="center" c="dimmed">
                   コンテンツがありません
                 </Table.Td>
               </Table.Tr>
@@ -308,6 +376,20 @@ export default function ContentsPage() {
                     }}
                     onClick={() => handleContentClick(content.id, content.type)}
                   >
+                    <Table.Td>
+                      <ActionIcon
+                        variant="subtle"
+                        color="blue"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          contentModalDispatch({ type: "OPEN_CONTENT_EDIT", content });
+                        }}
+                        aria-label="編集"
+                      >
+                        <IconEdit size={16} />
+                      </ActionIcon>
+                    </Table.Td>
                     <Table.Td>
                       {isPreviewable && (
                         <ContentHoverCard content={content}>
@@ -379,9 +461,8 @@ export default function ContentsPage() {
           onContentClick={(content) => {
             handleContentClick(content.id, content.type);
           }}
-          onContentEdit={(_content) => {
-            // 編集機能は今後の実装予定
-            // 現在はログのみ出力
+          onContentEdit={(content) => {
+            contentModalDispatch({ type: "OPEN_CONTENT_EDIT", content });
           }}
           onContentDelete={(content) => {
             handleContentDelete(content.id);
@@ -436,6 +517,15 @@ export default function ContentsPage() {
           modalDispatch({ type: "OPEN_CONTENT_PREVIEW", contentId: newContentId });
         }}
       />
+
+      {contentEditModal.content && (
+        <ContentEditModal
+          opened={contentEditModal.opened}
+          onClose={handleContentEditModalClose}
+          content={contentEditModal.content}
+          onSubmit={handleContentEditSubmit}
+        />
+      )}
     </Box>
   );
 }

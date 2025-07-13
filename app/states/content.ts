@@ -88,6 +88,12 @@ export const urlContentModalAtom = atom<boolean>(false);
 // 統合コンテンツ追加モーダル状態
 export const contentAddModalAtom = atom<boolean>(false);
 
+// コンテンツ編集モーダル状態
+export const contentEditModalAtom = atom<{ opened: boolean; content: ContentIndex | null }>({
+  opened: false,
+  content: null,
+});
+
 // ビュー表示モード（テーブル or グリッド）
 export const contentViewModeAtom = atomWithStorage<"table" | "grid">("contentViewMode", "table");
 
@@ -97,6 +103,8 @@ export type ModalAction =
   | { type: "CLOSE_FILE_UPLOAD" }
   | { type: "OPEN_URL_CONTENT" }
   | { type: "CLOSE_URL_CONTENT" }
+  | { type: "OPEN_CONTENT_EDIT"; content: ContentIndex }
+  | { type: "CLOSE_CONTENT_EDIT" }
   | { type: "OPEN_CONTENT_ADD" }
   | { type: "CLOSE_CONTENT_ADD" };
 
@@ -120,6 +128,12 @@ export const contentModalActionsAtom = atom(null, (_get, set, action: ModalActio
       break;
     case "CLOSE_CONTENT_ADD":
       set(contentAddModalAtom, false);
+      break;
+    case "OPEN_CONTENT_EDIT":
+      set(contentEditModalAtom, { opened: true, content: action.content });
+      break;
+    case "CLOSE_CONTENT_EDIT":
+      set(contentEditModalAtom, { opened: false, content: null });
       break;
   }
 });
