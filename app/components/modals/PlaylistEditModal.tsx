@@ -83,19 +83,31 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
   // プレイリストデータが変更されたときにフォームを初期化
   useEffect(() => {
     if (playlist && opened) {
-      const initialData = {
-        name: playlist.name,
-        device: playlist.device,
-        contentAssignments: playlist.contentAssignments || [],
-      };
-      setFormData(initialData);
-      setOriginalData(initialData);
       setCurrentStep("basic");
       setSelectedRegionId(null);
       loadPlaylistLayout();
       loadContents();
     }
   }, [playlist, opened, loadPlaylistLayout, loadContents]);
+
+  // レイアウトが読み込まれたらcontentAssignmentsを初期化
+  useEffect(() => {
+    if (playlist && layout && opened) {
+      // レイアウトの全リージョンに対してcontentAssignmentsを作成
+      const mergedAssignments: ContentAssignment[] = layout.regions.map((region) => {
+        const existingAssignment = playlist.contentAssignments?.find((assignment) => assignment.regionId === region.id);
+        return existingAssignment || { regionId: region.id, contentIds: [] };
+      });
+
+      const initialData = {
+        name: playlist.name,
+        device: playlist.device,
+        contentAssignments: mergedAssignments,
+      };
+      setFormData(initialData);
+      setOriginalData(initialData);
+    }
+  }, [playlist, layout, opened]);
 
   // 変更があるかチェック
   const hasChanges = useCallback(() => {
@@ -117,6 +129,16 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
     const newErrors: Partial<Record<keyof PlaylistEditFormData, string>> = {};
 
     if (currentStep === "basic") {
+      if (formData.name.trim().length === 0) {
+        newErrors.name = "プレイリスト名は必須です";
+      }
+      if (formData.device.trim().length === 0) {
+        newErrors.device = "デバイス名は必須です";
+      }
+    }
+
+    // コンテンツステップでも基本情報のバリデーションを確認
+    if (currentStep === "content") {
       if (formData.name.trim().length === 0) {
         newErrors.name = "プレイリスト名は必須です";
       }
@@ -163,6 +185,13 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
       onClose();
     } catch (error) {
       console.error("プレイリスト更新エラー:", error);
+      // エラーメッセージを表示
+      modals.openConfirmModal({
+        title: "更新エラー",
+        children: <Text size="sm">プレイリストの更新中にエラーが発生しました。もう一度お試しください。</Text>,
+        labels: { confirm: "OK", cancel: "" },
+        cancelProps: { display: "none" },
+      });
     } finally {
       setLoading(false);
     }

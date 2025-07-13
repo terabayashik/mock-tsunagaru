@@ -126,11 +126,14 @@ export const usePlaylist = () => {
     async (id: string, updateData: Partial<Omit<PlaylistItem, "id" | "createdAt">>): Promise<PlaylistItem> => {
       return await lock.withLock(`playlist-${id}`, async () => {
         try {
-          // 既存データを取得
-          const existingPlaylist = await getPlaylistById(id);
-          if (!existingPlaylist) {
+          // 既存データを取得（ロックを再取得しないように直接読み込む）
+          const playlistData = await opfs.readJSON<PlaylistItem>(`playlists/playlist-${id}.json`);
+          if (!playlistData) {
             throw new Error("プレイリストが見つかりません");
           }
+
+          // Zodでバリデーション
+          const existingPlaylist = PlaylistItemSchema.parse(playlistData);
 
           const updatedPlaylist: PlaylistItem = {
             ...existingPlaylist,
@@ -144,8 +147,9 @@ export const usePlaylist = () => {
           // 個別ファイルを更新
           await opfs.writeJSON(`playlists/playlist-${id}.json`, validated);
 
-          // インデックスを更新
-          const currentIndex = await getPlaylistsIndex();
+          // インデックスを更新（同様にロックを再取得しないように修正）
+          const indexData = await opfs.readJSON<PlaylistIndex[]>("playlists/index.json");
+          const currentIndex = indexData ? PlaylistsIndexSchema.parse(indexData) : [];
 
           // コンテンツ総数を計算
           const contentCount = validated.contentAssignments.reduce((total, assignment) => {
@@ -174,7 +178,7 @@ export const usePlaylist = () => {
         }
       });
     },
-    [getPlaylistById, getPlaylistsIndex, lock.withLock, opfs.writeJSON],
+    [lock.withLock, opfs.readJSON, opfs.writeJSON],
   );
 
   /**
