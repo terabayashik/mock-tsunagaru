@@ -189,8 +189,9 @@ export const LayoutFormModal = ({
                 checkForChanges(newData);
               }}
               data={[
-                { value: "landscape", label: "横向き (ランドスケープ)" },
-                { value: "portrait", label: "縦向き (ポートレート)" },
+                { value: "landscape", label: "横向き (1920x1080)" },
+                { value: "portrait-right", label: "縦向き右回転 (1080x1920)" },
+                { value: "portrait-left", label: "縦向き左回転 (1080x1920)" },
               ]}
               error={errors.orientation}
             />

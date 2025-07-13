@@ -354,7 +354,13 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
                 required
                 data={layouts.map((layout) => ({
                   value: layout.id,
-                  label: `${layout.name} (${layout.orientation === "portrait" ? "縦" : "横"}, ${layout.regionCount}リージョン)`,
+                  label: `${layout.name} (${
+                    layout.orientation === "landscape"
+                      ? "横"
+                      : layout.orientation === "portrait-right"
+                        ? "縦(右)"
+                        : "縦(左)"
+                  }, ${layout.regionCount}リージョン)`,
                 }))}
                 value={formData.layoutId}
                 onChange={(value) => setFormData((prev) => ({ ...prev, layoutId: value || "" }))}
@@ -375,8 +381,12 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
                       作成済みレイアウト: {tempLayoutData.name}
                     </Text>
                     <Text size="xs" c="dimmed">
-                      {tempLayoutData.orientation === "portrait" ? "縦向き" : "横向き"} -{" "}
-                      {tempLayoutData.regions.length}リージョン
+                      {tempLayoutData.orientation === "landscape"
+                        ? "横向き"
+                        : tempLayoutData.orientation === "portrait-right"
+                          ? "縦向き(右)"
+                          : "縦向き(左)"}{" "}
+                      - {tempLayoutData.regions.length}リージョン
                     </Text>
                   </Paper>
                 ) : (

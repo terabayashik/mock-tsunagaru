@@ -56,7 +56,13 @@ export const InteractiveLayoutPreview = ({
   return (
     <Box>
       <Text size="sm" mb="xs" ta="center" c="dimmed">
-        {layout.name} ({layout.orientation === "portrait" ? "縦向き" : "横向き"} - {layout.regions.length}リージョン)
+        {layout.name} (
+        {layout.orientation === "landscape"
+          ? "横向き"
+          : layout.orientation === "portrait-right"
+            ? "縦向き(右)"
+            : "縦向き(左)"}{" "}
+        - {layout.regions.length}リージョン)
       </Text>
 
       <Paper

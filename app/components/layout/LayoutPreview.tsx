@@ -144,7 +144,16 @@ export const LayoutPreview = ({ layout, onClick, onEdit, onDelete }: LayoutPrevi
   };
 
   const getOrientationBadgeColor = () => {
-    return layout.orientation === "landscape" ? "#228be6" : "#40c057";
+    switch (layout.orientation) {
+      case "landscape":
+        return "#228be6"; // 青
+      case "portrait-right":
+        return "#fa8c16"; // オレンジ
+      case "portrait-left":
+        return "#722ed1"; // 紫
+      default:
+        return "#40c057";
+    }
   };
 
   return (
@@ -193,7 +202,11 @@ export const LayoutPreview = ({ layout, onClick, onEdit, onDelete }: LayoutPrevi
                 fontWeight: 500,
               }}
             >
-              {layout.orientation === "landscape" ? "横向き" : "縦向き"}
+              {layout.orientation === "landscape"
+                ? "横向き"
+                : layout.orientation === "portrait-right"
+                  ? "縦向き(右)"
+                  : "縦向き(左)"}
             </Text>
           </Group>
 

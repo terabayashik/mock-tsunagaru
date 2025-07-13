@@ -86,7 +86,7 @@ export default function LayoutPage() {
 
   const handleLayoutCreateSubmit = async (data: {
     name: string;
-    orientation: "portrait" | "landscape";
+    orientation: "landscape" | "portrait-right" | "portrait-left";
     regions: Region[];
   }) => {
     try {
@@ -120,7 +120,7 @@ export default function LayoutPage() {
 
   const handleLayoutEditSubmit = async (data: {
     name: string;
-    orientation: "portrait" | "landscape";
+    orientation: "landscape" | "portrait-right" | "portrait-left";
     regions: Region[];
   }) => {
     if (!layoutEditModal.layoutId) return;
@@ -238,8 +238,21 @@ export default function LayoutPage() {
                     <Text fw={500}>{layout.name}</Text>
                   </Table.Td>
                   <Table.Td>
-                    <Badge color={layout.orientation === "landscape" ? "blue" : "green"} variant="light">
-                      {layout.orientation === "landscape" ? "横向き" : "縦向き"}
+                    <Badge
+                      color={
+                        layout.orientation === "landscape"
+                          ? "blue"
+                          : layout.orientation === "portrait-right"
+                            ? "orange"
+                            : "violet"
+                      }
+                      variant="light"
+                    >
+                      {layout.orientation === "landscape"
+                        ? "横向き"
+                        : layout.orientation === "portrait-right"
+                          ? "縦向き(右)"
+                          : "縦向き(左)"}
                     </Badge>
                   </Table.Td>
                   <Table.Td>

@@ -127,14 +127,23 @@ export const LayoutHoverCard = ({ layout, children, disabled = false }: LayoutHo
             px="8px"
             py="4px"
             style={{
-              backgroundColor: layout.orientation === "landscape" ? "#228be6" : "#40c057",
+              backgroundColor:
+                layout.orientation === "landscape"
+                  ? "#228be6"
+                  : layout.orientation === "portrait-right"
+                    ? "#fa8c16"
+                    : "#722ed1",
               color: "white",
               borderRadius: "4px",
               fontSize: "11px",
               fontWeight: 600,
             }}
           >
-            {layout.orientation === "landscape" ? "横向き" : "縦向き"}
+            {layout.orientation === "landscape"
+              ? "横向き"
+              : layout.orientation === "portrait-right"
+                ? "縦向き(右)"
+                : "縦向き(左)"}
           </Box>
         </Box>
 

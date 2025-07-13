@@ -220,7 +220,13 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                   使用中のレイアウト
                 </Text>
                 <Text size="sm" c="dimmed">
-                  {layout.name} ({layout.orientation === "portrait" ? "縦向き" : "横向き"} - {layout.regions.length}
+                  {layout.name} (
+                  {layout.orientation === "landscape"
+                    ? "横向き"
+                    : layout.orientation === "portrait-right"
+                      ? "縦向き(右)"
+                      : "縦向き(左)"}{" "}
+                  - {layout.regions.length}
                   リージョン)
                 </Text>
                 <Text size="xs" c="dimmed" mt="xs">
