@@ -15,6 +15,7 @@ import {
 import { IconArrowLeft, IconArrowRight, IconDeviceFloppy, IconLayoutGrid, IconX } from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
 import { ContentSelectionGrid } from "~/components/content/ContentSelectionGrid";
+import { SelectedContentList } from "~/components/content/SelectedContentList";
 import { InteractiveLayoutPreview } from "~/components/layout/InteractiveLayoutPreview";
 import { useContent } from "~/hooks/useContent";
 import { useLayout } from "~/hooks/useLayout";
@@ -246,6 +247,10 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
     }));
   };
 
+  const handleContentReorder = (regionId: string, reorderedContentIds: string[]) => {
+    handleContentAssignmentChange(regionId, reorderedContentIds);
+  };
+
   const handleRegionSelect = (regionId: string) => {
     setSelectedRegionId(regionId);
   };
@@ -399,21 +404,21 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
                   </Text>
                 </Paper>
               ) : (
-                <Group align="flex-start" gap="xl" style={{ minHeight: "500px" }}>
+                <Group align="flex-start" gap="md" style={{ minHeight: "600px" }}>
                   {/* 左側: レイアウトプレビュー */}
-                  <Box style={{ flex: "0 0 450px" }}>
+                  <Box style={{ flex: "0 0 350px" }}>
                     <InteractiveLayoutPreview
                       layout={selectedLayout}
                       selectedRegionId={selectedRegionId}
                       onRegionClick={handleRegionSelect}
                       assignedContentCounts={getAssignedContentCounts()}
-                      canvasWidth={450}
-                      canvasHeight={253}
+                      canvasWidth={350}
+                      canvasHeight={197}
                     />
                   </Box>
 
-                  {/* 右側: コンテンツ選択 */}
-                  <Box style={{ flex: 1 }}>
+                  {/* 中央: コンテンツ選択 */}
+                  <Box style={{ flex: "1 1 auto" }}>
                     {selectedRegionId ? (
                       <>
                         <Text fw={600} mb="sm">
@@ -429,7 +434,7 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
                             }
                           }}
                           loading={false}
-                          maxItems={50}
+                          maxItems={20}
                         />
                       </>
                     ) : (
@@ -439,6 +444,30 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
                         </Text>
                         <Text size="sm" c="dimmed">
                           選択したリージョンにコンテンツを割り当てることができます
+                        </Text>
+                      </Paper>
+                    )}
+                  </Box>
+
+                  {/* 右側: 選択済みコンテンツ一覧 */}
+                  <Box style={{ flex: "0 0 300px" }}>
+                    {selectedRegionId ? (
+                      <SelectedContentList
+                        selectedContents={
+                          (getSelectedRegionAssignment()
+                            ?.contentIds.map((contentId) => contents.find((content) => content.id === contentId))
+                            .filter(Boolean) as ContentIndex[]) || []
+                        }
+                        onReorder={(reorderedContentIds) => {
+                          if (selectedRegionId) {
+                            handleContentReorder(selectedRegionId, reorderedContentIds);
+                          }
+                        }}
+                      />
+                    ) : (
+                      <Paper p="md" withBorder style={{ minHeight: "120px" }}>
+                        <Text size="sm" c="dimmed" ta="center">
+                          リージョンを選択すると、選択済みコンテンツが表示されます
                         </Text>
                       </Paper>
                     )}

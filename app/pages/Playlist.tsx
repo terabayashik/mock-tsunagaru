@@ -2,21 +2,25 @@ import { ActionIcon, Alert, Box, Button, Group, LoadingOverlay, Table, Text } fr
 import { modals } from "@mantine/modals";
 import { IconEdit, IconExclamationCircle, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useAtom } from "jotai";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { PlaylistFormData } from "~/components/modals/PlaylistCreateModal";
 import { PlaylistCreateModal } from "~/components/modals/PlaylistCreateModal";
+import type { PlaylistEditFormData } from "~/components/modals/PlaylistEditModal";
+import { PlaylistEditModal } from "~/components/modals/PlaylistEditModal";
 import { usePlaylist } from "~/hooks/usePlaylist";
-import { modalActionsAtom, playlistCreateModalAtom } from "~/states/modal";
+import { modalActionsAtom, playlistCreateModalAtom, playlistEditModalAtom } from "~/states/modal";
 import { playlistActionsAtom, playlistsAtom, playlistsErrorAtom, playlistsLoadingAtom } from "~/states/playlist";
+import type { PlaylistItem } from "~/types/playlist";
 
 export default function PlaylistPage() {
   const [playlists] = useAtom(playlistsAtom);
   const [loading] = useAtom(playlistsLoadingAtom);
   const [error] = useAtom(playlistsErrorAtom);
   const [createModalOpened] = useAtom(playlistCreateModalAtom);
+  const [editModalState] = useAtom(playlistEditModalAtom);
   const [, dispatch] = useAtom(playlistActionsAtom);
   const [, modalDispatch] = useAtom(modalActionsAtom);
-  const { getPlaylistsIndex, deletePlaylist, createPlaylist } = usePlaylist();
+  const { getPlaylistsIndex, deletePlaylist, createPlaylist, getPlaylistById, updatePlaylist } = usePlaylist();
 
   // プレイリスト一覧を読み込み
   useEffect(() => {
@@ -38,8 +42,7 @@ export default function PlaylistPage() {
   }, [getPlaylistsIndex, dispatch]);
 
   const handleEdit = (id: string) => {
-    console.log("Edit playlist:", id);
-    // TODO: 編集機能を実装
+    modalDispatch({ type: "OPEN_PLAYLIST_EDIT", playlistId: id });
   };
 
   const handleDelete = async (id: string) => {
@@ -95,9 +98,57 @@ export default function PlaylistPage() {
     }
   };
 
-  const handleModalClose = () => {
+  const handleCreateModalClose = () => {
     modalDispatch({ type: "CLOSE_PLAYLIST_CREATE" });
   };
+
+  const handleEditModalClose = () => {
+    modalDispatch({ type: "CLOSE_PLAYLIST_EDIT" });
+  };
+
+  const handleEditSubmit = async (data: PlaylistEditFormData) => {
+    if (!editModalState.playlistId) return;
+
+    try {
+      await updatePlaylist(editModalState.playlistId, {
+        name: data.name,
+        device: data.device,
+        contentAssignments: data.contentAssignments,
+      });
+
+      // プレイリスト一覧を再読み込み
+      const updatedPlaylists = await getPlaylistsIndex();
+      dispatch({ type: "SET_PLAYLISTS", playlists: updatedPlaylists });
+    } catch (error) {
+      dispatch({
+        type: "SET_ERROR",
+        error: error instanceof Error ? error.message : "プレイリストの更新に失敗しました",
+      });
+      throw error;
+    }
+  };
+
+  const [currentPlaylist, setCurrentPlaylist] = useState<PlaylistItem | null>(null);
+
+  // 編集モーダルが開かれた時にプレイリストデータを取得
+  useEffect(() => {
+    const loadCurrentPlaylist = async () => {
+      if (editModalState.opened && editModalState.playlistId) {
+        try {
+          const playlist = await getPlaylistById(editModalState.playlistId);
+          setCurrentPlaylist(playlist);
+        } catch (error) {
+          dispatch({
+            type: "SET_ERROR",
+            error: error instanceof Error ? error.message : "プレイリストの読み込みに失敗しました",
+          });
+          modalDispatch({ type: "CLOSE_PLAYLIST_EDIT" });
+        }
+      }
+    };
+
+    loadCurrentPlaylist();
+  }, [editModalState.opened, editModalState.playlistId, getPlaylistById, dispatch, modalDispatch]);
 
   return (
     <Box pos="relative">
@@ -176,7 +227,13 @@ export default function PlaylistPage() {
         </Table.Tbody>
       </Table>
 
-      <PlaylistCreateModal opened={createModalOpened} onClose={handleModalClose} onSubmit={handleCreateSubmit} />
+      <PlaylistCreateModal opened={createModalOpened} onClose={handleCreateModalClose} onSubmit={handleCreateSubmit} />
+      <PlaylistEditModal
+        opened={editModalState.opened}
+        onClose={handleEditModalClose}
+        onSubmit={handleEditSubmit}
+        playlist={currentPlaylist}
+      />
     </Box>
   );
 }

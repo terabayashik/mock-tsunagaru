@@ -284,10 +284,9 @@ export class OPFSManager {
   }
 
   /**
-   * OPFSの使用状況を取得
+   * OPFSの使用状況を取得（再帰的にサブディレクトリも含む）
    */
   async getStorageInfo(): Promise<{
-    totalEntries: number;
     directories: string[];
     files: string[];
     estimatedSize?: number;
@@ -297,14 +296,8 @@ export class OPFSManager {
       const directories: string[] = [];
       const files: string[] = [];
 
-      // @ts-ignore - AsyncIterator type issue
-      for await (const [name, handle] of root.entries()) {
-        if (handle.kind === "directory") {
-          directories.push(name);
-        } else {
-          files.push(name);
-        }
-      }
+      // 再帰的にすべてのファイルとディレクトリを収集
+      await this.collectEntriesRecursively(root, "", directories, files);
 
       let estimatedSize: number | undefined;
       try {
@@ -318,7 +311,6 @@ export class OPFSManager {
       }
 
       return {
-        totalEntries: directories.length + files.length,
         directories,
         files,
         estimatedSize,
@@ -326,6 +318,29 @@ export class OPFSManager {
     } catch (error) {
       console.error("[OPFS] Failed to get storage info:", error);
       throw new OPFSError("Failed to get OPFS storage info", error);
+    }
+  }
+
+  /**
+   * 再帰的にディレクトリを探索してファイルとディレクトリを収集
+   */
+  private async collectEntriesRecursively(
+    directoryHandle: FileSystemDirectoryHandle,
+    currentPath: string,
+    directories: string[],
+    files: string[],
+  ): Promise<void> {
+    // @ts-ignore - AsyncIterator type issue
+    for await (const [name, handle] of directoryHandle.entries()) {
+      const fullPath = currentPath ? `${currentPath}/${name}` : name;
+
+      if (handle.kind === "directory") {
+        directories.push(fullPath);
+        // 再帰的にサブディレクトリを探索
+        await this.collectEntriesRecursively(handle, fullPath, directories, files);
+      } else {
+        files.push(fullPath);
+      }
     }
   }
 }

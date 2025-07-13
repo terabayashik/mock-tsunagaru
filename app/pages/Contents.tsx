@@ -4,6 +4,7 @@ import { modals } from "@mantine/modals";
 import {
   IconBrandYoutube,
   IconExclamationCircle,
+  IconEye,
   IconFile,
   IconFileText,
   IconLayoutGrid,
@@ -18,6 +19,7 @@ import { useAtom } from "jotai";
 import { useEffect } from "react";
 import { ContentFilters } from "~/components/content/ContentFilters";
 import { ContentGridView } from "~/components/content/ContentGridView";
+import { ContentHoverCard } from "~/components/content/ContentHoverCard";
 import { ContentAddModal } from "~/components/modals/ContentAddModal";
 import { ContentPreviewModal } from "~/components/modals/ContentPreviewModal";
 import { useContent } from "~/hooks/useContent";
@@ -251,6 +253,7 @@ export default function ContentsPage() {
         <Table striped highlightOnHover>
           <Table.Thead>
             <Table.Tr>
+              <Table.Th style={{ width: "40px" }} />
               <Table.Th>種別</Table.Th>
               <Table.Th>名前</Table.Th>
               <Table.Th>サイズ/URL</Table.Th>
@@ -261,67 +264,83 @@ export default function ContentsPage() {
           <Table.Tbody>
             {contents.length === 0 && !contentsLoading ? (
               <Table.Tr>
-                <Table.Td colSpan={5} ta="center" c="dimmed">
+                <Table.Td colSpan={6} ta="center" c="dimmed">
                   コンテンツがありません
                 </Table.Td>
               </Table.Tr>
             ) : (
-              contents.map((content) => (
-                <Table.Tr
-                  key={content.id}
-                  style={{
-                    cursor:
-                      content.type === "video" || content.type === "image" || content.type === "youtube"
-                        ? "pointer"
-                        : "default",
-                  }}
-                  onClick={() => handleContentClick(content.id, content.type)}
-                >
-                  <Table.Td>{getContentTypeBadge(content.type)}</Table.Td>
-                  <Table.Td>
-                    <Text fw={500}>{content.name}</Text>
-                    {content.tags.length > 0 && (
-                      <Group gap={4} mt={2}>
-                        {content.tags.map((tag) => (
-                          <Badge key={tag} size="xs" variant="outline">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </Group>
-                    )}
-                  </Table.Td>
-                  <Table.Td>
-                    {content.size ? (
-                      <Text size="sm">{formatFileSize(content.size)}</Text>
-                    ) : content.url ? (
-                      <Text size="sm" maw={200} truncate>
-                        {content.url}
-                      </Text>
-                    ) : (
-                      <Text size="sm" c="dimmed">
-                        -
-                      </Text>
-                    )}
-                  </Table.Td>
-                  <Table.Td>
-                    <Text size="sm">{new Date(content.createdAt).toLocaleString("ja-JP")}</Text>
-                  </Table.Td>
-                  <Table.Td>
-                    <ActionIcon
-                      variant="subtle"
-                      color="red"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleContentDelete(content.id);
-                      }}
-                      aria-label="削除"
-                    >
-                      <IconTrash size={16} />
-                    </ActionIcon>
-                  </Table.Td>
-                </Table.Tr>
-              ))
+              contents.map((content) => {
+                const isPreviewable =
+                  content.type === "video" || content.type === "image" || content.type === "youtube";
+                return (
+                  <Table.Tr
+                    key={content.id}
+                    style={{
+                      cursor: isPreviewable ? "pointer" : "default",
+                    }}
+                    onClick={() => handleContentClick(content.id, content.type)}
+                  >
+                    <Table.Td>
+                      {isPreviewable && (
+                        <ContentHoverCard content={content}>
+                          <ActionIcon
+                            variant="subtle"
+                            color="gray"
+                            size="sm"
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label="プレビュー"
+                          >
+                            <IconEye size={16} />
+                          </ActionIcon>
+                        </ContentHoverCard>
+                      )}
+                    </Table.Td>
+                    <Table.Td>{getContentTypeBadge(content.type)}</Table.Td>
+                    <Table.Td>
+                      <Text fw={500}>{content.name}</Text>
+                      {content.tags.length > 0 && (
+                        <Group gap={4} mt={2}>
+                          {content.tags.map((tag) => (
+                            <Badge key={tag} size="xs" variant="outline">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </Group>
+                      )}
+                    </Table.Td>
+                    <Table.Td>
+                      {content.size ? (
+                        <Text size="sm">{formatFileSize(content.size)}</Text>
+                      ) : content.url ? (
+                        <Text size="sm" maw={200} truncate>
+                          {content.url}
+                        </Text>
+                      ) : (
+                        <Text size="sm" c="dimmed">
+                          -
+                        </Text>
+                      )}
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="sm">{new Date(content.createdAt).toLocaleString("ja-JP")}</Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <ActionIcon
+                        variant="subtle"
+                        color="red"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleContentDelete(content.id);
+                        }}
+                        aria-label="削除"
+                      >
+                        <IconTrash size={16} />
+                      </ActionIcon>
+                    </Table.Td>
+                  </Table.Tr>
+                );
+              })
             )}
           </Table.Tbody>
         </Table>

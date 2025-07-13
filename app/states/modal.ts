@@ -6,6 +6,14 @@ import { atom } from "jotai";
 export const playlistCreateModalAtom = atom<boolean>(false);
 
 /**
+ * プレイリスト編集モーダルの状態
+ */
+export const playlistEditModalAtom = atom<{ opened: boolean; playlistId: string | null }>({
+  opened: false,
+  playlistId: null,
+});
+
+/**
  * レイアウト作成モーダルの開閉状態
  */
 export const layoutCreateModalAtom = atom<boolean>(false);
@@ -37,6 +45,8 @@ export const modalActionsAtom = atom(
     action:
       | { type: "OPEN_PLAYLIST_CREATE" }
       | { type: "CLOSE_PLAYLIST_CREATE" }
+      | { type: "OPEN_PLAYLIST_EDIT"; playlistId: string }
+      | { type: "CLOSE_PLAYLIST_EDIT" }
       | { type: "OPEN_LAYOUT_CREATE" }
       | { type: "CLOSE_LAYOUT_CREATE" }
       | { type: "OPEN_LAYOUT_EDIT"; layoutId: string }
@@ -50,6 +60,12 @@ export const modalActionsAtom = atom(
         break;
       case "CLOSE_PLAYLIST_CREATE":
         set(playlistCreateModalAtom, false);
+        break;
+      case "OPEN_PLAYLIST_EDIT":
+        set(playlistEditModalAtom, { opened: true, playlistId: action.playlistId });
+        break;
+      case "CLOSE_PLAYLIST_EDIT":
+        set(playlistEditModalAtom, { opened: false, playlistId: null });
         break;
       case "OPEN_LAYOUT_CREATE":
         set(layoutCreateModalAtom, true);

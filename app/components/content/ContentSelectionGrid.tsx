@@ -57,8 +57,10 @@ export const ContentSelectionGrid = ({
       let newSelection: string[];
 
       if (isSelected) {
+        // 選択解除: 配列から削除
         newSelection = selectedContentIds.filter((id) => id !== contentId);
       } else {
+        // 選択: 配列の末尾に追加（順序を保持）
         newSelection = [...selectedContentIds, contentId];
       }
 
@@ -93,28 +95,43 @@ export const ContentSelectionGrid = ({
       <SimpleGrid cols={gridConfig.cols} spacing={gridConfig.spacing} verticalSpacing={gridConfig.spacing}>
         {visibleContents.map((content) => {
           const isSelected = selectedContentIds.includes(content.id);
+          const selectionOrder = isSelected ? selectedContentIds.indexOf(content.id) + 1 : null;
 
           return (
             <Box key={content.id} pos="relative">
-              {/* チェックボックスオーバーレイ */}
+              {/* 順序番号またはチェックボックスオーバーレイ */}
               <Box
                 pos="absolute"
                 top="8px"
                 right="8px"
                 style={{
                   zIndex: 10,
-                  backgroundColor: "rgba(255, 255, 255, 0.9)",
+                  backgroundColor: isSelected ? "#4a90e2" : "rgba(255, 255, 255, 0.9)",
                   borderRadius: "50%",
                   padding: "4px",
                   boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                  minWidth: "24px",
+                  minHeight: "24px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
                 }}
+                onClick={() => handleContentToggle(content.id)}
               >
-                <Checkbox
-                  checked={isSelected}
-                  onChange={() => handleContentToggle(content.id)}
-                  size="sm"
-                  color="blue"
-                />
+                {isSelected ? (
+                  <Text size="xs" c="white" fw={600}>
+                    {selectionOrder}
+                  </Text>
+                ) : (
+                  <Checkbox
+                    checked={false}
+                    onChange={() => handleContentToggle(content.id)}
+                    size="sm"
+                    color="blue"
+                    style={{ pointerEvents: "none" }}
+                  />
+                )}
               </Box>
 
               {/* 選択状態のオーバーレイ */}

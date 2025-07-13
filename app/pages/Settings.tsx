@@ -13,7 +13,6 @@ export const meta = (_args: Route.MetaArgs) => {
 };
 
 interface StorageInfo {
-  totalEntries: number;
   directories: string[];
   files: string[];
   estimatedSize?: number;
@@ -78,7 +77,7 @@ const Settings = () => {
             <List.Item>アプリケーションの設定</List.Item>
           </List>
           <Text size="sm" c="dimmed">
-            現在の使用量: {formatBytes(storageInfo?.estimatedSize)} ({storageInfo?.totalEntries || 0} ファイル)
+            現在の使用量: {formatBytes(storageInfo?.estimatedSize)} ({storageInfo?.files.length || 0} ファイル)
           </Text>
         </Stack>
       ),
@@ -209,12 +208,6 @@ const Settings = () => {
                       使用容量:
                     </Text>
                     <Text size="sm">{formatBytes(storageInfo.estimatedSize)}</Text>
-                  </Group>
-                  <Group justify="space-between">
-                    <Text size="sm" fw={500}>
-                      総ファイル数:
-                    </Text>
-                    <Text size="sm">{storageInfo.totalEntries}</Text>
                   </Group>
                   <Group justify="space-between">
                     <Text size="sm" fw={500}>

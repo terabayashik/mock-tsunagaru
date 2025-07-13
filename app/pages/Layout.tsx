@@ -1,9 +1,18 @@
 import { ActionIcon, Alert, Badge, Box, Button, Group, LoadingOverlay, Table, Text } from "@mantine/core";
 import { modals } from "@mantine/modals";
-import { IconEdit, IconExclamationCircle, IconLayoutGrid, IconList, IconPlus, IconTrash } from "@tabler/icons-react";
+import {
+  IconEdit,
+  IconExclamationCircle,
+  IconEye,
+  IconLayoutGrid,
+  IconList,
+  IconPlus,
+  IconTrash,
+} from "@tabler/icons-react";
 import { useAtom } from "jotai";
 import { useEffect } from "react";
 import { LayoutGridView } from "~/components/layout/LayoutGridView";
+import { LayoutHoverCard } from "~/components/layout/LayoutHoverCard";
 import { LayoutCreateModal } from "~/components/modals/LayoutCreateModal";
 import { LayoutEditModal } from "~/components/modals/LayoutEditModal";
 import { useLayout } from "~/hooks/useLayout";
@@ -188,6 +197,7 @@ export default function LayoutPage() {
         <Table striped highlightOnHover>
           <Table.Thead>
             <Table.Tr>
+              <Table.Th style={{ width: "40px" }} />
               <Table.Th>操作</Table.Th>
               <Table.Th>名前</Table.Th>
               <Table.Th>向き</Table.Th>
@@ -199,13 +209,20 @@ export default function LayoutPage() {
           <Table.Tbody>
             {layouts.length === 0 && !layoutsLoading ? (
               <Table.Tr>
-                <Table.Td colSpan={6} ta="center" c="dimmed">
+                <Table.Td colSpan={7} ta="center" c="dimmed">
                   レイアウトがありません
                 </Table.Td>
               </Table.Tr>
             ) : (
               layouts.map((layout) => (
                 <Table.Tr key={layout.id}>
+                  <Table.Td>
+                    <LayoutHoverCard layout={layout}>
+                      <ActionIcon variant="subtle" color="gray" size="sm" aria-label="プレビュー">
+                        <IconEye size={16} />
+                      </ActionIcon>
+                    </LayoutHoverCard>
+                  </Table.Td>
                   <Table.Td>
                     <ActionIcon
                       variant="subtle"
