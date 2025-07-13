@@ -7,6 +7,8 @@ import { ContentPreview } from "./ContentPreview";
 interface ContentGridViewProps {
   contents: ContentIndex[];
   onContentClick?: (content: ContentIndex) => void;
+  onContentEdit?: (content: ContentIndex) => void;
+  onContentDelete?: (content: ContentIndex) => void;
   loading?: boolean;
 }
 
@@ -15,7 +17,39 @@ interface GridConfig {
   spacing: string;
 }
 
-export const ContentGridView = ({ contents, onContentClick, loading = false }: ContentGridViewProps) => {
+// Responsive breakpoints and configurations
+const BREAKPOINTS = {
+  XL: 1200,
+  LG: 992,
+  MD: 768,
+  SM: 576,
+} as const;
+
+const GRID_CONFIGS = {
+  XL: { cols: 6, spacing: "md" },
+  LG: { cols: 5, spacing: "md" },
+  MD: { cols: 4, spacing: "sm" },
+  SM: { cols: 3, spacing: "sm" },
+  XS: { cols: 2, spacing: "xs" },
+} as const;
+
+// Virtual scrolling constants
+const INITIAL_LOAD = 24;
+const LOAD_MORE_COUNT = 12;
+const OBSERVER_ROOT_MARGIN = "100px";
+const OBSERVER_THRESHOLD = 0.1;
+
+// Layout constants
+const EMPTY_STATE_MIN_HEIGHT = "300px";
+const LOADER_TRIGGER_HEIGHT = "20px";
+
+export const ContentGridView = ({
+  contents,
+  onContentClick,
+  onContentEdit,
+  onContentDelete,
+  loading = false,
+}: ContentGridViewProps) => {
   const { width } = useViewportSize();
   const [visibleContents, setVisibleContents] = useState<ContentIndex[]>([]);
   const [hasMore, setHasMore] = useState(true);
@@ -24,26 +58,24 @@ export const ContentGridView = ({ contents, onContentClick, loading = false }: C
 
   // レスポンシブグリッド設定
   const getGridConfig = (viewportWidth: number): GridConfig => {
-    if (viewportWidth >= 1200) {
-      return { cols: 6, spacing: "md" };
+    if (viewportWidth >= BREAKPOINTS.XL) {
+      return GRID_CONFIGS.XL;
     }
-    if (viewportWidth >= 992) {
-      return { cols: 5, spacing: "md" };
+    if (viewportWidth >= BREAKPOINTS.LG) {
+      return GRID_CONFIGS.LG;
     }
-    if (viewportWidth >= 768) {
-      return { cols: 4, spacing: "sm" };
+    if (viewportWidth >= BREAKPOINTS.MD) {
+      return GRID_CONFIGS.MD;
     }
-    if (viewportWidth >= 576) {
-      return { cols: 3, spacing: "sm" };
+    if (viewportWidth >= BREAKPOINTS.SM) {
+      return GRID_CONFIGS.SM;
     }
-    return { cols: 2, spacing: "xs" };
+    return GRID_CONFIGS.XS;
   };
 
   const gridConfig = getGridConfig(width);
 
-  // 仮想スクロール用の初期読み込み数
-  const INITIAL_LOAD = 24;
-  const LOAD_MORE_COUNT = 12;
+  // Virtual scrolling uses constants defined above
 
   useEffect(() => {
     // コンテンツが変更されたら初期化
@@ -77,8 +109,8 @@ export const ContentGridView = ({ contents, onContentClick, loading = false }: C
         }
       },
       {
-        rootMargin: "100px", // 100px手前で読み込み開始
-        threshold: 0.1,
+        rootMargin: OBSERVER_ROOT_MARGIN,
+        threshold: OBSERVER_THRESHOLD,
       },
     );
 
@@ -108,7 +140,7 @@ export const ContentGridView = ({ contents, onContentClick, loading = false }: C
 
   if (contents.length === 0 && !loading) {
     return (
-      <Flex align="center" justify="center" mih="300px" ta="center">
+      <Flex align="center" justify="center" mih={EMPTY_STATE_MIN_HEIGHT} ta="center">
         <div>
           <Text size="lg" c="dimmed" mb="sm">
             コンテンツがありません
@@ -125,13 +157,19 @@ export const ContentGridView = ({ contents, onContentClick, loading = false }: C
     <Box>
       <SimpleGrid cols={gridConfig.cols} spacing={gridConfig.spacing} verticalSpacing={gridConfig.spacing}>
         {visibleContents.map((content) => (
-          <ContentPreview key={content.id} content={content} onClick={() => handleContentClick(content)} />
+          <ContentPreview
+            key={content.id}
+            content={content}
+            onClick={() => handleContentClick(content)}
+            onEdit={onContentEdit ? () => onContentEdit(content) : undefined}
+            onDelete={onContentDelete ? () => onContentDelete(content) : undefined}
+          />
         ))}
       </SimpleGrid>
 
       {/* 無限スクロール用のトリガー要素 */}
       {hasMore && (
-        <Box ref={loadMoreRef} h="20px" mt="20px">
+        <Box ref={loadMoreRef} h={LOADER_TRIGGER_HEIGHT} mt="20px">
           <Text ta="center" size="sm" c="dimmed">
             {loading ? "読み込み中..." : ""}
           </Text>

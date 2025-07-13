@@ -1,16 +1,23 @@
-import { Box, Flex, Group, Image, Paper, Text, Tooltip } from "@mantine/core";
+import { ActionIcon, Box, Flex, Group, Image, Paper, Text, Tooltip } from "@mantine/core";
 import {
   IconBrandYoutube,
+  IconEdit,
   IconFile,
   IconFileText,
   IconLink,
   IconPhoto,
   IconPlayerPlay,
+  IconTrash,
   IconVideo,
 } from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
 import { useContent } from "~/hooks/useContent";
 import type { ContentIndex, ContentType } from "~/types/content";
+
+// Constants
+const PREVIEW_ASPECT_RATIO = 16 / 9;
+const INFO_SECTION_HEIGHT = 60;
+const BASE_WIDTH = 200;
 
 const extractYouTubeVideoId = (url: string): string | null => {
   const regex = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/;
@@ -18,9 +25,20 @@ const extractYouTubeVideoId = (url: string): string | null => {
   return match ? match[1] : null;
 };
 
+const formatFileSize = (bytes?: number): string => {
+  if (!bytes) return "";
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${Number.parseFloat((bytes / k ** i).toFixed(1))} ${sizes[i]}`;
+};
+
 interface ContentPreviewProps {
   content: ContentIndex;
   onClick?: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
   aspectRatio?: number; // 幅対高さの比率 (デフォルト: 3:2)
 }
 
@@ -35,16 +53,19 @@ interface PreviewState {
   };
 }
 
-export const ContentPreview = ({ content, onClick, aspectRatio = 16 / 9 }: ContentPreviewProps) => {
+export const ContentPreview = ({
+  content,
+  onClick,
+  onEdit,
+  onDelete,
+  aspectRatio = PREVIEW_ASPECT_RATIO,
+}: ContentPreviewProps) => {
   const [previewState, setPreviewState] = useState<PreviewState>({ loading: false });
   const { getThumbnailUrl } = useContent();
 
-  // プレビュー画像は16:9のアスペクト比に固定
-  const previewImageAspectRatio = 16 / 9;
-  const infoSectionHeight = 60; // px
-  // 高さを固定計算: 幅200pxベースでの16:9比率 + 情報セクション
-  const totalHeight = Math.round(200 / previewImageAspectRatio) + infoSectionHeight;
-  const imageHeight = totalHeight - infoSectionHeight;
+  // Calculate heights based on constants
+  const totalHeight = Math.round(BASE_WIDTH / PREVIEW_ASPECT_RATIO) + INFO_SECTION_HEIGHT;
+  const imageHeight = totalHeight - INFO_SECTION_HEIGHT;
 
   const generateFilePreview = useCallback(async () => {
     try {
@@ -221,14 +242,90 @@ export const ContentPreview = ({ content, onClick, aspectRatio = 16 / 9 }: Conte
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
-  const formatFileSize = (bytes?: number): string => {
-    if (!bytes) return "";
-    if (bytes === 0) return "0 B";
-    const k = 1024;
-    const sizes = ["B", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${Number.parseFloat((bytes / k ** i).toFixed(1))} ${sizes[i]}`;
-  };
+  // Shared component for content info section
+  const ContentInfo = () => (
+    <Box p="xs" style={{ height: `${INFO_SECTION_HEIGHT}px`, overflow: "hidden" }}>
+      <Tooltip label={content.name} disabled={content.name.length <= 20}>
+        <Text size="sm" fw={500} lineClamp={1}>
+          {content.name}
+        </Text>
+      </Tooltip>
+
+      <Group justify="space-between" align="center" mt={4}>
+        <Group gap="xs">
+          <Text size="xs" c="dimmed">
+            {new Date(content.createdAt).toLocaleDateString("ja-JP")}
+          </Text>
+          {content.size && (
+            <Text size="xs" c="dimmed">
+              {formatFileSize(content.size)}
+            </Text>
+          )}
+          {content.url && !content.size && (
+            <Text size="xs" c="dimmed" lineClamp={1} maw="80px">
+              {new URL(content.url).hostname}
+            </Text>
+          )}
+        </Group>
+
+        <Group gap="xs">
+          {onEdit && (
+            <ActionIcon
+              size="xs"
+              variant="subtle"
+              color="blue"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              aria-label="編集"
+            >
+              <IconEdit size={12} />
+            </ActionIcon>
+          )}
+          {onDelete && (
+            <ActionIcon
+              size="xs"
+              variant="subtle"
+              color="red"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              aria-label="削除"
+            >
+              <IconTrash size={12} />
+            </ActionIcon>
+          )}
+        </Group>
+      </Group>
+
+      {/* タグ表示 */}
+      {content.tags.length > 0 && (
+        <Group gap={4} mt={2}>
+          {content.tags.slice(0, 2).map((tag) => (
+            <Text
+              key={tag}
+              size="xs"
+              style={{
+                backgroundColor: "var(--mantine-color-gray-1)",
+                padding: "1px 4px",
+                borderRadius: "2px",
+                color: "var(--mantine-color-gray-7)",
+              }}
+            >
+              {tag}
+            </Text>
+          ))}
+          {content.tags.length > 2 && (
+            <Text size="xs" c="dimmed">
+              +{content.tags.length - 2}
+            </Text>
+          )}
+        </Group>
+      )}
+    </Box>
+  );
 
   if (previewState.loading) {
     return (
@@ -276,55 +373,7 @@ export const ContentPreview = ({ content, onClick, aspectRatio = 16 / 9 }: Conte
           </Flex>
         </Box>
 
-        {/* コンテンツ情報 */}
-        <Box p="xs" style={{ height: `${infoSectionHeight}px`, overflow: "hidden" }}>
-          <Tooltip label={content.name} disabled={content.name.length <= 20}>
-            <Text size="sm" fw={500} lineClamp={1}>
-              {content.name}
-            </Text>
-          </Tooltip>
-
-          <Group justify="space-between" mt={4}>
-            {content.size && (
-              <Text size="xs" c="dimmed">
-                {formatFileSize(content.size)}
-              </Text>
-            )}
-            {content.url && !content.size && (
-              <Text size="xs" c="dimmed" lineClamp={1} maw="120px">
-                {new URL(content.url).hostname}
-              </Text>
-            )}
-            <Text size="xs" c="dimmed">
-              {new Date(content.createdAt).toLocaleDateString("ja-JP")}
-            </Text>
-          </Group>
-
-          {/* タグ表示 */}
-          {content.tags.length > 0 && (
-            <Group gap={4} mt={4}>
-              {content.tags.slice(0, 2).map((tag) => (
-                <Text
-                  key={tag}
-                  size="xs"
-                  style={{
-                    backgroundColor: "var(--mantine-color-gray-1)",
-                    padding: "1px 4px",
-                    borderRadius: "2px",
-                    color: "var(--mantine-color-gray-7)",
-                  }}
-                >
-                  {tag}
-                </Text>
-              ))}
-              {content.tags.length > 2 && (
-                <Text size="xs" c="dimmed">
-                  +{content.tags.length - 2}
-                </Text>
-              )}
-            </Group>
-          )}
-        </Box>
+        <ContentInfo />
       </Paper>
     );
   }
@@ -377,55 +426,7 @@ export const ContentPreview = ({ content, onClick, aspectRatio = 16 / 9 }: Conte
           </Flex>
         </Box>
 
-        {/* コンテンツ情報 */}
-        <Box p="xs" style={{ height: `${infoSectionHeight}px`, overflow: "hidden" }}>
-          <Tooltip label={content.name} disabled={content.name.length <= 20}>
-            <Text size="sm" fw={500} lineClamp={1}>
-              {content.name}
-            </Text>
-          </Tooltip>
-
-          <Group justify="space-between" mt={4}>
-            {content.size && (
-              <Text size="xs" c="dimmed">
-                {formatFileSize(content.size)}
-              </Text>
-            )}
-            {content.url && !content.size && (
-              <Text size="xs" c="dimmed" lineClamp={1} maw="120px">
-                {new URL(content.url).hostname}
-              </Text>
-            )}
-            <Text size="xs" c="dimmed">
-              {new Date(content.createdAt).toLocaleDateString("ja-JP")}
-            </Text>
-          </Group>
-
-          {/* タグ表示 */}
-          {content.tags.length > 0 && (
-            <Group gap={4} mt={4}>
-              {content.tags.slice(0, 2).map((tag) => (
-                <Text
-                  key={tag}
-                  size="xs"
-                  style={{
-                    backgroundColor: "var(--mantine-color-gray-1)",
-                    padding: "1px 4px",
-                    borderRadius: "2px",
-                    color: "var(--mantine-color-gray-7)",
-                  }}
-                >
-                  {tag}
-                </Text>
-              ))}
-              {content.tags.length > 2 && (
-                <Text size="xs" c="dimmed">
-                  +{content.tags.length - 2}
-                </Text>
-              )}
-            </Group>
-          )}
-        </Box>
+        <ContentInfo />
       </Paper>
     );
   }
@@ -438,6 +439,13 @@ export const ContentPreview = ({ content, onClick, aspectRatio = 16 / 9 }: Conte
       style={{
         cursor: onClick ? "pointer" : "default",
         aspectRatio: aspectRatio.toString(),
+      }}
+      styles={{
+        root: {
+          "&:hover .content-actions": {
+            opacity: 1,
+          },
+        },
       }}
       onClick={onClick}
     >
@@ -513,55 +521,7 @@ export const ContentPreview = ({ content, onClick, aspectRatio = 16 / 9 }: Conte
         </Flex>
       </Box>
 
-      {/* コンテンツ情報 */}
-      <Box p="xs" style={{ height: infoSectionHeight, overflow: "hidden" }}>
-        <Tooltip label={content.name} disabled={content.name.length <= 20}>
-          <Text size="sm" fw={500} lineClamp={1}>
-            {content.name}
-          </Text>
-        </Tooltip>
-
-        <Group justify="space-between" mt={4}>
-          {content.size && (
-            <Text size="xs" c="dimmed">
-              {formatFileSize(content.size)}
-            </Text>
-          )}
-          {content.url && !content.size && (
-            <Text size="xs" c="dimmed" lineClamp={1} maw="120px">
-              {new URL(content.url).hostname}
-            </Text>
-          )}
-          <Text size="xs" c="dimmed">
-            {new Date(content.createdAt).toLocaleDateString("ja-JP")}
-          </Text>
-        </Group>
-
-        {/* タグ表示 */}
-        {content.tags.length > 0 && (
-          <Group gap={4} mt={4}>
-            {content.tags.slice(0, 2).map((tag) => (
-              <Text
-                key={tag}
-                size="xs"
-                style={{
-                  backgroundColor: "var(--mantine-color-gray-1)",
-                  padding: "1px 4px",
-                  borderRadius: "2px",
-                  color: "var(--mantine-color-gray-7)",
-                }}
-              >
-                {tag}
-              </Text>
-            ))}
-            {content.tags.length > 2 && (
-              <Text size="xs" c="dimmed">
-                +{content.tags.length - 2}
-              </Text>
-            )}
-          </Group>
-        )}
-      </Box>
+      <ContentInfo />
     </Paper>
   );
 };

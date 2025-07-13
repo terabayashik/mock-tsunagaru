@@ -379,6 +379,13 @@ export default function ContentsPage() {
           onContentClick={(content) => {
             handleContentClick(content.id, content.type);
           }}
+          onContentEdit={(_content) => {
+            // 編集機能は今後の実装予定
+            // 現在はログのみ出力
+          }}
+          onContentDelete={(content) => {
+            handleContentDelete(content.id);
+          }}
         />
       )}
 

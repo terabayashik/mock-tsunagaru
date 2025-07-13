@@ -2,6 +2,7 @@
  * WebCodecs APIを使用した動画サムネイル生成ユーティリティ
  * Canvas APIフォールバック機能付き
  */
+import { logger } from "~/utils/logger";
 
 export interface ThumbnailOptions {
   width?: number;
@@ -47,13 +48,13 @@ export class VideoThumbnailGenerator {
 
     try {
       if (this.supportsWebCodecs) {
-        console.log("[VideoThumbnail] Using WebCodecs API");
+        logger.debug("VideoThumbnail", "Using WebCodecs API");
         return await this.generateWithWebCodecs(videoFile, options);
       }
-      console.log("[VideoThumbnail] Falling back to Canvas API");
+      logger.debug("VideoThumbnail", "Falling back to Canvas API");
       return await this.generateWithCanvas(videoFile, options);
     } catch (error) {
-      console.error("[VideoThumbnail] WebCodecs failed, falling back to Canvas:", error);
+      logger.warn("VideoThumbnail", "WebCodecs failed, falling back to Canvas", error);
       return await this.generateWithCanvas(videoFile, options);
     }
   }
@@ -73,7 +74,7 @@ export class VideoThumbnailGenerator {
     // WebCodecs実装のためのプレースホルダー
     // 実際の実装では MP4Box.js などのデマルチプレクサーが必要
     // 現在はCanvas APIにフォールバック
-    console.log("[VideoThumbnail] WebCodecs implementation needs demuxer, falling back to Canvas");
+    logger.debug("VideoThumbnail", "WebCodecs implementation needs demuxer, falling back to Canvas");
     return await this.generateWithCanvas(videoFile, options);
   }
 

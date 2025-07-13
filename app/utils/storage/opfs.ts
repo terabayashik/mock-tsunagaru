@@ -4,6 +4,7 @@
  * - /playlists/index.json - プレイリスト一覧のメタデータ
  * - /playlists/playlist-{id}.json - 個別のプレイリスト詳細データ
  */
+import { logger } from "~/utils/logger";
 
 export class OPFSError extends Error {
   constructor(
@@ -33,9 +34,9 @@ export class OPFSManager {
       }
       try {
         this.root = await navigator.storage.getDirectory();
-        console.log("[OPFS] Successfully initialized root directory");
+        logger.debug("OPFS", "Successfully initialized root directory");
       } catch (error) {
-        console.error("[OPFS] Failed to get root directory:", error);
+        logger.error("OPFS", "Failed to get root directory", error);
         throw new OPFSError("Failed to access OPFS root directory", error);
       }
     }
@@ -44,7 +45,7 @@ export class OPFSManager {
 
   async readJSON<T>(filePath: string): Promise<T | null> {
     try {
-      console.log(`[OPFS] Reading JSON from: ${filePath}`);
+      logger.debug("OPFS", `Reading JSON from: ${filePath}`);
       const root = await this.getRoot();
 
       // Handle nested paths
@@ -57,7 +58,7 @@ export class OPFSManager {
           currentHandle = await currentHandle.getDirectoryHandle(pathParts[i]);
         } catch (error) {
           if (error instanceof DOMException && error.name === "NotFoundError") {
-            console.log(`[OPFS] Directory not found: ${pathParts[i]}`);
+            logger.debug("OPFS", `Directory not found: ${pathParts[i]}`);
             return null;
           }
           throw error;
@@ -70,21 +71,21 @@ export class OPFSManager {
       const file = await fileHandle.getFile();
       const text = await file.text();
       const data = JSON.parse(text) as T;
-      console.log(`[OPFS] Successfully read JSON from: ${filePath}`);
+      logger.debug("OPFS", `Successfully read JSON from: ${filePath}`);
       return data;
     } catch (error) {
       if (error instanceof DOMException && error.name === "NotFoundError") {
-        console.log(`[OPFS] File not found: ${filePath}`);
+        logger.debug("OPFS", `File not found: ${filePath}`);
         return null;
       }
-      console.error(`[OPFS] Failed to read JSON from ${filePath}:`, error);
+      logger.error("OPFS", `Failed to read JSON from ${filePath}:`, error);
       throw new OPFSError(`Failed to read JSON from ${filePath}`, error);
     }
   }
 
   async writeJSON<T>(filePath: string, data: T): Promise<void> {
     try {
-      console.log(`[OPFS] Writing JSON to: ${filePath}`);
+      logger.debug("OPFS", `Writing JSON to: ${filePath}`);
       const root = await this.getRoot();
 
       // Handle nested paths
@@ -96,11 +97,11 @@ export class OPFSManager {
         const dirName = pathParts[i];
         try {
           currentHandle = await currentHandle.getDirectoryHandle(dirName);
-          console.log(`[OPFS] Directory exists: ${dirName}`);
+          logger.debug("OPFS", `Directory exists: ${dirName}`);
         } catch (error) {
           if (error instanceof DOMException && error.name === "NotFoundError") {
             currentHandle = await currentHandle.getDirectoryHandle(dirName, { create: true });
-            console.log(`[OPFS] Created directory: ${dirName}`);
+            logger.debug("OPFS", `Created directory: ${dirName}`);
           } else {
             throw error;
           }
@@ -114,16 +115,16 @@ export class OPFSManager {
       await writable.write(JSON.stringify(data, null, 2));
       await writable.close();
 
-      console.log(`[OPFS] Successfully wrote JSON to: ${filePath}`);
+      logger.debug("OPFS", `Successfully wrote JSON to: ${filePath}`);
     } catch (error) {
-      console.error(`[OPFS] Failed to write JSON to ${filePath}:`, error);
+      logger.error("OPFS", `Failed to write JSON to ${filePath}:`, error);
       throw new OPFSError(`Failed to write JSON to ${filePath}`, error);
     }
   }
 
   async deleteFile(filePath: string): Promise<void> {
     try {
-      console.log(`[OPFS] Deleting file: ${filePath}`);
+      logger.debug("OPFS", `Deleting file: ${filePath}`);
       const root = await this.getRoot();
 
       // Handle nested paths
@@ -139,20 +140,20 @@ export class OPFSManager {
       const fileName = pathParts[pathParts.length - 1];
       await currentHandle.removeEntry(fileName);
 
-      console.log(`[OPFS] Successfully deleted file: ${filePath}`);
+      logger.debug("OPFS", `Successfully deleted file: ${filePath}`);
     } catch (error) {
       if (error instanceof DOMException && error.name === "NotFoundError") {
-        console.log(`[OPFS] File not found for deletion: ${filePath}`);
+        logger.debug("OPFS", `File not found for deletion: ${filePath}`);
         return; // File doesn't exist, which is fine for deletion
       }
-      console.error(`[OPFS] Failed to delete file ${filePath}:`, error);
+      logger.error("OPFS", `Failed to delete file ${filePath}:`, error);
       throw new OPFSError(`Failed to delete file ${filePath}`, error);
     }
   }
 
   async readFile(filePath: string): Promise<ArrayBuffer> {
     try {
-      console.log(`[OPFS] Reading file: ${filePath}`);
+      logger.debug("OPFS", `Reading file: ${filePath}`);
       const root = await this.getRoot();
 
       // Handle nested paths
@@ -165,7 +166,7 @@ export class OPFSManager {
           currentHandle = await currentHandle.getDirectoryHandle(pathParts[i]);
         } catch (error) {
           if (error instanceof DOMException && error.name === "NotFoundError") {
-            console.log(`[OPFS] Directory not found: ${pathParts[i]}`);
+            logger.debug("OPFS", `Directory not found: ${pathParts[i]}`);
             throw new OPFSError(`Directory not found: ${pathParts[i]}`, error);
           }
           throw error;
@@ -177,21 +178,21 @@ export class OPFSManager {
       const fileHandle = await currentHandle.getFileHandle(fileName);
       const file = await fileHandle.getFile();
       const arrayBuffer = await file.arrayBuffer();
-      console.log(`[OPFS] Successfully read file: ${filePath} (${arrayBuffer.byteLength} bytes)`);
+      logger.debug("OPFS", `Successfully read file: ${filePath} (${arrayBuffer.byteLength} bytes)`);
       return arrayBuffer;
     } catch (error) {
       if (error instanceof DOMException && error.name === "NotFoundError") {
-        console.log(`[OPFS] File not found: ${filePath}`);
+        logger.debug("OPFS", `File not found: ${filePath}`);
         throw new OPFSError(`File not found: ${filePath}`, error);
       }
-      console.error(`[OPFS] Failed to read file ${filePath}:`, error);
+      logger.error("OPFS", `Failed to read file ${filePath}:`, error);
       throw new OPFSError(`Failed to read file ${filePath}`, error);
     }
   }
 
   async writeFile(filePath: string, data: ArrayBuffer): Promise<void> {
     try {
-      console.log(`[OPFS] Writing file: ${filePath} (${data.byteLength} bytes)`);
+      logger.debug("OPFS", `Writing file: ${filePath} (${data.byteLength} bytes)`);
       const root = await this.getRoot();
 
       // Handle nested paths
@@ -203,11 +204,11 @@ export class OPFSManager {
         const dirName = pathParts[i];
         try {
           currentHandle = await currentHandle.getDirectoryHandle(dirName);
-          console.log(`[OPFS] Directory exists: ${dirName}`);
+          logger.debug("OPFS", `Directory exists: ${dirName}`);
         } catch (error) {
           if (error instanceof DOMException && error.name === "NotFoundError") {
             currentHandle = await currentHandle.getDirectoryHandle(dirName, { create: true });
-            console.log(`[OPFS] Created directory: ${dirName}`);
+            logger.debug("OPFS", `Created directory: ${dirName}`);
           } else {
             throw error;
           }
@@ -221,9 +222,9 @@ export class OPFSManager {
       await writable.write(data);
       await writable.close();
 
-      console.log(`[OPFS] Successfully wrote file: ${filePath}`);
+      logger.debug("OPFS", `Successfully wrote file: ${filePath}`);
     } catch (error) {
-      console.error(`[OPFS] Failed to write file to ${filePath}:`, error);
+      logger.error("OPFS", `Failed to write file to ${filePath}:`, error);
       throw new OPFSError(`Failed to write file to ${filePath}`, error);
     }
   }
@@ -255,7 +256,7 @@ export class OPFSManager {
    */
   async clearAll(): Promise<void> {
     try {
-      console.log("[OPFS] Clearing all data...");
+      logger.info("OPFS", "Clearing all data...");
       const root = await this.getRoot();
 
       // ルートディレクトリ内のすべてのエントリを取得
@@ -269,16 +270,16 @@ export class OPFSManager {
       for (const name of entries) {
         try {
           await root.removeEntry(name, { recursive: true });
-          console.log(`[OPFS] Deleted: ${name}`);
+          logger.debug("OPFS", `Deleted: ${name}`);
         } catch (error) {
-          console.warn(`[OPFS] Failed to delete ${name}:`, error);
+          logger.warn("OPFS", `Failed to delete ${name}`, error);
           // 個別のエラーは警告として記録し、続行する
         }
       }
 
-      console.log(`[OPFS] Successfully cleared ${entries.length} entries`);
+      logger.debug("OPFS", `Successfully cleared ${entries.length} entries`);
     } catch (error) {
-      console.error("[OPFS] Failed to clear all data:", error);
+      logger.error("OPFS", "Failed to clear all data:", error);
       throw new OPFSError("Failed to clear OPFS data", error);
     }
   }
@@ -307,7 +308,7 @@ export class OPFSManager {
           estimatedSize = estimate.usage;
         }
       } catch (error) {
-        console.warn("[OPFS] Could not get storage estimate:", error);
+        console.warn("Could not get storage estimate:", error);
       }
 
       return {
@@ -316,7 +317,7 @@ export class OPFSManager {
         estimatedSize,
       };
     } catch (error) {
-      console.error("[OPFS] Failed to get storage info:", error);
+      logger.error("OPFS", "Failed to get storage info:", error);
       throw new OPFSError("Failed to get OPFS storage info", error);
     }
   }

@@ -227,12 +227,7 @@ export const ContentAddModal = ({
         {/* ファイルアップロードモード */}
         {isFileMode &&
           (selectedFiles.length === 0 ? (
-            <Dropzone
-              onDrop={handleFileDrop}
-              accept={getAllAcceptedMimeTypes()}
-              maxSize={MAX_FILE_SIZE}
-              multiple
-            >
+            <Dropzone onDrop={handleFileDrop} accept={getAllAcceptedMimeTypes()} maxSize={MAX_FILE_SIZE} multiple>
               <Group justify="center" gap="xl" mih={220} style={{ pointerEvents: "none" }}>
                 <Dropzone.Accept>
                   <IconCloudUpload size={50} stroke={1.5} />
