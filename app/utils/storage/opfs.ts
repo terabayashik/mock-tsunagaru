@@ -4,6 +4,14 @@
  * - /playlists/index.json - プレイリスト一覧のメタデータ
  * - /playlists/playlist-{id}.json - 個別のプレイリスト詳細データ
  */
+
+// File System Access API の型定義を拡張
+declare global {
+  interface FileSystemDirectoryHandle {
+    entries(): AsyncIterableIterator<[string, FileSystemFileHandle | FileSystemDirectoryHandle]>;
+  }
+}
+
 import { logger } from "~/utils/logger";
 
 export class OPFSError extends Error {
@@ -261,9 +269,7 @@ export class OPFSManager {
 
       // ルートディレクトリ内のすべてのエントリを取得
       const entries: string[] = [];
-      // FileSystemDirectoryHandle.entries() の型定義を正しく設定
-      const entriesIterator = root.entries() as AsyncIterableIterator<[string, FileSystemHandle]>;
-      for await (const [name] of entriesIterator) {
+      for await (const [name] of root.entries()) {
         entries.push(name);
       }
 
@@ -332,14 +338,13 @@ export class OPFSManager {
     directories: string[],
     files: string[],
   ): Promise<void> {
-    const entriesIterator = directoryHandle.entries() as AsyncIterableIterator<[string, FileSystemHandle]>;
-    for await (const [name, handle] of entriesIterator) {
+    for await (const [name, handle] of directoryHandle.entries()) {
       const fullPath = currentPath ? `${currentPath}/${name}` : name;
 
       if (handle.kind === "directory") {
         directories.push(fullPath);
         // 再帰的にサブディレクトリを探索
-        await this.collectEntriesRecursively(handle, fullPath, directories, files);
+        await this.collectEntriesRecursively(handle as FileSystemDirectoryHandle, fullPath, directories, files);
       } else {
         files.push(fullPath);
       }

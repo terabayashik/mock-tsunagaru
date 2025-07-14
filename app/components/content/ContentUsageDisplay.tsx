@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useLayout } from "~/hooks/useLayout";
 import { usePlaylist } from "~/hooks/usePlaylist";
 import type { LayoutItem } from "~/types/layout";
-import type { PlaylistIndex, PlaylistItem } from "~/types/playlist";
+import type { PlaylistIndex } from "~/types/playlist";
 import { logger } from "~/utils/logger";
 
 interface ContentUsage {

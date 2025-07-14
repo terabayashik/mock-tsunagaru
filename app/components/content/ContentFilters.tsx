@@ -1,4 +1,4 @@
-import { Button, Group, SegmentedControl, Stack, Text, TextInput } from "@mantine/core";
+import { Button, Group, SegmentedControl, Text, TextInput } from "@mantine/core";
 import {
   IconBrandYoutube,
   IconFile,

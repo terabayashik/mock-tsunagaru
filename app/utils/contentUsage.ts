@@ -1,5 +1,4 @@
-import type { LayoutItem } from "~/types/layout";
-import type { PlaylistIndex } from "~/types/playlist";
+import type { PlaylistIndex, PlaylistItem } from "~/types/playlist";
 import { logger } from "~/utils/logger";
 
 export interface ContentUsageInfo {
@@ -19,7 +18,7 @@ export interface ContentUsageInfo {
 export const checkContentUsage = async (
   contentId: string,
   getPlaylistsIndex: () => Promise<PlaylistIndex[]>,
-  getPlaylistById: (id: string) => Promise<any | null>,
+  getPlaylistById: (id: string) => Promise<PlaylistItem | null>,
 ): Promise<ContentUsageInfo> => {
   try {
     const playlists = await getPlaylistsIndex();
