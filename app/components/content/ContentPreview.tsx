@@ -256,14 +256,9 @@ export const ContentPreview = memo(
                 {formatFileSize(content.size)}
               </Text>
             )}
-            {content.url && !content.size && (
-              <Text size="xs" c="dimmed" lineClamp={1} maw="80px">
-                {new URL(content.url).hostname}
-              </Text>
-            )}
           </Group>
 
-          <Group gap="xs" className="content-actions" style={{ opacity: 0, transition: 'opacity 0.2s ease' }}>
+          <Group gap="xs" className="content-actions" style={{ opacity: 1, transition: 'opacity 0.2s ease' }}>
             {onEdit && (
               <ActionIcon
                 size="xs"
