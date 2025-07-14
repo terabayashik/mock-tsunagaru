@@ -1,14 +1,14 @@
-import { Box, Button, Divider, Group, Modal, Paper, Progress, Stack, Text, TextInput } from "@mantine/core";
+import { Box, Button, Divider, Group, Modal, Paper, Progress, ScrollArea, SegmentedControl, Stack, Text, TextInput } from "@mantine/core";
 import type { FileWithPath } from "@mantine/dropzone";
 import { modals } from "@mantine/modals";
-import { IconArrowLeft, IconArrowRight, IconDeviceFloppy, IconPlus, IconX } from "@tabler/icons-react";
+import { IconArrowLeft, IconArrowRight, IconBrandYoutube, IconDeviceFloppy, IconFile, IconFileText, IconLink, IconPhoto, IconPlus, IconSearch, IconVideo, IconX } from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
 import { ContentSelectionGrid } from "~/components/content/ContentSelectionGrid";
 import { SelectedContentList } from "~/components/content/SelectedContentList";
 import { InteractiveLayoutPreview } from "~/components/layout/InteractiveLayoutPreview";
 import { useContent } from "~/hooks/useContent";
 import { useLayout } from "~/hooks/useLayout";
-import type { ContentIndex, RichTextContent } from "~/types/content";
+import type { ContentIndex, ContentType, RichTextContent } from "~/types/content";
 import { extractYouTubeVideoId } from "~/types/content";
 import type { LayoutItem } from "~/types/layout";
 import type { ContentAssignment, ContentDuration, PlaylistItem } from "~/types/playlist";
@@ -58,6 +58,10 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
     contentName: string;
     contentType: string;
   } | null>(null);
+  
+  // フィルター状態
+  const [contentTypeFilter, setContentTypeFilter] = useState<ContentType | "all">("all");
+  const [contentSearchQuery, setContentSearchQuery] = useState("");
 
   const { getLayoutById } = useLayout();
   const { getContentsIndex, getContentById, createFileContent, createUrlContent, createRichTextContent } = useContent();
@@ -232,6 +236,8 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
     setErrors({});
     setLayout(null);
     setSelectedRegionId(null);
+    setContentTypeFilter("all");
+    setContentSearchQuery("");
   };
 
   const handleContentAssignmentChange = async (regionId: string, contentIds: string[]) => {
@@ -417,6 +423,68 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
     return duration?.duration;
   };
 
+  // フィルターアイコンとラベルのヘルパー関数
+  const getFilterIcon = (type: ContentType | "all") => {
+    switch (type) {
+      case "all":
+        return <IconFile size={14} />;
+      case "video":
+        return <IconVideo size={14} />;
+      case "image":
+        return <IconPhoto size={14} />;
+      case "text":
+        return <IconFileText size={14} />;
+      case "youtube":
+        return <IconBrandYoutube size={14} />;
+      case "url":
+        return <IconLink size={14} />;
+      default:
+        return <IconFile size={14} />;
+    }
+  };
+
+  const getFilterLabel = (type: ContentType | "all") => {
+    switch (type) {
+      case "all":
+        return "すべて";
+      case "video":
+        return "動画";
+      case "image":
+        return "画像";
+      case "text":
+        return "テキスト";
+      case "youtube":
+        return "YouTube";
+      case "url":
+        return "URL";
+      default:
+        return "すべて";
+    }
+  };
+
+  // フィルター済みコンテンツの取得
+  const getFilteredContents = useCallback(() => {
+    let filtered = contents;
+
+    // タイプフィルター
+    if (contentTypeFilter !== "all") {
+      filtered = filtered.filter((content) => content.type === contentTypeFilter);
+    }
+
+    // 検索フィルター
+    if (contentSearchQuery.trim()) {
+      const query = contentSearchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (content) =>
+          content.name.toLowerCase().includes(query) ||
+          content.tags.some((tag) => tag.toLowerCase().includes(query)) ||
+          content.url?.toLowerCase().includes(query),
+      );
+    }
+
+    return filtered;
+  }, [contents, contentTypeFilter, contentSearchQuery]);
+
   const canGoNext = () => {
     return getCurrentStepIndex() < steps.length - 1;
   };
@@ -491,7 +559,7 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
 
       case "content":
         return (
-          <Stack gap="md">
+          <Box style={{ height: "100%" }}>
             {layout ? (
               layout.regions.length === 0 ? (
                 <Paper p="md" withBorder>
@@ -500,9 +568,9 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                   </Text>
                 </Paper>
               ) : (
-                <Group align="flex-start" gap="lg" wrap="nowrap" style={{ minHeight: "600px" }}>
+                <Group align="flex-start" gap="lg" wrap="nowrap" style={{ height: "100%" }}>
                   {/* 左側: コンテンツ選択グリッド */}
-                  <Box style={{ flex: "1 1 auto" }}>
+                  <Box style={{ flex: "1 1 auto", height: "100%", display: "flex", flexDirection: "column" }}>
                     {selectedRegionId ? (
                       <>
                         <Group justify="space-between" mb="sm">
@@ -519,38 +587,141 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                             コンテンツを追加
                           </Button>
                         </Group>
-                        {contents.length === 0 ? (
-                          <Paper p="xl" withBorder style={{ textAlign: "center" }}>
-                            <Text c="dimmed" mb="sm">
-                              利用可能なコンテンツがありません
-                            </Text>
-                            <Text size="sm" c="dimmed" mb="md">
-                              先にコンテンツを追加してください
-                            </Text>
-                            <Button
-                              variant="filled"
-                              leftSection={<IconPlus size={16} />}
-                              onClick={() => setShowContentAddModal(true)}
-                            >
-                              コンテンツを追加
-                            </Button>
-                          </Paper>
-                        ) : (
-                          <ContentSelectionGrid
-                            contents={contents}
-                            selectedContentIds={getSelectedRegionAssignment()?.contentIds || []}
-                            onSelectionChange={async (contentIds) => {
-                              if (selectedRegionId) {
-                                await handleContentAssignmentChange(selectedRegionId, contentIds);
-                              }
-                            }}
-                            loading={false}
-                            maxItems={20}
+
+                        {/* フィルター */}
+                        <Group gap="md" mb="md">
+                          <TextInput
+                            placeholder="コンテンツを検索..."
+                            leftSection={<IconSearch size={16} />}
+                            rightSection={
+                              contentSearchQuery ? (
+                                <Button
+                                  variant="subtle"
+                                  size="xs"
+                                  p={0}
+                                  onClick={() => setContentSearchQuery("")}
+                                  miw="auto"
+                                  h="auto"
+                                >
+                                  <IconX size={14} />
+                                </Button>
+                              ) : null
+                            }
+                            value={contentSearchQuery}
+                            onChange={(e) => setContentSearchQuery(e.target.value)}
+                            flex={1}
+                            size="sm"
                           />
-                        )}
+                          
+                          <SegmentedControl
+                            value={contentTypeFilter}
+                            onChange={(value) => setContentTypeFilter(value as ContentType | "all")}
+                            data={[
+                              {
+                                value: "all",
+                                label: (
+                                  <Group gap={4} align="center" justify="center" miw="60px" wrap="nowrap">
+                                    {getFilterIcon("all")}
+                                    <Text size="xs">すべて</Text>
+                                  </Group>
+                                ),
+                              },
+                              {
+                                value: "video",
+                                label: (
+                                  <Group gap={4} align="center" justify="center" miw="60px" wrap="nowrap">
+                                    {getFilterIcon("video")}
+                                    <Text size="xs">動画</Text>
+                                  </Group>
+                                ),
+                              },
+                              {
+                                value: "image",
+                                label: (
+                                  <Group gap={4} align="center" justify="center" miw="60px" wrap="nowrap">
+                                    {getFilterIcon("image")}
+                                    <Text size="xs">画像</Text>
+                                  </Group>
+                                ),
+                              },
+                              {
+                                value: "text",
+                                label: (
+                                  <Group gap={4} align="center" justify="center" miw="60px" wrap="nowrap">
+                                    {getFilterIcon("text")}
+                                    <Text size="xs">テキスト</Text>
+                                  </Group>
+                                ),
+                              },
+                              {
+                                value: "youtube",
+                                label: (
+                                  <Group gap={4} align="center" justify="center" miw="60px" wrap="nowrap">
+                                    {getFilterIcon("youtube")}
+                                    <Text size="xs">YouTube</Text>
+                                  </Group>
+                                ),
+                              },
+                              {
+                                value: "url",
+                                label: (
+                                  <Group gap={4} align="center" justify="center" miw="60px" wrap="nowrap">
+                                    {getFilterIcon("url")}
+                                    <Text size="xs">URL</Text>
+                                  </Group>
+                                ),
+                              },
+                            ]}
+                            size="xs"
+                            style={{ fontSize: "11px" }}
+                          />
+                        </Group>
+                        <ScrollArea style={{ flex: 1 }} type="auto">
+                          {(() => {
+                            const filteredContents = getFilteredContents();
+                            return contents.length === 0 ? (
+                              <Paper p="xl" withBorder style={{ textAlign: "center" }}>
+                                <Text c="dimmed" mb="sm">
+                                  利用可能なコンテンツがありません
+                                </Text>
+                                <Text size="sm" c="dimmed" mb="md">
+                                  先にコンテンツを追加してください
+                                </Text>
+                                <Button
+                                  variant="filled"
+                                  leftSection={<IconPlus size={16} />}
+                                  onClick={() => setShowContentAddModal(true)}
+                                >
+                                  コンテンツを追加
+                                </Button>
+                              </Paper>
+                            ) : filteredContents.length === 0 ? (
+                              <Paper p="xl" withBorder style={{ textAlign: "center" }}>
+                                <Text c="dimmed" mb="sm">
+                                  条件に一致するコンテンツがありません
+                                </Text>
+                                <Text size="sm" c="dimmed">
+                                  フィルターや検索条件を変更してください
+                                </Text>
+                              </Paper>
+                            ) : (
+                              <ContentSelectionGrid
+                                contents={filteredContents}
+                                selectedContentIds={getSelectedRegionAssignment()?.contentIds || []}
+                                onSelectionChange={async (contentIds) => {
+                                  if (selectedRegionId) {
+                                    await handleContentAssignmentChange(selectedRegionId, contentIds);
+                                  }
+                                }}
+                                loading={false}
+                                maxItems={20}
+                              />
+                            );
+                          })()}
+                        </ScrollArea>
                       </>
                     ) : (
-                      <Paper p="xl" withBorder style={{ textAlign: "center" }}>
+                      <Paper p="xl" withBorder style={{ textAlign: "center", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center" }}>
                         <Text c="dimmed" mb="sm">
                           右のレイアウトプレビューからリージョンを選択してください
                         </Text>
@@ -562,8 +733,8 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                   </Box>
 
                   {/* 右側: レイアウトプレビューと順序変更 */}
-                  <Box style={{ flex: "0 0 400px", minWidth: "400px" }}>
-                    <Stack gap="lg">
+                  <Box style={{ flex: "0 0 400px", minWidth: "400px", height: "100%", display: "flex", flexDirection: "column" }}>
+                    <Stack gap="lg" style={{ height: "100%" }}>
                       {/* レイアウトプレビュー */}
                       <Box>
                         <Text fw={600} mb="sm">レイアウトプレビュー</Text>
@@ -579,27 +750,29 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
 
                       {/* 順序変更 */}
                       {selectedRegionId && (
-                        <Box>
+                        <Box style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
                           <Text fw={600} mb="sm">順序変更</Text>
-                          <SelectedContentList
-                            selectedContents={
-                              (getSelectedRegionAssignment()
-                                ?.contentIds.map((contentId) => contents.find((content) => content.id === contentId))
-                                .filter(Boolean) as ContentIndex[]) || []
-                            }
-                            onReorder={(reorderedContentIds) => {
-                              if (selectedRegionId) {
-                                handleContentReorder(selectedRegionId, reorderedContentIds);
+                          <ScrollArea style={{ flex: 1, minHeight: 0 }} type="auto" scrollbarSize={8}>
+                            <SelectedContentList
+                              selectedContents={
+                                (getSelectedRegionAssignment()
+                                  ?.contentIds.map((contentId) => contents.find((content) => content.id === contentId))
+                                  .filter(Boolean) as ContentIndex[]) || []
                               }
-                            }}
-                            contentDurations={getSelectedRegionAssignment()?.contentDurations?.reduce(
-                              (acc, duration) => {
-                                acc[duration.contentId] = duration.duration;
-                                return acc;
-                              },
-                              {} as Record<string, number>,
-                            )}
-                          />
+                              onReorder={(reorderedContentIds) => {
+                                if (selectedRegionId) {
+                                  handleContentReorder(selectedRegionId, reorderedContentIds);
+                                }
+                              }}
+                              contentDurations={getSelectedRegionAssignment()?.contentDurations?.reduce(
+                                (acc, duration) => {
+                                  acc[duration.contentId] = duration.duration;
+                                  return acc;
+                                },
+                                {} as Record<string, number>,
+                              )}
+                            />
+                          </ScrollArea>
                         </Box>
                       )}
                     </Stack>
@@ -609,7 +782,7 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
             ) : (
               <Text c="dimmed">レイアウト情報を読み込み中...</Text>
             )}
-          </Stack>
+          </Box>
         );
 
       default:
@@ -631,6 +804,15 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
         content: {
           maxWidth: "1600px",
           minWidth: "1200px",
+          height: "900px",
+          maxHeight: "95vh",
+        },
+        body: {
+          height: "calc(900px - 60px)",
+          padding: 0,
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
         },
       };
     }
@@ -647,9 +829,9 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
         size={getModalSize()}
         styles={getModalStyles()}
       >
-        <Stack gap="lg">
+        <Stack gap="lg" style={{ height: "100%", display: "flex", flexDirection: "column" }}>
           {/* プログレスバー */}
-          <Box>
+          <Box px={currentStep === "content" ? 20 : 0} pt={currentStep === "content" ? 20 : 0}>
             <Group justify="space-between" mb="xs">
               <Text size="sm" fw={500}>
                 {steps[getCurrentStepIndex()].title}
@@ -664,13 +846,15 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
             </Text>
           </Box>
 
-          <Divider />
+          <Divider mx={currentStep === "content" ? 20 : 0} />
 
           {/* ステップコンテンツ */}
-          {renderStepContent()}
+          <Box style={{ flex: 1, overflow: "hidden", minHeight: 0 }} px={currentStep === "content" ? 20 : 0}>
+            {renderStepContent()}
+          </Box>
 
           {/* ナビゲーションボタン */}
-          <Group justify="space-between" mt="lg">
+          <Group justify="space-between" mt={currentStep === "content" ? "sm" : "lg"} px={currentStep === "content" ? 20 : 0} pb={currentStep === "content" ? 16 : 0}>
             <Group>
               <Button variant="subtle" leftSection={<IconX size={16} />} onClick={handleClose} disabled={loading}>
                 キャンセル
