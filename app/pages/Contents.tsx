@@ -11,7 +11,7 @@ import {
   IconTrash,
 } from "@tabler/icons-react";
 import { useAtom } from "jotai";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { ContentFilters } from "~/components/content/ContentFilters";
 import { ContentGridView } from "~/components/content/ContentGridView";
 import { ContentHoverCard } from "~/components/content/ContentHoverCard";
@@ -19,6 +19,7 @@ import { ContentAddModal } from "~/components/modals/ContentAddModal";
 import { ContentEditModal } from "~/components/modals/ContentEditModal";
 import { ContentPreviewModal } from "~/components/modals/ContentPreviewModal";
 import { useContent } from "~/hooks/useContent";
+import { useUnusedContents } from "~/hooks/useUnusedContents";
 import {
   contentActionsAtom,
   contentAddModalAtom,
@@ -58,15 +59,35 @@ export default function ContentsPage() {
     getContentById,
   } = useContent();
 
-  // コンテンツ一覧を読み込み
+  const { getUnusedContentIds } = useUnusedContents();
+
+  // 未使用状態を更新するヘルパー関数
+  const refreshUnusedStatus = useCallback(
+    async (contentsData: typeof contents) => {
+      try {
+        const unusedIds = await getUnusedContentIds(contentsData);
+        contentDispatch({ type: "SET_UNUSED_CONTENT_IDS", unusedIds });
+      } catch (error) {
+        logger.error("Contents", "Failed to refresh unused status", error);
+      }
+    },
+    [getUnusedContentIds, contentDispatch],
+  );
+
+  // コンテンツ一覧と未使用状態を読み込み
   useEffect(() => {
     const loadContents = async () => {
       contentDispatch({ type: "SET_LOADING", loading: true });
       contentDispatch({ type: "SET_ERROR", error: null });
 
       try {
+        // コンテンツ一覧を取得
         const contentsData = await getContentsIndex();
         contentDispatch({ type: "SET_CONTENTS", contents: contentsData });
+
+        // 未使用コンテンツIDを取得
+        const unusedIds = await getUnusedContentIds(contentsData);
+        contentDispatch({ type: "SET_UNUSED_CONTENT_IDS", unusedIds });
       } catch (error) {
         contentDispatch({
           type: "SET_ERROR",
@@ -78,7 +99,7 @@ export default function ContentsPage() {
     };
 
     loadContents();
-  }, [getContentsIndex, contentDispatch]);
+  }, [getContentsIndex, getUnusedContentIds, contentDispatch]);
 
   // コンテンツ関連のハンドラー
   const handleContentDelete = async (id: string, contentName: string) => {
@@ -132,6 +153,9 @@ export default function ContentsPage() {
           try {
             await deleteContentSafely(id);
             contentDispatch({ type: "REMOVE_CONTENT", id });
+            // 削除後に未使用状態を更新
+            const contentsData = await getContentsIndex();
+            await refreshUnusedStatus(contentsData);
           } catch (error) {
             contentDispatch({
               type: "SET_ERROR",
@@ -179,6 +203,9 @@ export default function ContentsPage() {
 
         contentDispatch({ type: "ADD_CONTENT", content: contentIndex });
       }
+      // 追加後に未使用状態を更新
+      const contentsData = await getContentsIndex();
+      await refreshUnusedStatus(contentsData);
     } catch (error) {
       contentDispatch({
         type: "SET_ERROR",
@@ -204,6 +231,9 @@ export default function ContentsPage() {
       };
 
       contentDispatch({ type: "ADD_CONTENT", content: contentIndex });
+      // 追加後に未使用状態を更新
+      const contentsData = await getContentsIndex();
+      await refreshUnusedStatus(contentsData);
     } catch (error) {
       contentDispatch({
         type: "SET_ERROR",
@@ -228,6 +258,9 @@ export default function ContentsPage() {
       };
 
       contentDispatch({ type: "ADD_CONTENT", content: contentIndex });
+      // 追加後に未使用状態を更新
+      const contentsData = await getContentsIndex();
+      await refreshUnusedStatus(contentsData);
     } catch (error) {
       contentDispatch({
         type: "SET_ERROR",
@@ -286,6 +319,9 @@ export default function ContentsPage() {
       };
 
       contentDispatch({ type: "UPDATE_CONTENT", id: data.id, content: contentIndex });
+      // 編集後に未使用状態を更新（名前やタグの変更があるため）
+      const contentsData = await getContentsIndex();
+      await refreshUnusedStatus(contentsData);
     } catch (error) {
       logger.error("Contents", "Content edit failed", error);
       contentDispatch({ type: "SET_ERROR", error: `コンテンツの編集に失敗しました: ${error}` });
@@ -477,11 +513,14 @@ export default function ContentsPage() {
         contentId={contentPreviewModal.contentId}
         allContents={contents}
         onContentDeleted={() => {
-          // コンテンツ一覧を再読み込み
+          // コンテンツ一覧と未使用状態を再読み込み
           const loadContents = async () => {
             try {
               const contentsData = await getContentsIndex();
               contentDispatch({ type: "SET_CONTENTS", contents: contentsData });
+              // 未使用状態も更新
+              const unusedIds = await getUnusedContentIds(contentsData);
+              contentDispatch({ type: "SET_UNUSED_CONTENT_IDS", unusedIds });
             } catch (error) {
               contentDispatch({
                 type: "SET_ERROR",
@@ -492,11 +531,14 @@ export default function ContentsPage() {
           loadContents();
         }}
         onContentUpdated={() => {
-          // コンテンツ一覧を再読み込み
+          // コンテンツ一覧と未使用状態を再読み込み
           const loadContents = async () => {
             try {
               const contentsData = await getContentsIndex();
               contentDispatch({ type: "SET_CONTENTS", contents: contentsData });
+              // 未使用状態も更新
+              const unusedIds = await getUnusedContentIds(contentsData);
+              contentDispatch({ type: "SET_UNUSED_CONTENT_IDS", unusedIds });
             } catch (error) {
               contentDispatch({
                 type: "SET_ERROR",

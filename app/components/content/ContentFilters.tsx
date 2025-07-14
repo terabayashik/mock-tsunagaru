@@ -6,6 +6,7 @@ import {
   IconLink,
   IconPhoto,
   IconSearch,
+  IconTrash,
   IconVideo,
   IconX,
 } from "@tabler/icons-react";
@@ -18,7 +19,7 @@ export const ContentFilters = memo(() => {
   const [typeFilter, setTypeFilter] = useAtom(contentTypeFilterAtom);
   const [searchQuery, setSearchQuery] = useAtom(contentSearchQueryAtom);
 
-  const getFilterIcon = (type: ContentType | "all") => {
+  const getFilterIcon = (type: ContentType | "all" | "unused") => {
     switch (type) {
       case "all":
         return <IconFile size={14} />;
@@ -32,12 +33,14 @@ export const ContentFilters = memo(() => {
         return <IconBrandYoutube size={14} />;
       case "url":
         return <IconLink size={14} />;
+      case "unused":
+        return <IconTrash size={14} />;
       default:
         return <IconFile size={14} />;
     }
   };
 
-  const getFilterLabel = (type: ContentType | "all") => {
+  const getFilterLabel = (type: ContentType | "all" | "unused") => {
     switch (type) {
       case "all":
         return "すべて";
@@ -51,12 +54,14 @@ export const ContentFilters = memo(() => {
         return "YouTube";
       case "url":
         return "URL";
+      case "unused":
+        return "未使用";
       default:
         return "すべて";
     }
   };
 
-  const getFilterOption = (type: ContentType | "all") => ({
+  const getFilterOption = (type: ContentType | "all" | "unused") => ({
     value: type,
     label: (
       <Group gap={4} align="center" justify="center" miw="80px" wrap="nowrap">
@@ -75,6 +80,7 @@ export const ContentFilters = memo(() => {
     getFilterOption("text"),
     getFilterOption("youtube"),
     getFilterOption("url"),
+    getFilterOption("unused"),
   ];
 
   return (
@@ -106,7 +112,7 @@ export const ContentFilters = memo(() => {
 
       <SegmentedControl
         value={typeFilter}
-        onChange={(value) => setTypeFilter(value as ContentType | "all")}
+        onChange={(value) => setTypeFilter(value as ContentType | "all" | "unused")}
         data={filterOptions}
         size="sm"
         aria-label="コンテンツタイプフィルター"

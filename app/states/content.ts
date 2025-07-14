@@ -12,21 +12,29 @@ export const contentsLoadingAtom = atom<boolean>(false);
 export const contentsErrorAtom = atom<string | null>(null);
 
 // 選択されたコンテンツタイプフィルター
-export const contentTypeFilterAtom = atomWithStorage<ContentType | "all">("contentTypeFilter", "all");
+export const contentTypeFilterAtom = atomWithStorage<ContentType | "all" | "unused">("contentTypeFilter", "all");
 
 // 検索クエリ
 export const contentSearchQueryAtom = atom<string>("");
+
+// 未使用コンテンツのIDを追跡する状態
+export const unusedContentIdsAtom = atom<Set<string>>(new Set<string>());
 
 // フィルター済みコンテンツの取得（派生状態）
 export const filteredContentsAtom = atom((get) => {
   const contents = get(contentsAtom);
   const typeFilter = get(contentTypeFilterAtom);
   const searchQuery = get(contentSearchQueryAtom);
+  const unusedContentIds = get(unusedContentIdsAtom);
 
   let filtered = contents;
 
   // タイプフィルター
-  if (typeFilter !== "all") {
+  if (typeFilter === "unused") {
+    // 未使用フィルター
+    filtered = filtered.filter((content) => unusedContentIds.has(content.id));
+  } else if (typeFilter !== "all") {
+    // 通常のタイプフィルター
     filtered = filtered.filter((content) => content.type === typeFilter);
   }
 
@@ -51,7 +59,8 @@ export type ContentAction =
   | { type: "UPDATE_CONTENT"; id: string; content: Partial<ContentIndex> }
   | { type: "REMOVE_CONTENT"; id: string }
   | { type: "SET_LOADING"; loading: boolean }
-  | { type: "SET_ERROR"; error: string | null };
+  | { type: "SET_ERROR"; error: string | null }
+  | { type: "SET_UNUSED_CONTENT_IDS"; unusedIds: Set<string> };
 
 // コンテンツアクションの処理
 export const contentActionsAtom = atom(null, (_get, set, action: ContentAction) => {
@@ -75,6 +84,9 @@ export const contentActionsAtom = atom(null, (_get, set, action: ContentAction) 
       break;
     case "SET_ERROR":
       set(contentsErrorAtom, action.error);
+      break;
+    case "SET_UNUSED_CONTENT_IDS":
+      set(unusedContentIdsAtom, action.unusedIds);
       break;
   }
 });
