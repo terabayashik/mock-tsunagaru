@@ -9,9 +9,13 @@ import { InteractiveLayoutPreview } from "~/components/layout/InteractiveLayoutP
 import { useContent } from "~/hooks/useContent";
 import { useLayout } from "~/hooks/useLayout";
 import type { ContentIndex, RichTextContent } from "~/types/content";
+import { extractYouTubeVideoId } from "~/types/content";
 import type { LayoutItem } from "~/types/layout";
-import type { ContentAssignment, PlaylistItem } from "~/types/playlist";
+import type { ContentAssignment, ContentDuration, PlaylistItem } from "~/types/playlist";
+import { logger } from "~/utils/logger";
+import { getYouTubeVideoDurationCached } from "~/utils/youtube-player";
 import { ContentAddModal } from "./ContentAddModal";
+import { ContentDurationModal } from "./ContentDurationModal";
 
 export interface PlaylistEditFormData {
   name: string;
@@ -48,9 +52,15 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
   const [selectedRegionId, setSelectedRegionId] = useState<string | null>(null);
   const [originalData, setOriginalData] = useState<PlaylistEditFormData | null>(null);
   const [showContentAddModal, setShowContentAddModal] = useState(false);
+  const [showDurationModal, setShowDurationModal] = useState(false);
+  const [durationModalContent, setDurationModalContent] = useState<{
+    contentId: string;
+    contentName: string;
+    contentType: string;
+  } | null>(null);
 
   const { getLayoutById } = useLayout();
-  const { getContentsIndex, createFileContent, createUrlContent, createRichTextContent } = useContent();
+  const { getContentsIndex, getContentById, createFileContent, createUrlContent, createRichTextContent } = useContent();
 
   const steps: StepInfo[] = [
     { key: "basic", title: "基本情報", description: "プレイリスト名とデバイスを編集" },
@@ -67,7 +77,7 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
       const layoutData = await getLayoutById(playlist.layoutId);
       setLayout(layoutData);
     } catch (error) {
-      console.error("Failed to load layout:", error);
+      logger.error("PlaylistEditModal", "Failed to load layout", error);
     }
   }, [playlist?.layoutId, getLayoutById]);
 
@@ -76,7 +86,7 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
       const contentsData = await getContentsIndex();
       setContents(contentsData);
     } catch (error) {
-      console.error("Failed to load contents:", error);
+      logger.error("PlaylistEditModal", "Failed to load contents", error);
     }
   }, [getContentsIndex]);
 
@@ -96,7 +106,7 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
       // レイアウトの全リージョンに対してcontentAssignmentsを作成
       const mergedAssignments: ContentAssignment[] = layout.regions.map((region) => {
         const existingAssignment = playlist.contentAssignments?.find((assignment) => assignment.regionId === region.id);
-        return existingAssignment || { regionId: region.id, contentIds: [] };
+        return existingAssignment || { regionId: region.id, contentIds: [], contentDurations: [] };
       });
 
       const initialData = {
@@ -184,7 +194,7 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
       resetForm();
       onClose();
     } catch (error) {
-      console.error("プレイリスト更新エラー:", error);
+      logger.error("PlaylistEditModal", "プレイリスト更新エラー", error);
       // エラーメッセージを表示
       modals.openConfirmModal({
         title: "更新エラー",
@@ -224,17 +234,133 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
     setSelectedRegionId(null);
   };
 
-  const handleContentAssignmentChange = (regionId: string, contentIds: string[]) => {
+  const handleContentAssignmentChange = async (regionId: string, contentIds: string[]) => {
+    // 新しく追加されたコンテンツをチェック
+    const currentAssignment = formData.contentAssignments.find((a) => a.regionId === regionId);
+    const currentContentIds = currentAssignment?.contentIds || [];
+    const newContentIds = contentIds.filter((id) => !currentContentIds.includes(id));
+
+    let newDurations: ContentDuration[] = currentAssignment?.contentDurations || [];
+
+    if (newContentIds.length > 0) {
+      // 新しいコンテンツの情報を取得
+      const newContent = contents.find((c) => c.id === newContentIds[0]);
+      if (newContent) {
+        // 動画の場合は詳細情報から再生時間を取得
+        if (newContent.type === "video") {
+          try {
+            const contentDetail = await getContentById(newContent.id);
+            if (contentDetail?.fileInfo?.metadata?.duration) {
+              newDurations = [
+                ...newDurations,
+                {
+                  contentId: newContent.id,
+                  duration: Math.ceil(contentDetail.fileInfo.metadata.duration),
+                },
+              ];
+            }
+          } catch (error) {
+            logger.error("PlaylistEditModal", "Failed to get video duration", error);
+          }
+        }
+        // YouTubeコンテンツの場合はiframe APIで再生時間を取得
+        else if (newContent.type === "youtube") {
+          try {
+            const contentDetail = await getContentById(newContent.id);
+            if (contentDetail?.urlInfo?.url) {
+              const videoId = extractYouTubeVideoId(contentDetail.urlInfo.url);
+              if (videoId) {
+                // YouTube iframe APIから実際の動画時間を取得
+                const duration = await getYouTubeVideoDurationCached(videoId);
+                if (duration !== null) {
+                  newDurations = [
+                    ...newDurations,
+                    {
+                      contentId: newContent.id,
+                      duration,
+                    },
+                  ];
+                } else {
+                  // API取得失敗時は手動設定
+                  setDurationModalContent({
+                    contentId: newContent.id,
+                    contentName: newContent.name,
+                    contentType: newContent.type,
+                  });
+                  setShowDurationModal(true);
+
+                  setFormData((prev) => ({
+                    ...prev,
+                    contentAssignments: prev.contentAssignments.map((assignment) =>
+                      assignment.regionId === regionId
+                        ? { ...assignment, contentIds, contentDurations: newDurations }
+                        : assignment,
+                    ),
+                  }));
+                  return;
+                }
+              }
+            }
+          } catch (error) {
+            logger.error("PlaylistEditModal", "Failed to get YouTube video info", error);
+            // エラー時は手動設定
+            setDurationModalContent({
+              contentId: newContent.id,
+              contentName: newContent.name,
+              contentType: newContent.type,
+            });
+            setShowDurationModal(true);
+
+            setFormData((prev) => ({
+              ...prev,
+              contentAssignments: prev.contentAssignments.map((assignment) =>
+                assignment.regionId === regionId
+                  ? { ...assignment, contentIds, contentDurations: newDurations }
+                  : assignment,
+              ),
+            }));
+            return;
+          }
+        }
+        // その他のコンテンツは再生時間設定が必要
+        else {
+          setDurationModalContent({
+            contentId: newContent.id,
+            contentName: newContent.name,
+            contentType: newContent.type,
+          });
+          setShowDurationModal(true);
+
+          // 一時的にコンテンツを追加（再生時間はモーダルで設定）
+          setFormData((prev) => ({
+            ...prev,
+            contentAssignments: prev.contentAssignments.map((assignment) =>
+              assignment.regionId === regionId
+                ? { ...assignment, contentIds, contentDurations: newDurations }
+                : assignment,
+            ),
+          }));
+          return;
+        }
+      }
+    }
+
+    // 削除されたコンテンツの再生時間情報も削除
+    const removedContentIds = currentContentIds.filter((id) => !contentIds.includes(id));
+    if (removedContentIds.length > 0) {
+      newDurations = newDurations.filter((d) => !removedContentIds.includes(d.contentId));
+    }
+
     setFormData((prev) => ({
       ...prev,
       contentAssignments: prev.contentAssignments.map((assignment) =>
-        assignment.regionId === regionId ? { ...assignment, contentIds } : assignment,
+        assignment.regionId === regionId ? { ...assignment, contentIds, contentDurations: newDurations } : assignment,
       ),
     }));
   };
 
-  const handleContentReorder = (regionId: string, reorderedContentIds: string[]) => {
-    handleContentAssignmentChange(regionId, reorderedContentIds);
+  const handleContentReorder = async (regionId: string, reorderedContentIds: string[]) => {
+    await handleContentAssignmentChange(regionId, reorderedContentIds);
   };
 
   const handleRegionSelect = (regionId: string) => {
@@ -252,6 +378,43 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
       counts[assignment.regionId] = assignment.contentIds.length;
     });
     return counts;
+  };
+
+  const handleDurationSubmit = (duration: number) => {
+    if (!durationModalContent || !selectedRegionId) return;
+
+    setFormData((prev) => {
+      const updatedAssignments = prev.contentAssignments.map((assignment) => {
+        if (assignment.regionId === selectedRegionId) {
+          // 既存の再生時間情報を更新または追加
+          const existingDurations = assignment.contentDurations || [];
+          const updatedDurations = existingDurations.filter((d) => d.contentId !== durationModalContent.contentId);
+          updatedDurations.push({
+            contentId: durationModalContent.contentId,
+            duration,
+          });
+          return {
+            ...assignment,
+            contentDurations: updatedDurations,
+          };
+        }
+        return assignment;
+      });
+
+      return {
+        ...prev,
+        contentAssignments: updatedAssignments,
+      };
+    });
+
+    setShowDurationModal(false);
+    setDurationModalContent(null);
+  };
+
+  const getContentDuration = (regionId: string, contentId: string): number | undefined => {
+    const assignment = formData.contentAssignments.find((a) => a.regionId === regionId);
+    const duration = assignment?.contentDurations?.find((d) => d.contentId === contentId);
+    return duration?.duration;
   };
 
   const canGoNext = () => {
@@ -388,9 +551,9 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                           <ContentSelectionGrid
                             contents={contents}
                             selectedContentIds={getSelectedRegionAssignment()?.contentIds || []}
-                            onSelectionChange={(contentIds) => {
+                            onSelectionChange={async (contentIds) => {
                               if (selectedRegionId) {
-                                handleContentAssignmentChange(selectedRegionId, contentIds);
+                                await handleContentAssignmentChange(selectedRegionId, contentIds);
                               }
                             }}
                             loading={false}
@@ -424,6 +587,13 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                             handleContentReorder(selectedRegionId, reorderedContentIds);
                           }
                         }}
+                        contentDurations={getSelectedRegionAssignment()?.contentDurations?.reduce(
+                          (acc, duration) => {
+                            acc[duration.contentId] = duration.duration;
+                            return acc;
+                          },
+                          {} as Record<string, number>,
+                        )}
                       />
                     ) : (
                       <Paper p="md" withBorder style={{ minHeight: "120px" }}>
@@ -538,6 +708,23 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
         onUrlSubmit={handleUrlContentSubmit}
         onRichTextSubmit={handleRichTextContentSubmit}
       />
+
+      {/* 再生時間設定モーダル */}
+      {durationModalContent && (
+        <ContentDurationModal
+          opened={showDurationModal}
+          onClose={() => {
+            setShowDurationModal(false);
+            setDurationModalContent(null);
+          }}
+          contentName={durationModalContent.contentName}
+          contentType={durationModalContent.contentType}
+          currentDuration={
+            selectedRegionId ? getContentDuration(selectedRegionId, durationModalContent.contentId) : undefined
+          }
+          onSubmit={handleDurationSubmit}
+        />
+      )}
     </>
   );
 };

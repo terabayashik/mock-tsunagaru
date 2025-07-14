@@ -118,6 +118,11 @@ export const isYouTubeUrl = (url: string): boolean => {
   return youtubeRegex.test(url);
 };
 
+export const extractYouTubeVideoId = (url: string): string | null => {
+  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
+  return match ? match[1] : null;
+};
+
 // 利用可能なフォントファミリー
 export const FONT_FAMILIES = [
   { value: "Inter, sans-serif", label: "Inter（デフォルト）" },

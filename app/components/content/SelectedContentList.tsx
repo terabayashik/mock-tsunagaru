@@ -7,9 +7,10 @@ import type { ContentIndex } from "~/types/content";
 interface SelectedContentListProps {
   selectedContents: ContentIndex[];
   onReorder: (reorderedContentIds: string[]) => void;
+  contentDurations?: Record<string, number>; // contentId -> duration
 }
 
-export const SelectedContentList = ({ selectedContents, onReorder }: SelectedContentListProps) => {
+export const SelectedContentList = ({ selectedContents, onReorder, contentDurations }: SelectedContentListProps) => {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
@@ -59,6 +60,12 @@ export const SelectedContentList = ({ selectedContents, onReorder }: SelectedCon
     },
     [selectedContents, onReorder],
   );
+
+  const formatDuration = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  };
 
   if (selectedContents.length === 0) {
     return (
@@ -196,6 +203,7 @@ export const SelectedContentList = ({ selectedContents, onReorder }: SelectedCon
                         <Text size="xs" c="dimmed">
                           {content.type === "image" ? "画像" : content.type === "video" ? "動画" : "その他"}
                           {content.size && ` • ${(content.size / 1024 / 1024).toFixed(1)}MB`}
+                          {contentDurations?.[content.id] && ` • ${formatDuration(contentDurations[content.id])}`}
                         </Text>
                       </Box>
                     </Group>

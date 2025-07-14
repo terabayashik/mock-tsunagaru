@@ -46,3 +46,4 @@ This is a React Router v7 application with SSR disabled and prerendering enabled
 - Prioritize using faster alternative implemented with Rust. For example, fd, rg and sd.
 - Use `fd` command instead of `find` command
 - Use `sd` command instead of `sed` command
+- Use `rg` command instead of `grep` command

@@ -1,9 +1,16 @@
 import { z } from "zod";
 
+// コンテンツの再生時間情報
+export const ContentDurationSchema = z.object({
+  contentId: z.string().min(1, "コンテンツIDは必須です"),
+  duration: z.number().min(1, "再生時間は1秒以上である必要があります"), // 秒単位
+});
+
 // レイアウト内のコンテンツ割り当て情報
 export const ContentAssignmentSchema = z.object({
   regionId: z.string().min(1, "リージョンIDは必須です"),
   contentIds: z.array(z.string()).default([]), // 複数のコンテンツを割り当て可能
+  contentDurations: z.array(ContentDurationSchema).default([]), // 各コンテンツの再生時間
 });
 
 // プレイリストアイテム（詳細情報）
@@ -31,6 +38,7 @@ export const PlaylistIndexSchema = z.object({
 export const PlaylistsIndexSchema = z.array(PlaylistIndexSchema);
 
 // 型エクスポート
+export type ContentDuration = z.infer<typeof ContentDurationSchema>;
 export type ContentAssignment = z.infer<typeof ContentAssignmentSchema>;
 export type PlaylistItem = z.infer<typeof PlaylistItemSchema>;
 export type PlaylistIndex = z.infer<typeof PlaylistIndexSchema>;

@@ -7,7 +7,7 @@ import { ContentPreview } from "./ContentPreview";
 interface ContentSelectionGridProps {
   contents: ContentIndex[];
   selectedContentIds: string[];
-  onSelectionChange: (contentIds: string[]) => void;
+  onSelectionChange: (contentIds: string[]) => void | Promise<void>;
   loading?: boolean;
   maxItems?: number; // 表示する最大アイテム数
 }
