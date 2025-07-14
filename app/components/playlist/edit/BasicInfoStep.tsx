@@ -31,7 +31,7 @@ export const BasicInfoStep = ({ formData, setFormData, errors, layout }: BasicIn
 
       {/* レイアウト情報表示（編集不可） */}
       {layout && (
-        <Paper p="md" withBorder style={{ backgroundColor: "var(--mantine-color-gray-0)" }}>
+        <Paper p="md" withBorder bg="gray.0">
           <Text size="sm" fw={500} mb="xs">
             使用中のレイアウト
           </Text>

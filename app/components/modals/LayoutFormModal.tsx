@@ -163,7 +163,7 @@ export const LayoutFormModal = ({
     >
       <Flex gap="md" w="100%">
         {/* 左側: フォーム */}
-        <Box component="form" onSubmit={handleSubmit} miw="300px" style={{ flex: "0 0 auto" }}>
+        <Box component="form" onSubmit={handleSubmit} miw="300px" flex="0 0 auto">
           <Stack gap="md">
             <TextInput
               label="レイアウト名"
@@ -218,7 +218,7 @@ export const LayoutFormModal = ({
         </Box>
 
         {/* 右側: レイアウトエディター */}
-        <Flex style={{ flex: 1 }} justify="center" align="center">
+        <Flex flex={1} justify="center" align="center">
           {isInitialized && (
             <LayoutEditor
               regions={formData.regions}

@@ -1,4 +1,4 @@
-import { Button, Checkbox, Group, Paper, Select, Stack, Text } from "@mantine/core";
+import { Box, Button, Checkbox, Group, Paper, Select, Stack, Text } from "@mantine/core";
 import { IconLayoutGrid, IconPlus } from "@tabler/icons-react";
 import { InteractiveLayoutPreview } from "~/components/layout/InteractiveLayoutPreview";
 import type { LayoutIndex, LayoutItem, Orientation, Region } from "~/types/layout";
@@ -69,8 +69,10 @@ export const LayoutSelectionStep = ({
       )}
 
       {createNewLayout && !tempLayoutData && (
-        <Paper p="xl" withBorder style={{ textAlign: "center" }}>
-          <IconLayoutGrid size={48} style={{ marginBottom: "8px", color: "#868e96" }} />
+        <Paper p="xl" withBorder ta="center">
+          <Box mb="8px">
+            <IconLayoutGrid size={48} color="#868e96" />
+          </Box>
           <Text c="dimmed" mb="md">
             新しいレイアウトを作成してください
           </Text>

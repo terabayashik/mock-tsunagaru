@@ -197,7 +197,7 @@ export default function LayoutPage() {
         <Table striped highlightOnHover>
           <Table.Thead>
             <Table.Tr>
-              <Table.Th style={{ width: "40px" }} />
+              <Table.Th w={40} />
               <Table.Th>操作</Table.Th>
               <Table.Th>名前</Table.Th>
               <Table.Th>向き</Table.Th>

@@ -341,13 +341,13 @@ export default function ContentsPage() {
         <Table striped highlightOnHover>
           <Table.Thead>
             <Table.Tr>
-              <Table.Th style={{ width: "60px" }}>編集</Table.Th>
-              <Table.Th style={{ width: "40px" }} />
+              <Table.Th w={60}>編集</Table.Th>
+              <Table.Th w={40} />
               <Table.Th>種別</Table.Th>
               <Table.Th>名前</Table.Th>
               <Table.Th>サイズ/URL</Table.Th>
               <Table.Th>作成日時</Table.Th>
-              <Table.Th style={{ width: "60px" }}>操作</Table.Th>
+              <Table.Th w={60}>操作</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>

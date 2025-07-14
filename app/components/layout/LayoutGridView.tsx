@@ -1,4 +1,4 @@
-import { SimpleGrid, Text } from "@mantine/core";
+import { Box, SimpleGrid, Text } from "@mantine/core";
 import type { LayoutIndex } from "~/types/layout";
 import { LayoutPreview } from "./LayoutPreview";
 
@@ -21,7 +21,7 @@ export const LayoutGridView = ({
     return (
       <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="md">
         {Array.from({ length: 8 }, () => crypto.randomUUID()).map((id) => (
-          <div key={id} style={{ height: "200px", background: "#f8f9fa", borderRadius: "8px" }} />
+          <Box key={id} h="200px" bg="#f8f9fa" style={{ borderRadius: "8px" }} />
         ))}
       </SimpleGrid>
     );

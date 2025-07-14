@@ -152,7 +152,9 @@ export const ContentUsageDisplay = ({ contentId }: ContentUsageDisplayProps) => 
         </Text>
         <Paper p="md" withBorder>
           <Group gap="sm">
-            <IconList size={16} color="var(--mantine-color-dimmed)" />
+            <Box c="dimmed">
+              <IconList size={16} />
+            </Box>
             <Text size="sm" c="dimmed">
               このコンテンツはどのプレイリストでも使用されていません
             </Text>
@@ -178,7 +180,9 @@ export const ContentUsageDisplay = ({ contentId }: ContentUsageDisplayProps) => 
           <Paper key={usage.playlist.id} p="md" withBorder>
             <Stack gap="xs">
               <Group gap="sm" wrap="nowrap">
-                <IconPlaylist size={16} color="var(--mantine-color-blue-6)" />
+                <Box c="blue.6">
+                  <IconPlaylist size={16} />
+                </Box>
                 <Box style={{ flex: 1, minWidth: 0 }}>
                   <Text size="sm" fw={500} style={{ wordBreak: "break-word" }}>
                     {usage.playlist.name}

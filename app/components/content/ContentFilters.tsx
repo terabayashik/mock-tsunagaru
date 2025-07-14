@@ -110,7 +110,7 @@ export const ContentFilters = memo(() => {
         data={filterOptions}
         size="sm"
         aria-label="コンテンツタイプフィルター"
-        style={{ minWidth: "520px" }}
+        miw="520px"
         fullWidth={false}
       />
     </Group>

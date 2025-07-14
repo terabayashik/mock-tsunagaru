@@ -1,4 +1,4 @@
-import { Box, Paper, Text, useMantineColorScheme } from "@mantine/core";
+import { Box, Flex, Paper, Text, useMantineColorScheme } from "@mantine/core";
 import { useCallback } from "react";
 import type { LayoutItem } from "~/types/layout";
 
@@ -68,26 +68,22 @@ export const InteractiveLayoutPreview = ({
       <Paper
         withBorder
         p="md"
-        style={{
-          position: "relative",
-          width: actualCanvasWidth,
-          height: actualCanvasHeight,
-          margin: "0 auto",
-          backgroundColor: "var(--mantine-color-gray-0)",
-          overflow: "hidden",
-        }}
+        pos="relative"
+        w={actualCanvasWidth}
+        h={actualCanvasHeight}
+        mx="auto"
+        bg="gray.0"
+        style={{ overflow: "hidden" }}
       >
         {/* キャンバス背景 */}
         <Box
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: actualCanvasWidth,
-            height: actualCanvasHeight,
-            backgroundColor: colorScheme === "dark" ? "var(--mantine-color-dark-6)" : "var(--mantine-color-gray-1)",
-            borderRadius: "4px",
-          }}
+          pos="absolute"
+          top={0}
+          left={0}
+          w={actualCanvasWidth}
+          h={actualCanvasHeight}
+          bg={colorScheme === "dark" ? "dark.6" : "gray.1"}
+          style={{ borderRadius: "4px" }}
         />
 
         {/* リージョン表示 */}
@@ -97,8 +93,11 @@ export const InteractiveLayoutPreview = ({
           const regionColor = getRegionColor(index, isSelected);
 
           return (
-            <Box
+            <Flex
               key={region.id}
+              direction="column"
+              align="center"
+              justify="center"
               style={{
                 position: "absolute",
                 left: region.x * scale,
@@ -109,10 +108,6 @@ export const InteractiveLayoutPreview = ({
                 border: `2px solid ${regionColor.borderColor}`,
                 borderRadius: "4px",
                 cursor: onRegionClick ? "pointer" : "default",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
                 transition: "all 0.2s ease",
                 zIndex: isSelected ? 10 : 5,
                 boxShadow: isSelected ? `0 0 0 2px ${regionColor.borderColor}` : "none",
@@ -130,7 +125,7 @@ export const InteractiveLayoutPreview = ({
                   {contentCount}個のコンテンツ
                 </Text>
               )}
-            </Box>
+            </Flex>
           );
         })}
 

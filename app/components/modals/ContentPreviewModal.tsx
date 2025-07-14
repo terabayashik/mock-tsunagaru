@@ -159,7 +159,7 @@ export const ContentPreviewModal = ({
       const videoId = extractYouTubeVideoId(content.urlInfo.url);
       if (videoId) {
         return (
-          <Box style={{ textAlign: "center" }}>
+          <Box ta="center">
             <iframe
               width="100%"
               height="400"

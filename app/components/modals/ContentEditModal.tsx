@@ -164,7 +164,7 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
 
         {/* ファイルタイプの場合 */}
         {isFileType && (
-          <Box p="md" style={{ backgroundColor: "#f8f9fa", borderRadius: "4px" }}>
+          <Box p="md" bg="#f8f9fa" style={{ borderRadius: "4px" }}>
             <Text size="sm" c="dimmed">
               ファイルコンテンツは名前とタグのみ編集可能です。
               {content.size && ` ファイルサイズ: ${formatFileSize(content.size)}`}
@@ -175,7 +175,7 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
         {/* URLタイプの場合 */}
         {isUrl && (
           <Stack gap="md">
-            <Box p="md" style={{ backgroundColor: "#f8f9fa", borderRadius: "4px" }}>
+            <Box p="md" bg="#f8f9fa" style={{ borderRadius: "4px" }}>
               <Text size="sm" fw={500} mb="xs">
                 URL情報
               </Text>

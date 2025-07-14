@@ -323,7 +323,7 @@ const Settings = () => {
                       "#E8590C",
                       "#D9480F",
                     ]}
-                    style={{ flex: 1 }}
+                    flex={1}
                   />
                   <Button
                     variant="light"

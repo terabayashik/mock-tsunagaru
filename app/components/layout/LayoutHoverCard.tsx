@@ -1,4 +1,4 @@
-import { Box, Group, HoverCard, Paper, Text } from "@mantine/core";
+import { Box, Flex, Group, HoverCard, Paper, Text } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { useLayout } from "~/hooks/useLayout";
 import type { LayoutIndex, LayoutItem } from "~/types/layout";
@@ -56,25 +56,21 @@ export const LayoutHoverCard = ({ layout, children, disabled = false }: LayoutHo
   const renderPreviewContent = () => {
     if (loading) {
       return (
-        <Box w={CARD_WIDTH} h={300} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Flex w={CARD_WIDTH} h={300} align="center" justify="center">
           <Text size="sm" c="dimmed">
             読み込み中...
           </Text>
-        </Box>
+        </Flex>
       );
     }
 
     if (!layoutDetails) {
       return (
-        <Box
-          w={CARD_WIDTH}
-          h={300}
-          style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}
-        >
+        <Flex w={CARD_WIDTH} h={300} direction="column" align="center" justify="center">
           <Text size="xs" c="dimmed" ta="center">
             レイアウトプレビュー未対応
           </Text>
-        </Box>
+        </Flex>
       );
     }
 

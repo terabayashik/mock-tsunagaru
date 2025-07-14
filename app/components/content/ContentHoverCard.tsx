@@ -334,11 +334,11 @@ export const ContentHoverCard = ({ content, children, disabled = false }: Conten
                 <Text
                   key={tag}
                   size="xs"
+                  bg="gray.1"
+                  c="gray.7"
                   style={{
-                    backgroundColor: "var(--mantine-color-gray-1)",
                     padding: "2px 6px",
                     borderRadius: "4px",
-                    color: "var(--mantine-color-gray-7)",
                   }}
                 >
                   {tag}

@@ -239,16 +239,7 @@ export const ContentPreview = memo(
 
     // Shared component for content info section (3段レイアウト)
     const ContentInfo = () => (
-      <Box
-        p="xs"
-        style={{
-          height: `${INFO_SECTION_HEIGHT}px`,
-          overflow: "hidden",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-        }}
-      >
+      <Flex p="xs" h={INFO_SECTION_HEIGHT} style={{ overflow: "hidden" }} direction="column" justify="space-between">
         {/* 1段目: 名前 */}
         <Tooltip label={content.name} disabled={content.name.length <= 20}>
           <Text size="sm" fw={500} lineClamp={1}>
@@ -306,7 +297,7 @@ export const ContentPreview = memo(
             )}
           </Group>
         </Group>
-      </Box>
+      </Flex>
     );
 
     if (previewState.loading) {
@@ -335,21 +326,11 @@ export const ContentPreview = memo(
         >
           <Box pos="relative">
             {/* ローディング表示 */}
-            <Box
-              style={{
-                height: `${imageHeight}px`,
-                width: "100%",
-                overflow: "hidden",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: "#f8f9fa",
-              }}
-            >
+            <Flex h={imageHeight} w="100%" style={{ overflow: "hidden" }} align="center" justify="center" bg="#f8f9fa">
               <Text size="sm" c="dimmed">
                 読み込み中...
               </Text>
-            </Box>
+            </Flex>
 
             {/* タイプバッジ */}
             <Flex
@@ -359,7 +340,8 @@ export const ContentPreview = memo(
               bg={`${getTypeColor(content.type)}.6`}
               c="white"
               p="2px 6px"
-              style={{ borderRadius: "4px", fontSize: "10px" }}
+              fz="10px"
+              style={{ borderRadius: "4px" }}
               align="center"
               gap="4px"
             >
@@ -398,23 +380,20 @@ export const ContentPreview = memo(
         >
           <Box pos="relative">
             {/* プレビューエラー表示 */}
-            <Box
-              style={{
-                height: `${imageHeight}px`,
-                width: "100%",
-                overflow: "hidden",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: "#f8f9fa",
-              }}
+            <Flex
+              h={imageHeight}
+              w="100%"
+              style={{ overflow: "hidden" }}
+              direction="column"
+              align="center"
+              justify="center"
+              bg="#f8f9fa"
             >
               {getTypeIcon(content.type)}
               <Text size="xs" c="dimmed" mt="xs" ta="center">
                 プレビュー未対応
               </Text>
-            </Box>
+            </Flex>
 
             {/* タイプバッジ */}
             <Flex
@@ -424,7 +403,8 @@ export const ContentPreview = memo(
               bg={`${getTypeColor(content.type)}.6`}
               c="white"
               p="2px 6px"
-              style={{ borderRadius: "4px", fontSize: "10px" }}
+              fz="10px"
+              style={{ borderRadius: "4px" }}
               align="center"
               gap="4px"
             >
@@ -462,28 +442,16 @@ export const ContentPreview = memo(
       >
         <Box pos="relative">
           {/* プレビュー画像 */}
-          <Box
-            style={{
-              height: imageHeight,
-              width: "100%",
-              overflow: "hidden",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "#f8f9fa",
-            }}
-          >
+          <Flex h={imageHeight} w="100%" style={{ overflow: "hidden" }} align="center" justify="center" bg="#f8f9fa">
             <Image
               src={previewState.previewUrl}
               alt={content.name}
-              style={{
-                maxWidth: "100%",
-                maxHeight: "100%",
-                objectFit: "contain",
-              }}
+              maw="100%"
+              mah="100%"
+              style={{ objectFit: "contain" }}
               fallbackSrc="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjFmM2Y0Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIiBmaWxsPSIjOWNhM2FmIiBmb250LXNpemU9IjE0Ij5ObyBQcmV2aWV3PC90ZXh0Pjwvc3ZnPg=="
             />
-          </Box>
+          </Flex>
 
           {/* オーバーレイアイコン */}
           {(content.type === "video" || content.type === "youtube") && (
@@ -510,7 +478,8 @@ export const ContentPreview = memo(
               bg="rgba(0, 0, 0, 0.8)"
               c="white"
               p="2px 6px"
-              style={{ borderRadius: "4px", fontSize: "11px" }}
+              fz="11px"
+              style={{ borderRadius: "4px" }}
             >
               {formatDuration(previewState.metadata.duration)}
             </Box>

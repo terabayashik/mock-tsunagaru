@@ -251,26 +251,32 @@ export const ContentAddModal = memo(
               >
                 <Group justify="center" gap="xl" mih={220} style={{ pointerEvents: "none" }}>
                   <Dropzone.Accept>
-                    <IconCloudUpload size={50} stroke={1.5} color="var(--mantine-color-green-6)" />
+                    <Box c="green.6">
+                      <IconCloudUpload size={50} stroke={1.5} />
+                    </Box>
                   </Dropzone.Accept>
                   <Dropzone.Reject>
-                    <IconX size={50} stroke={1.5} color="var(--mantine-color-red-6)" />
+                    <Box c="red.6">
+                      <IconX size={50} stroke={1.5} />
+                    </Box>
                   </Dropzone.Reject>
                   <Dropzone.Idle>
-                    <IconCloudUpload size={50} stroke={1.5} color="var(--mantine-color-blue-6)" />
+                    <Box c="blue.6">
+                      <IconCloudUpload size={50} stroke={1.5} />
+                    </Box>
                   </Dropzone.Idle>
 
-                  <div style={{ textAlign: "center" }}>
-                    <Text size="xl" inline fw={500}>
+                  <Box>
+                    <Text size="xl" inline fw={500} ta="center">
                       ファイルをドラッグ&ドロップするか、クリックして選択
                     </Text>
-                    <Text size="sm" c="dimmed" inline mt={7} style={{ display: "block" }}>
+                    <Text size="sm" c="dimmed" inline mt={7} display="block" ta="center">
                       動画、画像、テキストファイルをアップロードできます（最大500MB）
                     </Text>
-                    <Text size="xs" c="dimmed" mt="xs" style={{ display: "block" }}>
+                    <Text size="xs" c="dimmed" mt="xs" display="block">
                       対応形式：MP4, AVI, MOV, WMV, PNG, JPG, GIF, TXT, PDF
                     </Text>
-                  </div>
+                  </Box>
                 </Group>
               </Dropzone>
             ) : (

@@ -2,6 +2,7 @@ import {
   ActionIcon,
   Box,
   Button,
+  Flex,
   Group,
   NumberInput,
   Popover,
@@ -57,15 +58,15 @@ const generateGridLines = (canvasWidth: number, canvasHeight: number, scale: num
   // 縦のグリッドライン
   for (let x = 0; x <= CANVAS_WIDTH; x += GRID_LINE_SPACING) {
     lines.push(
-      <div
+      <Box
         key={`vertical-${x}`}
+        pos="absolute"
+        bg={gridColor}
         style={{
-          position: "absolute",
           left: x * scale,
           top: 0,
           width: "1px",
           height: canvasHeight,
-          backgroundColor: gridColor,
           pointerEvents: "none",
         }}
       />,
@@ -75,15 +76,15 @@ const generateGridLines = (canvasWidth: number, canvasHeight: number, scale: num
   // 横のグリッドライン
   for (let y = 0; y <= CANVAS_HEIGHT; y += GRID_LINE_SPACING) {
     lines.push(
-      <div
+      <Box
         key={`horizontal-${y}`}
+        pos="absolute"
+        bg={gridColor}
         style={{
-          position: "absolute",
           left: 0,
           top: y * scale,
           width: canvasWidth,
           height: "1px",
-          backgroundColor: gridColor,
           pointerEvents: "none",
         }}
       />,
@@ -492,10 +493,12 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
       </div>
 
       {/* 選択中のリージョン情報 - 固定高さ */}
-      <div
+      <Flex
+        align="center"
+        h={40}
+        px="sm"
+        py={8}
         style={{
-          height: "40px",
-          padding: "8px 12px",
           backgroundColor: selectedRegionData
             ? colorScheme === "dark"
               ? "var(--mantine-color-blue-9)"
@@ -505,8 +508,6 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
               : "var(--mantine-color-gray-0)",
           borderRadius: "4px",
           fontSize: "12px",
-          display: "flex",
-          alignItems: "center",
           border: `1px solid ${colorScheme === "dark" ? "var(--mantine-color-dark-4)" : "var(--mantine-color-gray-3)"}`,
         }}
       >
@@ -515,7 +516,7 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
             ? `リージョン ${regions.findIndex((r) => r.id === selectedRegionData.id) + 1}: X:${selectedRegionData.x}, Y:${selectedRegionData.y}, 幅:${selectedRegionData.width}, 高さ:${selectedRegionData.height}`
             : "リージョンを選択してください"}
         </Text>
-      </div>
+      </Flex>
     </Stack>
   );
 };

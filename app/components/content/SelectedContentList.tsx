@@ -1,4 +1,4 @@
-import { Box, Group, Paper, Stack, Text } from "@mantine/core";
+import { Box, Flex, Group, Paper, Stack, Text } from "@mantine/core";
 import { IconGripVertical } from "@tabler/icons-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useState } from "react";
@@ -69,7 +69,7 @@ export const SelectedContentList = ({ selectedContents, onReorder, contentDurati
 
   if (selectedContents.length === 0) {
     return (
-      <Paper p="md" withBorder style={{ minHeight: "120px" }}>
+      <Paper p="md" withBorder mih="120px">
         <Text size="sm" c="dimmed" ta="center">
           コンテンツを選択すると、ここに順序付きで表示されます
         </Text>
@@ -147,8 +147,8 @@ export const SelectedContentList = ({ selectedContents, onReorder, contentDurati
                     style={{
                       cursor: isDragging ? "grabbing" : "grab",
                       opacity: isDragging ? 0.9 : 1,
-                      backgroundColor: isDragOver && dragIndex !== index ? "var(--mantine-color-blue-0)" : undefined,
-                      borderColor: isDragOver && dragIndex !== index ? "var(--mantine-color-blue-4)" : undefined,
+                      backgroundColor: isDragOver && dragIndex !== index ? "blue.0" : undefined,
+                      borderColor: isDragOver && dragIndex !== index ? "blue.4" : undefined,
                     }}
                     onDragStart={(e) => handleDragStart(e, index)}
                     onDragEnd={handleDragEnd}
@@ -158,45 +158,43 @@ export const SelectedContentList = ({ selectedContents, onReorder, contentDurati
                   >
                     <Group gap="sm" wrap="nowrap">
                       {/* 順序番号 */}
-                      <Box
-                        style={{
-                          minWidth: "24px",
-                          height: "24px",
-                          backgroundColor: "#4a90e2",
-                          borderRadius: "50%",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
+                      <Flex
+                        miw="24px"
+                        h="24px"
+                        bg="#4a90e2"
+                        style={{ borderRadius: "50%" }}
+                        align="center"
+                        justify="center"
                       >
                         <Text size="xs" c="white" fw={600}>
                           {index + 1}
                         </Text>
-                      </Box>
+                      </Flex>
 
                       {/* ドラッグハンドル */}
-                      <IconGripVertical size={16} style={{ color: "var(--mantine-color-gray-5)" }} />
-
-                      {/* サムネイル */}
-                      <Box
-                        style={{
-                          width: "40px",
-                          height: "30px",
-                          backgroundColor: "var(--mantine-color-gray-1)",
-                          borderRadius: "4px",
-                          flexShrink: 0,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: "10px",
-                          color: "var(--mantine-color-gray-6)",
-                        }}
-                      >
-                        {content.type === "image" ? "📷" : content.type === "video" ? "🎬" : "📄"}
+                      <Box c="gray.5">
+                        <IconGripVertical size={16} />
                       </Box>
 
+                      {/* サムネイル */}
+                      <Flex
+                        w="40px"
+                        h="30px"
+                        bg="gray.1"
+                        c="gray.6"
+                        style={{
+                          borderRadius: "4px",
+                          flexShrink: 0,
+                          fontSize: "10px",
+                        }}
+                        align="center"
+                        justify="center"
+                      >
+                        {content.type === "image" ? "📷" : content.type === "video" ? "🎬" : "📄"}
+                      </Flex>
+
                       {/* コンテンツ情報 */}
-                      <Box style={{ flex: 1, overflow: "hidden" }}>
+                      <Box flex={1} style={{ overflow: "hidden" }}>
                         <Text size="sm" fw={500} lineClamp={1}>
                           {content.name}
                         </Text>

@@ -1,4 +1,4 @@
-import { ActionIcon, Box, Group, Paper, Text, Tooltip } from "@mantine/core";
+import { ActionIcon, Box, Flex, Group, Paper, Text, Tooltip } from "@mantine/core";
 import { IconEdit, IconTrash } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { useLayout } from "~/hooks/useLayout";
@@ -82,20 +82,9 @@ export const LayoutPreview = ({ layout, onClick, onEdit, onDelete }: LayoutPrevi
   const renderRegions = () => {
     if (!layoutDetails || loading) {
       return (
-        <Box
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: "#f8f9fa",
-            color: "#9ca3af",
-            fontSize: "12px",
-          }}
-        >
+        <Flex w="100%" h="100%" align="center" justify="center" bg="gray.0" c="gray.5" fz="xs">
           {loading ? "読み込み中..." : "プレビュー未対応"}
-        </Box>
+        </Flex>
       );
     }
 
@@ -104,39 +93,31 @@ export const LayoutPreview = ({ layout, onClick, onEdit, onDelete }: LayoutPrevi
     // 統一スケールを使用してアスペクト比を正確に保持
 
     return (
-      <Box
-        style={{
-          width: "100%",
-          height: "100%",
-          position: "relative",
-          backgroundColor: "#f8f9fa",
-        }}
-      >
+      <Box w="100%" h="100%" pos="relative" bg="#f8f9fa">
         {layoutDetails.regions.map((region, index) => {
           const colors = REGION_COLORS[index % REGION_COLORS.length];
           return (
-            <Box
+            <Flex
               key={region.id}
+              pos="absolute"
+              bg={colors.bg}
+              fz="8px"
+              c="white"
+              fw={700}
+              align="center"
+              justify="center"
               style={{
-                position: "absolute",
                 left: `${region.x * scale}px`,
                 top: `${region.y * scale}px`,
                 width: `${region.width * scale}px`,
                 height: `${region.height * scale}px`,
-                backgroundColor: colors.bg,
                 border: `1px solid ${colors.border}`,
                 borderRadius: "2px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "8px",
-                color: "white",
-                fontWeight: 700,
                 textShadow: "1px 1px 2px rgba(0,0,0,0.6)",
               }}
             >
               リージョン {index + 1}
-            </Box>
+            </Flex>
           );
         })}
       </Box>
