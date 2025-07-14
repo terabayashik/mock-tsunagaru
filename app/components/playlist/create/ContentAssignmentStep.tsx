@@ -1,4 +1,4 @@
-import { Box, Button, Group, Paper, Stack, Text } from "@mantine/core";
+import { Box, Button, Group, Paper, ScrollArea, Text } from "@mantine/core";
 import { IconPlus } from "@tabler/icons-react";
 import { useState } from "react";
 import { ContentSelectionGrid } from "~/components/content/ContentSelectionGrid";
@@ -59,33 +59,36 @@ export const ContentAssignmentStep = ({
   }
 
   return (
-    <Stack gap="md">
-      <Group align="flex-start" gap="md" style={{ minHeight: "600px" }}>
-        {/* 左側: レイアウトプレビュー */}
-        <Box style={{ flex: "0 0 350px" }}>
-          <InteractiveLayoutPreview
-            layout={layout}
-            selectedRegionId={selectedRegionId}
-            onRegionClick={handleRegionSelect}
-            assignedContentCounts={getAssignedContentCounts()}
-            canvasWidth={350}
-            canvasHeight={197}
-          />
-        </Box>
+    <Group align="flex-start" gap="md" style={{ height: "100%", minHeight: "600px" }}>
+      {/* 左側: レイアウトプレビュー */}
+      <Box style={{ flex: "0 0 350px" }}>
+        <Text fw={600} mb="sm">
+          レイアウトプレビュー
+        </Text>
+        <InteractiveLayoutPreview
+          layout={layout}
+          selectedRegionId={selectedRegionId}
+          onRegionClick={handleRegionSelect}
+          assignedContentCounts={getAssignedContentCounts()}
+          canvasWidth={350}
+          canvasHeight={197}
+        />
+      </Box>
 
-        {/* 中央: コンテンツ選択 */}
-        <Box style={{ flex: "1 1 auto" }}>
-          {selectedRegionId ? (
-            <>
-              <Group justify="space-between" mb="sm">
-                <Text fw={600}>
-                  リージョン {layout.regions.findIndex((r) => r.id === selectedRegionId) + 1} のコンテンツを選択
-                </Text>
-                <Button variant="light" size="xs" leftSection={<IconPlus size={14} />} onClick={onContentAddClick}>
-                  コンテンツを追加
-                </Button>
-              </Group>
+      {/* 中央: コンテンツ選択 */}
+      <Box style={{ flex: "1 1 auto", height: "100%", display: "flex", flexDirection: "column" }}>
+        {selectedRegionId ? (
+          <>
+            <Group justify="space-between" mb="sm">
+              <Text fw={600}>
+                リージョン {layout.regions.findIndex((r) => r.id === selectedRegionId) + 1} のコンテンツを選択
+              </Text>
+              <Button variant="light" size="xs" leftSection={<IconPlus size={14} />} onClick={onContentAddClick}>
+                コンテンツを追加
+              </Button>
+            </Group>
 
+            <ScrollArea style={{ flex: 1 }} type="auto">
               {contents.length === 0 ? (
                 <Paper p="xl" withBorder style={{ textAlign: "center" }}>
                   <Text c="dimmed" mb="sm">
@@ -105,20 +108,39 @@ export const ContentAssignmentStep = ({
                   onSelectionChange={(contentIds) => onContentAssignmentChange(selectedRegionId, contentIds)}
                 />
               )}
-            </>
-          ) : (
-            <Paper p="xl" withBorder style={{ textAlign: "center" }}>
-              <Text c="dimmed">左側のレイアウトからリージョンを選択してください</Text>
-            </Paper>
-          )}
-        </Box>
+            </ScrollArea>
+          </>
+        ) : (
+          <Paper
+            p="xl"
+            withBorder
+            style={{
+              textAlign: "center",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+            }}
+          >
+            <Text c="dimmed">左側のレイアウトからリージョンを選択してください</Text>
+          </Paper>
+        )}
+      </Box>
 
-        {/* 右側: 選択されたコンテンツ一覧 */}
-        {selectedRegionId && regionAssignment && regionAssignment.contentIds.length > 0 && (
-          <Box style={{ flex: "0 0 300px" }}>
-            <Text fw={600} mb="sm">
-              選択されたコンテンツ ({regionAssignment.contentIds.length}件)
-            </Text>
+      {/* 右側: 選択されたコンテンツ一覧 */}
+      {selectedRegionId && regionAssignment && regionAssignment.contentIds.length > 0 && (
+        <Box
+          style={{
+            flex: "0 0 300px",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <Text fw={600} mb="sm">
+            選択されたコンテンツ ({regionAssignment.contentIds.length}件)
+          </Text>
+          <ScrollArea style={{ flex: 1, minHeight: 0 }} type="auto" scrollbarSize={8}>
             <SelectedContentList
               selectedContents={contents.filter((c) => regionAssignment.contentIds.includes(c.id))}
               onReorder={(reorderedIds) => onContentReorder(selectedRegionId, reorderedIds)}
@@ -137,9 +159,9 @@ export const ContentAssignmentStep = ({
                   : undefined
               }
             />
-          </Box>
-        )}
-      </Group>
-    </Stack>
+          </ScrollArea>
+        </Box>
+      )}
+    </Group>
   );
 };

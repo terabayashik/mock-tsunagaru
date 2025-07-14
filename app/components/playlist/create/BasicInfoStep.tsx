@@ -1,5 +1,5 @@
 import { Stack, TextInput } from "@mantine/core";
-import type { PlaylistFormData } from "~/hooks/usePlaylistCreate";
+import type { PlaylistFormData } from "~/types/playlistForm";
 
 interface BasicInfoStepProps {
   formData: PlaylistFormData;

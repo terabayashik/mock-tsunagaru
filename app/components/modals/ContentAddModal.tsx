@@ -222,24 +222,53 @@ export const ContentAddModal = memo(
           {/* ファイルアップロードモード */}
           {isFileMode &&
             (selectedFiles.length === 0 ? (
-              <Dropzone onDrop={handleFileDrop} accept={getAllAcceptedMimeTypes()} maxSize={MAX_FILE_SIZE} multiple>
+              <Dropzone
+                onDrop={handleFileDrop}
+                accept={getAllAcceptedMimeTypes()}
+                maxSize={MAX_FILE_SIZE}
+                multiple
+                styles={{
+                  root: {
+                    border: "2px dashed #dee2e6",
+                    borderRadius: "8px",
+                    backgroundColor: "#f8f9fa",
+                    transition: "all 0.2s ease",
+                    cursor: "pointer",
+                    "&:hover": {
+                      borderColor: "#228be6",
+                      backgroundColor: "#f0f7ff",
+                    },
+                    "&[data-accept]": {
+                      borderColor: "#51cf66",
+                      backgroundColor: "#ebfbee",
+                    },
+                    "&[data-reject]": {
+                      borderColor: "#ff6b6b",
+                      backgroundColor: "#fff0f0",
+                    },
+                  },
+                }}
+              >
                 <Group justify="center" gap="xl" mih={220} style={{ pointerEvents: "none" }}>
                   <Dropzone.Accept>
-                    <IconCloudUpload size={50} stroke={1.5} />
+                    <IconCloudUpload size={50} stroke={1.5} color="var(--mantine-color-green-6)" />
                   </Dropzone.Accept>
                   <Dropzone.Reject>
-                    <IconX size={50} stroke={1.5} />
+                    <IconX size={50} stroke={1.5} color="var(--mantine-color-red-6)" />
                   </Dropzone.Reject>
                   <Dropzone.Idle>
-                    <IconCloudUpload size={50} stroke={1.5} />
+                    <IconCloudUpload size={50} stroke={1.5} color="var(--mantine-color-blue-6)" />
                   </Dropzone.Idle>
 
-                  <div>
-                    <Text size="xl" inline>
+                  <div style={{ textAlign: "center" }}>
+                    <Text size="xl" inline fw={500}>
                       ファイルをドラッグ&ドロップするか、クリックして選択
                     </Text>
-                    <Text size="sm" c="dimmed" inline mt={7}>
+                    <Text size="sm" c="dimmed" inline mt={7} style={{ display: "block" }}>
                       動画、画像、テキストファイルをアップロードできます（最大500MB）
+                    </Text>
+                    <Text size="xs" c="dimmed" mt="xs" style={{ display: "block" }}>
+                      対応形式：MP4, AVI, MOV, WMV, PNG, JPG, GIF, TXT, PDF
                     </Text>
                   </div>
                 </Group>
