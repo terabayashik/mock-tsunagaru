@@ -263,7 +263,7 @@ export const ContentPreview = memo(
             )}
           </Group>
 
-          <Group gap="xs">
+          <Group gap="xs" className="content-actions" style={{ opacity: 0, transition: 'opacity 0.2s ease' }}>
             {onEdit && (
               <ActionIcon
                 size="xs"
@@ -332,6 +332,18 @@ export const ContentPreview = memo(
           style={{
             cursor: onClick ? "pointer" : "default",
           }}
+          styles={{
+            root: {
+              "&:hover .content-actions, &:focus-within .content-actions, &:active .content-actions": {
+                opacity: 1,
+              },
+              "@media (hover: none)": {
+                "& .content-actions": {
+                  opacity: 1,
+                },
+              },
+            },
+          }}
           onClick={onClick}
         >
           <Box pos="relative">
@@ -382,6 +394,18 @@ export const ContentPreview = memo(
           h={totalHeight}
           style={{
             cursor: onClick ? "pointer" : "default",
+          }}
+          styles={{
+            root: {
+              "&:hover .content-actions, &:focus-within .content-actions, &:active .content-actions": {
+                opacity: 1,
+              },
+              "@media (hover: none)": {
+                "& .content-actions": {
+                  opacity: 1,
+                },
+              },
+            },
           }}
           onClick={onClick}
         >
@@ -437,8 +461,13 @@ export const ContentPreview = memo(
         }}
         styles={{
           root: {
-            "&:hover .content-actions": {
+            "&:hover .content-actions, &:focus-within .content-actions, &:active .content-actions": {
               opacity: 1,
+            },
+            "@media (hover: none)": {
+              "& .content-actions": {
+                opacity: 1,
+              },
             },
           },
         }}
