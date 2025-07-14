@@ -61,7 +61,9 @@ export const ContentFilters = memo(() => {
     label: (
       <Group gap={4} align="center" justify="center" miw="80px" wrap="nowrap">
         {getFilterIcon(type)}
-        <Text size="xs" style={{ whiteSpace: 'nowrap' }}>{getFilterLabel(type)}</Text>
+        <Text size="xs" style={{ whiteSpace: "nowrap" }}>
+          {getFilterLabel(type)}
+        </Text>
       </Group>
     ),
   });
@@ -108,7 +110,7 @@ export const ContentFilters = memo(() => {
         data={filterOptions}
         size="sm"
         aria-label="コンテンツタイプフィルター"
-        style={{ minWidth: '520px' }}
+        style={{ minWidth: "520px" }}
         fullWidth={false}
       />
     </Group>

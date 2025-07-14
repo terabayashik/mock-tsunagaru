@@ -2,6 +2,7 @@ import {
   Box,
   Button,
   ColorInput,
+  Divider,
   Group,
   Modal,
   NumberInput,
@@ -13,6 +14,7 @@ import {
 } from "@mantine/core";
 import { IconDeviceFloppy } from "@tabler/icons-react";
 import { memo, useEffect, useState } from "react";
+import { ContentUsageDisplay } from "~/components/content/ContentUsageDisplay";
 import { type ContentIndex, FONT_FAMILIES, type RichTextContent } from "~/types/content";
 
 interface ContentEditModalProps {
@@ -325,8 +327,12 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
           </Stack>
         )}
 
+        {/* 使用状況 */}
+        <Divider />
+        <ContentUsageDisplay contentId={content.id} />
+
         {/* アクションボタン */}
-        <Group justify="flex-end">
+        <Group justify="flex-end" mt="lg">
           <Button variant="subtle" onClick={handleClose} disabled={loading}>
             キャンセル
           </Button>

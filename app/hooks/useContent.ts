@@ -1,14 +1,17 @@
 import { useCallback } from "react";
 import type { ContentIndex, ContentItem, ContentType, RichTextContent } from "~/types/content";
 import { ContentItemSchema, ContentsIndexSchema, getContentTypeFromMimeType, isYouTubeUrl } from "~/types/content";
+import { type ContentUsageInfo, checkContentUsage } from "~/utils/contentUsage";
 import { logger } from "~/utils/logger";
 import { thumbnailGenerator } from "~/utils/media/thumbnailGenerator";
 import { OPFSError, OPFSManager } from "~/utils/storage/opfs";
 import { OPFSLock } from "~/utils/storage/opfsLock";
+import { usePlaylist } from "./usePlaylist";
 
 export const useContent = () => {
   const opfs = OPFSManager.getInstance();
   const lock = OPFSLock.getInstance();
+  const { getPlaylistsIndex, getPlaylistById } = usePlaylist();
 
   /**
    * コンテンツ一覧を取得
@@ -382,6 +385,39 @@ export const useContent = () => {
   );
 
   /**
+   * コンテンツの使用状況をチェック
+   */
+  const checkContentUsageStatus = useCallback(
+    async (contentId: string): Promise<ContentUsageInfo> => {
+      return await checkContentUsage(contentId, getPlaylistsIndex, getPlaylistById);
+    },
+    [getPlaylistsIndex, getPlaylistById],
+  );
+
+  /**
+   * 使用状況をチェックしてからコンテンツを削除
+   * プレイリストで使用中の場合はエラーを投げる
+   */
+  const deleteContentSafely = useCallback(
+    async (id: string): Promise<void> => {
+      // 使用状況をチェック
+      const usageInfo = await checkContentUsageStatus(id);
+
+      if (usageInfo.isUsed) {
+        const playlistNames = usageInfo.playlists.map((p) => p.name).join("、");
+        throw new Error(
+          `このコンテンツは以下のプレイリストで使用されているため削除できません：${playlistNames}\n\n` +
+            "削除するには、まずプレイリストからコンテンツを削除してください。",
+        );
+      }
+
+      // 使用されていない場合は通常の削除を実行
+      await deleteContent(id);
+    },
+    [checkContentUsageStatus, deleteContent],
+  );
+
+  /**
    * ファイルコンテンツのバイナリデータを取得
    */
   const getFileContent = useCallback(
@@ -505,6 +541,8 @@ export const useContent = () => {
     createRichTextContent,
     updateContent,
     deleteContent,
+    deleteContentSafely,
+    checkContentUsageStatus,
     getFileContent,
     getThumbnailUrl,
     regenerateAllThumbnails,

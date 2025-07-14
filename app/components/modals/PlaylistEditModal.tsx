@@ -1,7 +1,33 @@
-import { Box, Button, Divider, Group, Modal, Paper, Progress, ScrollArea, SegmentedControl, Stack, Text, TextInput } from "@mantine/core";
+import {
+  Box,
+  Button,
+  Divider,
+  Group,
+  Modal,
+  Paper,
+  Progress,
+  ScrollArea,
+  SegmentedControl,
+  Stack,
+  Text,
+  TextInput,
+} from "@mantine/core";
 import type { FileWithPath } from "@mantine/dropzone";
 import { modals } from "@mantine/modals";
-import { IconArrowLeft, IconArrowRight, IconBrandYoutube, IconDeviceFloppy, IconFile, IconFileText, IconLink, IconPhoto, IconPlus, IconSearch, IconVideo, IconX } from "@tabler/icons-react";
+import {
+  IconArrowLeft,
+  IconArrowRight,
+  IconBrandYoutube,
+  IconDeviceFloppy,
+  IconFile,
+  IconFileText,
+  IconLink,
+  IconPhoto,
+  IconPlus,
+  IconSearch,
+  IconVideo,
+  IconX,
+} from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
 import { ContentSelectionGrid } from "~/components/content/ContentSelectionGrid";
 import { SelectedContentList } from "~/components/content/SelectedContentList";
@@ -58,7 +84,7 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
     contentName: string;
     contentType: string;
   } | null>(null);
-  
+
   // フィルター状態
   const [contentTypeFilter, setContentTypeFilter] = useState<ContentType | "all">("all");
   const [contentSearchQuery, setContentSearchQuery] = useState("");
@@ -423,45 +449,6 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
     return duration?.duration;
   };
 
-  // フィルターアイコンとラベルのヘルパー関数
-  const getFilterIcon = (type: ContentType | "all") => {
-    switch (type) {
-      case "all":
-        return <IconFile size={14} />;
-      case "video":
-        return <IconVideo size={14} />;
-      case "image":
-        return <IconPhoto size={14} />;
-      case "text":
-        return <IconFileText size={14} />;
-      case "youtube":
-        return <IconBrandYoutube size={14} />;
-      case "url":
-        return <IconLink size={14} />;
-      default:
-        return <IconFile size={14} />;
-    }
-  };
-
-  const getFilterLabel = (type: ContentType | "all") => {
-    switch (type) {
-      case "all":
-        return "すべて";
-      case "video":
-        return "動画";
-      case "image":
-        return "画像";
-      case "text":
-        return "テキスト";
-      case "youtube":
-        return "YouTube";
-      case "url":
-        return "URL";
-      default:
-        return "すべて";
-    }
-  };
-
   // フィルター済みコンテンツの取得
   const getFilteredContents = useCallback(() => {
     let filtered = contents;
@@ -612,7 +599,7 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                             flex={1}
                             size="sm"
                           />
-                          
+
                           <SegmentedControl
                             value={contentTypeFilter}
                             onChange={(value) => setContentTypeFilter(value as ContentType | "all")}
@@ -621,7 +608,7 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                                 value: "all",
                                 label: (
                                   <Group gap={4} align="center" justify="center" miw="60px" wrap="nowrap">
-                                    {getFilterIcon("all")}
+                                    <IconFile size={14} />
                                     <Text size="xs">すべて</Text>
                                   </Group>
                                 ),
@@ -630,7 +617,7 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                                 value: "video",
                                 label: (
                                   <Group gap={4} align="center" justify="center" miw="60px" wrap="nowrap">
-                                    {getFilterIcon("video")}
+                                    <IconVideo size={14} />
                                     <Text size="xs">動画</Text>
                                   </Group>
                                 ),
@@ -639,7 +626,7 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                                 value: "image",
                                 label: (
                                   <Group gap={4} align="center" justify="center" miw="60px" wrap="nowrap">
-                                    {getFilterIcon("image")}
+                                    <IconPhoto size={14} />
                                     <Text size="xs">画像</Text>
                                   </Group>
                                 ),
@@ -648,7 +635,7 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                                 value: "text",
                                 label: (
                                   <Group gap={4} align="center" justify="center" miw="60px" wrap="nowrap">
-                                    {getFilterIcon("text")}
+                                    <IconFileText size={14} />
                                     <Text size="xs">テキスト</Text>
                                   </Group>
                                 ),
@@ -657,7 +644,7 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                                 value: "youtube",
                                 label: (
                                   <Group gap={4} align="center" justify="center" miw="60px" wrap="nowrap">
-                                    {getFilterIcon("youtube")}
+                                    <IconBrandYoutube size={14} />
                                     <Text size="xs">YouTube</Text>
                                   </Group>
                                 ),
@@ -666,7 +653,7 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                                 value: "url",
                                 label: (
                                   <Group gap={4} align="center" justify="center" miw="60px" wrap="nowrap">
-                                    {getFilterIcon("url")}
+                                    <IconLink size={14} />
                                     <Text size="xs">URL</Text>
                                   </Group>
                                 ),
@@ -721,7 +708,17 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                         </ScrollArea>
                       </>
                     ) : (
-                      <Paper p="xl" withBorder style={{ textAlign: "center", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                      <Paper
+                        p="xl"
+                        withBorder
+                        style={{
+                          textAlign: "center",
+                          height: "100%",
+                          display: "flex",
+                          flexDirection: "column",
+                          justifyContent: "center",
+                        }}
+                      >
                         <Text c="dimmed" mb="sm">
                           右のレイアウトプレビューからリージョンを選択してください
                         </Text>
@@ -733,11 +730,21 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                   </Box>
 
                   {/* 右側: レイアウトプレビューと順序変更 */}
-                  <Box style={{ flex: "0 0 400px", minWidth: "400px", height: "100%", display: "flex", flexDirection: "column" }}>
+                  <Box
+                    style={{
+                      flex: "0 0 400px",
+                      minWidth: "400px",
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                  >
                     <Stack gap="lg" style={{ height: "100%" }}>
                       {/* レイアウトプレビュー */}
                       <Box>
-                        <Text fw={600} mb="sm">レイアウトプレビュー</Text>
+                        <Text fw={600} mb="sm">
+                          レイアウトプレビュー
+                        </Text>
                         <InteractiveLayoutPreview
                           layout={layout}
                           selectedRegionId={selectedRegionId}
@@ -751,7 +758,9 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                       {/* 順序変更 */}
                       {selectedRegionId && (
                         <Box style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-                          <Text fw={600} mb="sm">順序変更</Text>
+                          <Text fw={600} mb="sm">
+                            順序変更
+                          </Text>
                           <ScrollArea style={{ flex: 1, minHeight: 0 }} type="auto" scrollbarSize={8}>
                             <SelectedContentList
                               selectedContents={
@@ -812,7 +821,7 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
           padding: 0,
           overflow: "hidden",
           display: "flex",
-          flexDirection: "column",
+          flexDirection: "column" as const,
         },
       };
     }
@@ -854,7 +863,12 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
           </Box>
 
           {/* ナビゲーションボタン */}
-          <Group justify="space-between" mt={currentStep === "content" ? "sm" : "lg"} px={currentStep === "content" ? 20 : 0} pb={currentStep === "content" ? 16 : 0}>
+          <Group
+            justify="space-between"
+            mt={currentStep === "content" ? "sm" : "lg"}
+            px={currentStep === "content" ? 20 : 0}
+            pb={currentStep === "content" ? 16 : 0}
+          >
             <Group>
               <Button variant="subtle" leftSection={<IconX size={16} />} onClick={handleClose} disabled={loading}>
                 キャンセル

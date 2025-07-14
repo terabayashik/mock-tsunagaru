@@ -56,12 +56,12 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState<Step>("basic");
   const [formData, setFormData] = useState<PlaylistFormData>({
-    name: `プレイリスト ${new Date().toLocaleString("ja-JP", { 
-      year: "numeric", 
-      month: "2-digit", 
-      day: "2-digit", 
-      hour: "2-digit", 
-      minute: "2-digit" 
+    name: `プレイリスト ${new Date().toLocaleString("ja-JP", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
     })}`,
     device: "",
     layoutId: "",
@@ -129,15 +129,15 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
     if (opened) {
       loadLayouts();
       loadContents();
-      
+
       // モーダルが開かれたときの初期値を記録
       const initialData = {
-        name: `プレイリスト ${new Date().toLocaleString("ja-JP", { 
-          year: "numeric", 
-          month: "2-digit", 
-          day: "2-digit", 
-          hour: "2-digit", 
-          minute: "2-digit" 
+        name: `プレイリスト ${new Date().toLocaleString("ja-JP", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
         })}`,
         device: "",
         layoutId: "",
@@ -306,12 +306,12 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
   const resetForm = () => {
     setCurrentStep("basic");
     const newInitialData = {
-      name: `プレイリスト ${new Date().toLocaleString("ja-JP", { 
-        year: "numeric", 
-        month: "2-digit", 
-        day: "2-digit", 
-        hour: "2-digit", 
-        minute: "2-digit" 
+      name: `プレイリスト ${new Date().toLocaleString("ja-JP", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
       })}`,
       device: "",
       layoutId: "",

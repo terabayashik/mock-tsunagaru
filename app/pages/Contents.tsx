@@ -54,7 +54,8 @@ export default function ContentsPage() {
 
   const {
     getContentsIndex,
-    deleteContent,
+    deleteContentSafely,
+    checkContentUsageStatus,
     createFileContent,
     createUrlContent,
     createRichTextContent,
@@ -85,21 +86,71 @@ export default function ContentsPage() {
   }, [getContentsIndex, contentDispatch]);
 
   // コンテンツ関連のハンドラー
-  const handleContentDelete = async (id: string) => {
-    modals.openConfirmModal({
-      title: "コンテンツを削除",
-      children: <Text size="sm">このコンテンツを削除しますか？この操作は元に戻せません。</Text>,
-      labels: { confirm: "削除", cancel: "キャンセル" },
-      confirmProps: { color: "red" },
-      onConfirm: async () => {
-        try {
-          await deleteContent(id);
-          contentDispatch({ type: "REMOVE_CONTENT", id });
-        } catch (error) {
-          contentDispatch({ type: "SET_ERROR", error: error instanceof Error ? error.message : "削除に失敗しました" });
-        }
-      },
-    });
+  const handleContentDelete = async (id: string, contentName: string) => {
+    try {
+      // 使用状況をチェック
+      const usageInfo = await checkContentUsageStatus(id);
+
+      if (usageInfo.isUsed) {
+        // 使用中の場合は削除できない旨を表示
+        modals.openConfirmModal({
+          title: "削除できません",
+          children: (
+            <Box>
+              <Text size="sm" mb="md">
+                このコンテンツは以下のプレイリストで使用されているため削除できません：
+              </Text>
+              <Box mb="md">
+                {usageInfo.playlists.map((playlist) => (
+                  <Badge key={playlist.id} variant="light" color="blue" size="sm" mr="xs" mb="xs">
+                    {playlist.name}
+                  </Badge>
+                ))}
+              </Box>
+              <Text size="sm" c="dimmed">
+                削除するには、まずプレイリストからコンテンツを削除してください。
+              </Text>
+            </Box>
+          ),
+          labels: { confirm: "OK", cancel: "" },
+          cancelProps: { display: "none" },
+        });
+        return;
+      }
+
+      // 使用されていない場合は通常の削除確認
+      modals.openConfirmModal({
+        title: "コンテンツを削除",
+        children: (
+          <Box>
+            <Text size="sm" mb="md">
+              「{contentName}」を削除しますか？この操作は元に戻せません。
+            </Text>
+            <Alert icon={<IconExclamationCircle size={16} />} color="gray">
+              このコンテンツはどのプレイリストでも使用されていません。
+            </Alert>
+          </Box>
+        ),
+        labels: { confirm: "削除", cancel: "キャンセル" },
+        confirmProps: { color: "red" },
+        onConfirm: async () => {
+          try {
+            await deleteContentSafely(id);
+            contentDispatch({ type: "REMOVE_CONTENT", id });
+          } catch (error) {
+            contentDispatch({
+              type: "SET_ERROR",
+              error: error instanceof Error ? error.message : "削除に失敗しました",
+            });
+          }
+        },
+      });
+    } catch (error) {
+      contentDispatch({
+        type: "SET_ERROR",
+        error: error instanceof Error ? error.message : "使用状況の確認に失敗しました",
+      });
+    }
   };
 
   const handleContentAdd = () => {
@@ -442,7 +493,7 @@ export default function ContentsPage() {
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleContentDelete(content.id);
+                          handleContentDelete(content.id, content.name);
                         }}
                         aria-label="削除"
                       >
@@ -466,7 +517,7 @@ export default function ContentsPage() {
             contentModalDispatch({ type: "OPEN_CONTENT_EDIT", content });
           }}
           onContentDelete={(content) => {
-            handleContentDelete(content.id);
+            handleContentDelete(content.id, content.name);
           }}
         />
       )}
