@@ -500,20 +500,8 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                   </Text>
                 </Paper>
               ) : (
-                <Group align="flex-start" gap="md" style={{ minHeight: "600px" }}>
-                  {/* 左側: レイアウトプレビュー */}
-                  <Box style={{ flex: "0 0 350px" }}>
-                    <InteractiveLayoutPreview
-                      layout={layout}
-                      selectedRegionId={selectedRegionId}
-                      onRegionClick={handleRegionSelect}
-                      assignedContentCounts={getAssignedContentCounts()}
-                      canvasWidth={350}
-                      canvasHeight={197}
-                    />
-                  </Box>
-
-                  {/* 中央: コンテンツ選択 */}
+                <Group align="flex-start" gap="lg" wrap="nowrap" style={{ minHeight: "600px" }}>
+                  {/* 左側: コンテンツ選択グリッド */}
                   <Box style={{ flex: "1 1 auto" }}>
                     {selectedRegionId ? (
                       <>
@@ -564,7 +552,7 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                     ) : (
                       <Paper p="xl" withBorder style={{ textAlign: "center" }}>
                         <Text c="dimmed" mb="sm">
-                          左のレイアウトプレビューからリージョンを選択してください
+                          右のレイアウトプレビューからリージョンを選択してください
                         </Text>
                         <Text size="sm" c="dimmed">
                           選択したリージョンのコンテンツを編集できます
@@ -573,35 +561,48 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                     )}
                   </Box>
 
-                  {/* 右側: 選択済みコンテンツ一覧 */}
-                  <Box style={{ flex: "0 0 300px" }}>
-                    {selectedRegionId ? (
-                      <SelectedContentList
-                        selectedContents={
-                          (getSelectedRegionAssignment()
-                            ?.contentIds.map((contentId) => contents.find((content) => content.id === contentId))
-                            .filter(Boolean) as ContentIndex[]) || []
-                        }
-                        onReorder={(reorderedContentIds) => {
-                          if (selectedRegionId) {
-                            handleContentReorder(selectedRegionId, reorderedContentIds);
-                          }
-                        }}
-                        contentDurations={getSelectedRegionAssignment()?.contentDurations?.reduce(
-                          (acc, duration) => {
-                            acc[duration.contentId] = duration.duration;
-                            return acc;
-                          },
-                          {} as Record<string, number>,
-                        )}
-                      />
-                    ) : (
-                      <Paper p="md" withBorder style={{ minHeight: "120px" }}>
-                        <Text size="sm" c="dimmed" ta="center">
-                          リージョンを選択すると、選択済みコンテンツが表示されます
-                        </Text>
-                      </Paper>
-                    )}
+                  {/* 右側: レイアウトプレビューと順序変更 */}
+                  <Box style={{ flex: "0 0 400px", minWidth: "400px" }}>
+                    <Stack gap="lg">
+                      {/* レイアウトプレビュー */}
+                      <Box>
+                        <Text fw={600} mb="sm">レイアウトプレビュー</Text>
+                        <InteractiveLayoutPreview
+                          layout={layout}
+                          selectedRegionId={selectedRegionId}
+                          onRegionClick={handleRegionSelect}
+                          assignedContentCounts={getAssignedContentCounts()}
+                          canvasWidth={380}
+                          canvasHeight={214}
+                        />
+                      </Box>
+
+                      {/* 順序変更 */}
+                      {selectedRegionId && (
+                        <Box>
+                          <Text fw={600} mb="sm">順序変更</Text>
+                          <SelectedContentList
+                            selectedContents={
+                              (getSelectedRegionAssignment()
+                                ?.contentIds.map((contentId) => contents.find((content) => content.id === contentId))
+                                .filter(Boolean) as ContentIndex[]) || []
+                            }
+                            onReorder={(reorderedContentIds) => {
+                              if (selectedRegionId) {
+                                handleContentReorder(selectedRegionId, reorderedContentIds);
+                              }
+                            }}
+                            contentDurations={getSelectedRegionAssignment()?.contentDurations?.reduce(
+                              (acc, duration) => {
+                                acc[duration.contentId] = duration.duration;
+                                return acc;
+                              },
+                              {} as Record<string, number>,
+                            )}
+                          />
+                        </Box>
+                      )}
+                    </Stack>
                   </Box>
                 </Group>
               )
@@ -628,7 +629,8 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
     if (currentStep === "content") {
       return {
         content: {
-          maxWidth: "1400px",
+          maxWidth: "1600px",
+          minWidth: "1200px",
         },
       };
     }

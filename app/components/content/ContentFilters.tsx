@@ -1,4 +1,4 @@
-import { Button, Group, SegmentedControl, TextInput } from "@mantine/core";
+import { Button, Group, SegmentedControl, Stack, Text, TextInput } from "@mantine/core";
 import {
   IconBrandYoutube,
   IconFile,
@@ -18,22 +18,22 @@ export const ContentFilters = memo(() => {
   const [typeFilter, setTypeFilter] = useAtom(contentTypeFilterAtom);
   const [searchQuery, setSearchQuery] = useAtom(contentSearchQueryAtom);
 
-  const _getFilterIcon = (type: ContentType | "all") => {
+  const getFilterIcon = (type: ContentType | "all") => {
     switch (type) {
       case "all":
-        return <IconFile size={16} />;
+        return <IconFile size={14} />;
       case "video":
-        return <IconVideo size={16} />;
+        return <IconVideo size={14} />;
       case "image":
-        return <IconPhoto size={16} />;
+        return <IconPhoto size={14} />;
       case "text":
-        return <IconFileText size={16} />;
+        return <IconFileText size={14} />;
       case "youtube":
-        return <IconBrandYoutube size={16} />;
+        return <IconBrandYoutube size={14} />;
       case "url":
-        return <IconLink size={16} />;
+        return <IconLink size={14} />;
       default:
-        return <IconFile size={16} />;
+        return <IconFile size={14} />;
     }
   };
 
@@ -56,13 +56,23 @@ export const ContentFilters = memo(() => {
     }
   };
 
+  const getFilterOption = (type: ContentType | "all") => ({
+    value: type,
+    label: (
+      <Group gap={4} align="center" justify="center" miw="80px" wrap="nowrap">
+        {getFilterIcon(type)}
+        <Text size="xs" style={{ whiteSpace: 'nowrap' }}>{getFilterLabel(type)}</Text>
+      </Group>
+    ),
+  });
+
   const filterOptions = [
-    { value: "all", label: getFilterLabel("all") },
-    { value: "video", label: getFilterLabel("video") },
-    { value: "image", label: getFilterLabel("image") },
-    { value: "text", label: getFilterLabel("text") },
-    { value: "youtube", label: getFilterLabel("youtube") },
-    { value: "url", label: getFilterLabel("url") },
+    getFilterOption("all"),
+    getFilterOption("video"),
+    getFilterOption("image"),
+    getFilterOption("text"),
+    getFilterOption("youtube"),
+    getFilterOption("url"),
   ];
 
   return (
@@ -98,6 +108,8 @@ export const ContentFilters = memo(() => {
         data={filterOptions}
         size="sm"
         aria-label="コンテンツタイプフィルター"
+        style={{ minWidth: '520px' }}
+        fullWidth={false}
       />
     </Group>
   );
