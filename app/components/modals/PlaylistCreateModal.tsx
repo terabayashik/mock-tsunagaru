@@ -26,7 +26,7 @@ import { extractYouTubeVideoId } from "~/types/content";
 import type { LayoutIndex, LayoutItem, Orientation, Region } from "~/types/layout";
 import type { ContentAssignment, ContentDuration } from "~/types/playlist";
 import { logger } from "~/utils/logger";
-import { getYouTubeVideoDurationCached } from "~/utils/youtube-player";
+import { getYouTubeVideoDurationCached } from "~/utils/youtubePlayer";
 import { ContentAddModal } from "./ContentAddModal";
 import { ContentDurationModal } from "./ContentDurationModal";
 import { LayoutFormModal } from "./LayoutFormModal";

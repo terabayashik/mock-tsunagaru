@@ -13,7 +13,7 @@ import { extractYouTubeVideoId } from "~/types/content";
 import type { LayoutItem } from "~/types/layout";
 import type { ContentAssignment, ContentDuration, PlaylistItem } from "~/types/playlist";
 import { logger } from "~/utils/logger";
-import { getYouTubeVideoDurationCached } from "~/utils/youtube-player";
+import { getYouTubeVideoDurationCached } from "~/utils/youtubePlayer";
 import { ContentAddModal } from "./ContentAddModal";
 import { ContentDurationModal } from "./ContentDurationModal";
 
