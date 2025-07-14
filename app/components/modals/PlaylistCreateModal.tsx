@@ -131,26 +131,39 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
   // データ読み込み
   useEffect(() => {
     if (opened) {
-      loadLayouts();
-      loadContents();
+      const initializeData = async () => {
+        await loadLayouts();
+        await loadContents();
 
-      // モーダルが開かれたときの初期値を記録
-      const initialData = {
-        name: `プレイリスト ${new Date().toLocaleString("ja-JP", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-        })}`,
-        device: "",
-        layoutId: "",
-        contentAssignments: [],
+        // モーダルが開かれたときの初期値を記録
+        const initialData = {
+          name: `プレイリスト ${new Date().toLocaleString("ja-JP", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}`,
+          device: "",
+          layoutId: "",
+          contentAssignments: [],
+        };
+        setFormData(initialData);
+        setInitialFormData(initialData);
       };
-      setFormData(initialData);
-      setInitialFormData(initialData);
+
+      initializeData();
     }
   }, [opened, loadLayouts, loadContents]);
+
+  // レイアウトが読み込まれた後、利用可能なレイアウトがない場合は自動的に新規作成モードに
+  useEffect(() => {
+    // レイアウトが存在しない場合のみ自動的に新規作成モードに設定
+    if (layouts.length === 0) {
+      setCreateNewLayout(true);
+    }
+    // 既存レイアウトがある場合はユーザーの選択を尊重し、自動リセットしない
+  }, [layouts.length]);
 
   // 変更を監視（初期値と比較）
   useEffect(() => {
@@ -176,8 +189,13 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
         newErrors.device = "デバイス名は必須です";
       }
     } else if (currentStep === "layout") {
-      if (!createNewLayout && formData.layoutId.trim().length === 0) {
+      // 利用可能なレイアウトがある場合のみバリデーション
+      if (layouts.length > 0 && !createNewLayout && formData.layoutId.trim().length === 0) {
         newErrors.layoutId = "レイアウトを選択してください";
+      }
+      // 利用可能なレイアウトがない場合は、レイアウト作成が必須
+      if (layouts.length === 0 && !tempLayoutData) {
+        newErrors.layoutId = "レイアウトを作成してください";
       }
     }
 
@@ -610,18 +628,24 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
       case "layout":
         return (
           <Stack gap="md">
-            <Checkbox
-              label="新しいレイアウトを作成する"
-              checked={createNewLayout}
-              onChange={(e) => {
-                setCreateNewLayout(e.currentTarget.checked);
-                if (e.currentTarget.checked) {
-                  setFormData((prev) => ({ ...prev, layoutId: "" }));
-                }
-              }}
-            />
+            {layouts.length > 0 ? (
+              <Checkbox
+                label="新しいレイアウトを作成する"
+                checked={createNewLayout}
+                onChange={(e) => {
+                  setCreateNewLayout(e.currentTarget.checked);
+                  if (e.currentTarget.checked) {
+                    setFormData((prev) => ({ ...prev, layoutId: "" }));
+                  }
+                }}
+              />
+            ) : (
+              <Text size="sm" c="dimmed" mb="md">
+                利用可能なレイアウトがありません。新しいレイアウトを作成してください。
+              </Text>
+            )}
 
-            {!createNewLayout && (
+            {!createNewLayout && layouts.length > 0 && (
               <Select
                 label="レイアウトを選択"
                 placeholder="レイアウトを選択してください"
@@ -642,7 +666,7 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
               />
             )}
 
-            {createNewLayout && (
+            {(createNewLayout || layouts.length === 0) && (
               <Stack gap="sm">
                 {tempLayoutData ? (
                   <Paper p="md" withBorder>
@@ -663,6 +687,8 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
                     variant="light"
                     onClick={() => setShowLayoutForm(true)}
                     leftSection={<IconLayoutGrid size={16} />}
+                    size="lg"
+                    fullWidth={layouts.length === 0}
                   >
                     レイアウトを作成
                   </Button>
