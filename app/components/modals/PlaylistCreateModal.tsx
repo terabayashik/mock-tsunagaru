@@ -93,6 +93,10 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
     contentName: string;
     contentType: string;
   } | null>(null);
+  const [pendingContentSelection, setPendingContentSelection] = useState<{
+    regionId: string;
+    contentIds: string[];
+  } | null>(null);
 
   const { getLayoutsIndex, getLayoutById, createLayout } = useLayout();
   const { getContentsIndex, getContentById, createFileContent, createUrlContent, createRichTextContent } = useContent();
@@ -376,21 +380,13 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
                   ];
                 } else {
                   // API取得失敗時は手動設定
+                  setPendingContentSelection({ regionId, contentIds });
                   setDurationModalContent({
                     contentId: newContent.id,
                     contentName: newContent.name,
                     contentType: newContent.type,
                   });
                   setShowDurationModal(true);
-
-                  setFormData((prev) => ({
-                    ...prev,
-                    contentAssignments: prev.contentAssignments.map((assignment) =>
-                      assignment.regionId === regionId
-                        ? { ...assignment, contentIds, contentDurations: newDurations }
-                        : assignment,
-                    ),
-                  }));
                   return;
                 }
               }
@@ -398,42 +394,26 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
           } catch (error) {
             logger.error("PlaylistCreateModal", "Failed to get YouTube video info", error);
             // エラー時は手動設定
+            setPendingContentSelection({ regionId, contentIds });
             setDurationModalContent({
               contentId: newContent.id,
               contentName: newContent.name,
               contentType: newContent.type,
             });
             setShowDurationModal(true);
-
-            setFormData((prev) => ({
-              ...prev,
-              contentAssignments: prev.contentAssignments.map((assignment) =>
-                assignment.regionId === regionId
-                  ? { ...assignment, contentIds, contentDurations: newDurations }
-                  : assignment,
-              ),
-            }));
             return;
           }
         }
         // その他のコンテンツは再生時間設定が必要
         else {
+          // 選択状態を一時保存
+          setPendingContentSelection({ regionId, contentIds });
           setDurationModalContent({
             contentId: newContent.id,
             contentName: newContent.name,
             contentType: newContent.type,
           });
           setShowDurationModal(true);
-
-          // 一時的にコンテンツを追加（再生時間はモーダルで設定）
-          setFormData((prev) => ({
-            ...prev,
-            contentAssignments: prev.contentAssignments.map((assignment) =>
-              assignment.regionId === regionId
-                ? { ...assignment, contentIds, contentDurations: newDurations }
-                : assignment,
-            ),
-          }));
           return;
         }
       }
@@ -535,32 +515,64 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
   };
 
   const handleDurationSubmit = (duration: number) => {
-    if (!durationModalContent || !selectedRegionId) return;
+    if (!durationModalContent) return;
 
-    setFormData((prev) => {
-      const updatedAssignments = prev.contentAssignments.map((assignment) => {
-        if (assignment.regionId === selectedRegionId) {
-          // 既存の再生時間情報を更新または追加
-          const existingDurations = assignment.contentDurations || [];
-          const updatedDurations = existingDurations.filter((d) => d.contentId !== durationModalContent.contentId);
-          updatedDurations.push({
-            contentId: durationModalContent.contentId,
-            duration,
-          });
-          return {
-            ...assignment,
-            contentDurations: updatedDurations,
-          };
-        }
-        return assignment;
-      });
+    if (pendingContentSelection) {
+      // 新しいコンテンツ選択を確定
+      const { regionId, contentIds } = pendingContentSelection;
+      const currentAssignment = formData.contentAssignments.find((a) => a.regionId === regionId);
+      const newDurations: ContentDuration[] = [
+        ...(currentAssignment?.contentDurations || []),
+        {
+          contentId: durationModalContent.contentId,
+          duration,
+        },
+      ];
 
-      return {
+      setFormData((prev) => ({
         ...prev,
-        contentAssignments: updatedAssignments,
-      };
-    });
+        contentAssignments: prev.contentAssignments.map((assignment) =>
+          assignment.regionId === regionId ? { ...assignment, contentIds, contentDurations: newDurations } : assignment,
+        ),
+      }));
 
+      setPendingContentSelection(null);
+    } else if (selectedRegionId) {
+      // 既存のコンテンツの再生時間を更新
+      setFormData((prev) => {
+        const updatedAssignments = prev.contentAssignments.map((assignment) => {
+          if (assignment.regionId === selectedRegionId) {
+            // 既存の再生時間情報を更新または追加
+            const existingDurations = assignment.contentDurations || [];
+            const updatedDurations = existingDurations.filter((d) => d.contentId !== durationModalContent.contentId);
+            updatedDurations.push({
+              contentId: durationModalContent.contentId,
+              duration,
+            });
+            return {
+              ...assignment,
+              contentDurations: updatedDurations,
+            };
+          }
+          return assignment;
+        });
+
+        return {
+          ...prev,
+          contentAssignments: updatedAssignments,
+        };
+      });
+    }
+
+    setShowDurationModal(false);
+    setDurationModalContent(null);
+  };
+
+  const handleDurationCancel = () => {
+    if (pendingContentSelection) {
+      // 保留中のコンテンツ選択をキャンセル（選択を解除）
+      setPendingContentSelection(null);
+    }
     setShowDurationModal(false);
     setDurationModalContent(null);
   };
@@ -632,11 +644,6 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
 
             {createNewLayout && (
               <Stack gap="sm">
-                <Paper p="md" withBorder>
-                  <Text size="sm" c="dimmed">
-                    新しいレイアウトを作成します。
-                  </Text>
-                </Paper>
                 {tempLayoutData ? (
                   <Paper p="md" withBorder>
                     <Text size="sm" fw={500}>
@@ -677,19 +684,51 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
                 </Paper>
               ) : (
                 <Group align="flex-start" gap="md" style={{ minHeight: "600px" }}>
-                  {/* 左側: レイアウトプレビュー */}
-                  <Box style={{ flex: "0 0 350px" }}>
-                    <InteractiveLayoutPreview
-                      layout={selectedLayout}
-                      selectedRegionId={selectedRegionId}
-                      onRegionClick={handleRegionSelect}
-                      assignedContentCounts={getAssignedContentCounts()}
-                      canvasWidth={350}
-                      canvasHeight={197}
-                    />
-                  </Box>
+                  <Stack>
+                    {/* レイアウトプレビュー */}
+                    <Box>
+                      <InteractiveLayoutPreview
+                        layout={selectedLayout}
+                        selectedRegionId={selectedRegionId}
+                        onRegionClick={handleRegionSelect}
+                        assignedContentCounts={getAssignedContentCounts()}
+                        canvasWidth={350}
+                        canvasHeight={197}
+                      />
+                    </Box>
+                    {/* 選択済みコンテンツ一覧 */}
+                    <Box>
+                      {selectedRegionId ? (
+                        <SelectedContentList
+                          selectedContents={
+                            (getSelectedRegionAssignment()
+                              ?.contentIds.map((contentId) => contents.find((content) => content.id === contentId))
+                              .filter(Boolean) as ContentIndex[]) || []
+                          }
+                          onReorder={(reorderedContentIds) => {
+                            if (selectedRegionId) {
+                              handleContentReorder(selectedRegionId, reorderedContentIds);
+                            }
+                          }}
+                          contentDurations={getSelectedRegionAssignment()?.contentDurations?.reduce(
+                            (acc, duration) => {
+                              acc[duration.contentId] = duration.duration;
+                              return acc;
+                            },
+                            {} as Record<string, number>,
+                          )}
+                        />
+                      ) : (
+                        <Paper p="md" withBorder style={{ minHeight: "120px" }}>
+                          <Text size="sm" c="dimmed" ta="center">
+                            リージョンを選択すると、選択済みコンテンツが表示されます
+                          </Text>
+                        </Paper>
+                      )}
+                    </Box>
+                  </Stack>
 
-                  {/* 中央: コンテンツ選択 */}
+                  {/* コンテンツ選択 */}
                   <Box style={{ flex: "1 1 auto" }}>
                     {selectedRegionId ? (
                       <>
@@ -744,37 +783,6 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
                         </Text>
                         <Text size="sm" c="dimmed">
                           選択したリージョンにコンテンツを割り当てることができます
-                        </Text>
-                      </Paper>
-                    )}
-                  </Box>
-
-                  {/* 右側: 選択済みコンテンツ一覧 */}
-                  <Box style={{ flex: "0 0 300px" }}>
-                    {selectedRegionId ? (
-                      <SelectedContentList
-                        selectedContents={
-                          (getSelectedRegionAssignment()
-                            ?.contentIds.map((contentId) => contents.find((content) => content.id === contentId))
-                            .filter(Boolean) as ContentIndex[]) || []
-                        }
-                        onReorder={(reorderedContentIds) => {
-                          if (selectedRegionId) {
-                            handleContentReorder(selectedRegionId, reorderedContentIds);
-                          }
-                        }}
-                        contentDurations={getSelectedRegionAssignment()?.contentDurations?.reduce(
-                          (acc, duration) => {
-                            acc[duration.contentId] = duration.duration;
-                            return acc;
-                          },
-                          {} as Record<string, number>,
-                        )}
-                      />
-                    ) : (
-                      <Paper p="md" withBorder style={{ minHeight: "120px" }}>
-                        <Text size="sm" c="dimmed" ta="center">
-                          リージョンを選択すると、選択済みコンテンツが表示されます
                         </Text>
                       </Paper>
                     )}
@@ -898,16 +906,14 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
       {durationModalContent && (
         <ContentDurationModal
           opened={showDurationModal}
-          onClose={() => {
-            setShowDurationModal(false);
-            setDurationModalContent(null);
-          }}
+          onClose={handleDurationCancel}
           contentName={durationModalContent.contentName}
           contentType={durationModalContent.contentType}
           currentDuration={
             selectedRegionId ? getContentDuration(selectedRegionId, durationModalContent.contentId) : undefined
           }
           onSubmit={handleDurationSubmit}
+          onCancel={handleDurationCancel}
         />
       )}
     </>

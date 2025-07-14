@@ -9,6 +9,7 @@ interface ContentDurationModalProps {
   contentType: string;
   currentDuration?: number;
   onSubmit: (duration: number) => void;
+  onCancel?: () => void;
 }
 
 export const ContentDurationModal = ({
@@ -18,6 +19,7 @@ export const ContentDurationModal = ({
   contentType,
   currentDuration,
   onSubmit,
+  onCancel,
 }: ContentDurationModalProps) => {
   const [duration, setDuration] = useState<number>(currentDuration || 30);
   const [error, setError] = useState<string>("");
@@ -35,6 +37,13 @@ export const ContentDurationModal = ({
     onClose();
   };
 
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    }
+    onClose();
+  };
+
   const formatDuration = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -42,7 +51,7 @@ export const ContentDurationModal = ({
   };
 
   return (
-    <Modal opened={opened} onClose={onClose} title="再生時間の設定" centered size="sm">
+    <Modal opened={opened} onClose={handleCancel} title="再生時間の設定" centered size="sm">
       <Stack gap="md">
         <Text size="sm" c="dimmed">
           <Text span fw={500}>
@@ -83,7 +92,7 @@ export const ContentDurationModal = ({
         />
 
         <Group justify="flex-end">
-          <Button variant="subtle" onClick={onClose}>
+          <Button variant="subtle" onClick={handleCancel}>
             キャンセル
           </Button>
           <Button leftSection={<IconDeviceFloppy size={16} />} onClick={handleSubmit}>
