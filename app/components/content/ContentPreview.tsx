@@ -16,7 +16,7 @@ import type { ContentIndex, ContentType } from "~/types/content";
 
 // Constants
 const PREVIEW_ASPECT_RATIO = 16 / 9;
-const INFO_SECTION_HEIGHT = 60;
+const INFO_SECTION_HEIGHT = 80; // 情報エリアの高さを80pxに増加（3段レイアウト用）
 const BASE_WIDTH = 200;
 
 const extractYouTubeVideoId = (url: string): string | null => {
@@ -237,26 +237,43 @@ export const ContentPreview = memo(
       return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
     };
 
-    // Shared component for content info section
+    // Shared component for content info section (3段レイアウト)
     const ContentInfo = () => (
-      <Box p="xs" style={{ height: `${INFO_SECTION_HEIGHT}px`, overflow: "hidden" }}>
+      <Box
+        p="xs"
+        style={{
+          height: `${INFO_SECTION_HEIGHT}px`,
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+        }}
+      >
+        {/* 1段目: 名前 */}
         <Tooltip label={content.name} disabled={content.name.length <= 20}>
           <Text size="sm" fw={500} lineClamp={1}>
             {content.name}
           </Text>
         </Tooltip>
 
-        <Group justify="space-between" align="center" mt={4}>
-          <Group gap="xs">
+        {/* 2段目: サイズ */}
+        <Box>
+          {content.size ? (
             <Text size="xs" c="dimmed">
-              {new Date(content.createdAt).toLocaleDateString("ja-JP")}
+              {formatFileSize(content.size)}
             </Text>
-            {content.size && (
-              <Text size="xs" c="dimmed">
-                {formatFileSize(content.size)}
-              </Text>
-            )}
-          </Group>
+          ) : (
+            <Text size="xs" c="transparent">
+              &nbsp;
+            </Text>
+          )}
+        </Box>
+
+        {/* 3段目: 日付とボタン */}
+        <Group justify="space-between" align="center">
+          <Text size="xs" c="dimmed">
+            {new Date(content.createdAt).toLocaleDateString("ja-JP")}
+          </Text>
 
           <Group gap="xs" className="content-actions" style={{ opacity: 1, transition: "opacity 0.2s ease" }}>
             {onEdit && (
@@ -289,31 +306,6 @@ export const ContentPreview = memo(
             )}
           </Group>
         </Group>
-
-        {/* タグ表示 */}
-        {content.tags.length > 0 && (
-          <Group gap={4} mt={2}>
-            {content.tags.slice(0, 2).map((tag) => (
-              <Text
-                key={tag}
-                size="xs"
-                style={{
-                  backgroundColor: "var(--mantine-color-gray-1)",
-                  padding: "1px 4px",
-                  borderRadius: "2px",
-                  color: "var(--mantine-color-gray-7)",
-                }}
-              >
-                {tag}
-              </Text>
-            ))}
-            {content.tags.length > 2 && (
-              <Text size="xs" c="dimmed">
-                +{content.tags.length - 2}
-              </Text>
-            )}
-          </Group>
-        )}
       </Box>
     );
 
