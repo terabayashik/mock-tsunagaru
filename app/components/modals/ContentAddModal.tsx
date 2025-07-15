@@ -62,6 +62,8 @@ export const ContentAddModal = memo(
     const [color, setColor] = useState("#000000");
     const [backgroundColor, setBackgroundColor] = useState("#ffffff");
     const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE);
+    const [scrollType, setScrollType] = useState<"none" | "horizontal" | "vertical">("none");
+    const [scrollSpeed, setScrollSpeed] = useState(3);
 
     const handleClose = () => {
       if (loading) return;
@@ -82,6 +84,8 @@ export const ContentAddModal = memo(
       setColor("#000000");
       setBackgroundColor("#ffffff");
       setFontSize(DEFAULT_FONT_SIZE);
+      setScrollType("none");
+      setScrollSpeed(3);
 
       onClose();
     };
@@ -152,6 +156,8 @@ export const ContentAddModal = memo(
             color,
             backgroundColor,
             fontSize,
+            scrollType,
+            scrollSpeed,
           },
         });
         handleClose();
@@ -441,6 +447,30 @@ export const ContentAddModal = memo(
                   onChange={setBackgroundColor}
                   format="hex"
                   swatches={["#ffffff", "#000000", "#f5f5f5", "#e5e5e5", "#d4d4d4", "#a3a3a3", "#737373", "#525252"]}
+                />
+              </Group>
+
+              <Group grow>
+                <Select
+                  label="スクロール方向"
+                  value={scrollType}
+                  onChange={(value) => setScrollType(value as "none" | "horizontal" | "vertical")}
+                  data={[
+                    { value: "none", label: "スクロールなし" },
+                    { value: "horizontal", label: "横スクロール" },
+                    { value: "vertical", label: "縦スクロール" },
+                  ]}
+                  aria-label="スクロール方向の選択"
+                />
+
+                <NumberInput
+                  label="スクロール速度"
+                  value={scrollSpeed}
+                  onChange={(value) => setScrollSpeed(Number(value) || 3)}
+                  min={1}
+                  max={10}
+                  disabled={scrollType === "none"}
+                  description="1: 遅い - 10: 速い"
                 />
               </Group>
 

@@ -43,6 +43,8 @@ export const RichTextContentSchema = z.object({
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "有効な色コードを入力してください"),
   backgroundColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "有効な背景色コードを入力してください"),
   fontSize: z.number().min(8).max(200).default(16), // フォントサイズ
+  scrollType: z.enum(["none", "horizontal", "vertical"]).default("none"), // スクロールタイプ
+  scrollSpeed: z.number().min(1).max(10).default(3), // スクロール速度（1-10）
 });
 
 // コンテンツアイテムのスキーマ

@@ -109,6 +109,7 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
   const [isDragging, setIsDragging] = useState(false);
   const [_dragStartSelection, setDragStartSelection] = useState<string | null>(null);
   const [hasActuallyDragged, setHasActuallyDragged] = useState(false);
+  const [isContainerReady, setIsContainerReady] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const outerContainerRef = useRef<HTMLDivElement>(null);
 
@@ -116,6 +117,7 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
   useEffect(() => {
     // 固定サイズが指定されている場合は動的サイズ計算をスキップ
     if (canvasWidth && canvasHeight) {
+      setIsContainerReady(true);
       return;
     }
 
@@ -131,6 +133,7 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
           width: availableWidth,
           height: Math.min(calculatedHeight, 500), // 最大高さ制限
         });
+        setIsContainerReady(true);
       }
     };
 
@@ -188,6 +191,7 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
       y: 100,
       width: 960,
       height: 540,
+      zIndex: regions.length, // 新しいリージョンは最前面に
     };
 
     onRegionsChange([...regions, newRegion]);
@@ -224,6 +228,14 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
   };
 
   const selectedRegionData = selectedRegion ? regions.find((r) => r.id === selectedRegion) : null;
+
+  // Force re-render of Moveable components when container is ready
+  useEffect(() => {
+    if (containerRef.current && isContainerReady) {
+      // Force a re-render by updating a dummy state or using forceUpdate
+      // This ensures Moveable components are properly initialized with correct container dimensions
+    }
+  }, [isContainerReady]);
 
   return (
     <Stack gap="md" ref={outerContainerRef}>
@@ -266,230 +278,237 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
         {/* グリッドライン */}
         {generateGridLines(displayWidth, displayHeight, scale, colorScheme === "dark")}
 
-        {regions.map((region, index) => {
-          const isSelected = selectedRegion === region.id;
-          const colors = getRegionColor(index, isSelected);
+        {[...regions]
+          .sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0))
+          .map((region) => {
+            const index = regions.findIndex((r) => r.id === region.id);
+            const isSelected = selectedRegion === region.id;
+            const colors = getRegionColor(index, isSelected);
 
-          return (
-            <div key={region.id}>
-              {/* 矩形 */}
-              <button
-                type="button"
-                id={`region-${region.id}`}
-                style={{
-                  position: "absolute",
-                  left: region.x * scale,
-                  top: region.y * scale,
-                  width: region.width * scale,
-                  height: region.height * scale,
-                  backgroundColor: colors.backgroundColor,
-                  border: isSelected ? `2px solid ${colors.borderColor}` : `1px solid ${colors.borderColor}`,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: 0,
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // 実際にドラッグが発生しなかった場合のみ選択/選択解除を処理
-                  if (!isDragging && !hasActuallyDragged) {
-                    // 既に選択されている場合は選択解除、そうでなければ選択
-                    if (selectedRegion === region.id) {
-                      setSelectedRegion(null);
-                    } else {
-                      setSelectedRegion(region.id);
-                    }
-                  }
-                }}
-              >
-                <Text
-                  size="xs"
-                  c={colorScheme === "dark" ? "white" : "white"}
-                  fw={700}
+            return (
+              <div key={region.id} style={{ position: "absolute", zIndex: region.zIndex || 0 }}>
+                {/* 矩形 */}
+                <button
+                  type="button"
+                  id={`region-${region.id}`}
                   style={{
-                    textShadow: colorScheme === "dark" ? "1px 1px 2px rgba(0,0,0,0.8)" : "1px 1px 2px rgba(0,0,0,0.6)",
+                    position: "absolute",
+                    left: region.x * scale,
+                    top: region.y * scale,
+                    width: region.width * scale,
+                    height: region.height * scale,
+                    backgroundColor: colors.backgroundColor,
+                    border: isSelected ? `2px solid ${colors.borderColor}` : `1px solid ${colors.borderColor}`,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: 0,
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // 実際にドラッグが発生しなかった場合のみ選択/選択解除を処理
+                    if (!isDragging && !hasActuallyDragged) {
+                      // 既に選択されている場合は選択解除、そうでなければ選択
+                      if (selectedRegion === region.id) {
+                        setSelectedRegion(null);
+                      } else {
+                        setSelectedRegion(region.id);
+                      }
+                    }
                   }}
                 >
-                  リージョン {index + 1}
-                </Text>
+                  <Text
+                    size="xs"
+                    c={colorScheme === "dark" ? "white" : "white"}
+                    fw={700}
+                    style={{
+                      textShadow:
+                        colorScheme === "dark" ? "1px 1px 2px rgba(0,0,0,0.8)" : "1px 1px 2px rgba(0,0,0,0.6)",
+                    }}
+                  >
+                    リージョン {index + 1}
+                  </Text>
 
-                {/* 編集ボタン */}
-                <Box pos="absolute" top={4} right={4}>
-                  <Group gap={2}>
-                    <Popover
-                      opened={editingRegion === region.id}
-                      onClose={handleEditCancel}
-                      position="bottom-end"
-                      withArrow
-                    >
-                      <Popover.Target>
-                        <ActionIcon
-                          size="xs"
-                          variant="filled"
-                          color="blue"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditOpen(region);
-                          }}
-                        >
-                          <IconEdit size={10} />
-                        </ActionIcon>
-                      </Popover.Target>
-                      <Popover.Dropdown>
-                        <Stack gap="xs" miw={200} pos="relative">
-                          {/* 閉じるボタン */}
+                  {/* 編集ボタン */}
+                  <Box pos="absolute" top={4} right={4}>
+                    <Group gap={2}>
+                      <Popover
+                        opened={editingRegion === region.id}
+                        onClose={handleEditCancel}
+                        position="bottom-end"
+                        withArrow
+                      >
+                        <Popover.Target>
                           <ActionIcon
                             size="xs"
-                            variant="subtle"
-                            color="gray"
-                            onClick={handleEditCancel}
-                            style={{
-                              position: "absolute",
-                              top: "4px",
-                              right: "4px",
-                              zIndex: 10,
+                            variant="filled"
+                            color="blue"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditOpen(region);
                             }}
                           >
-                            <IconX size={12} />
+                            <IconEdit size={10} />
                           </ActionIcon>
+                        </Popover.Target>
+                        <Popover.Dropdown>
+                          <Stack gap="xs" miw={200} pos="relative">
+                            {/* 閉じるボタン */}
+                            <ActionIcon
+                              size="xs"
+                              variant="subtle"
+                              color="gray"
+                              onClick={handleEditCancel}
+                              style={{
+                                position: "absolute",
+                                top: "4px",
+                                right: "4px",
+                                zIndex: 10,
+                              }}
+                            >
+                              <IconX size={12} />
+                            </ActionIcon>
 
-                          <Text size="sm" fw={500}>
-                            位置とサイズ
-                          </Text>
-                          <Group gap="xs">
-                            <NumberInput
-                              label="X"
-                              size="xs"
-                              min={0}
-                              max={CANVAS_WIDTH - tempValues.width}
-                              value={tempValues.x}
-                              onChange={(value) => setTempValues((prev) => ({ ...prev, x: Number(value) || 0 }))}
-                            />
-                            <NumberInput
-                              label="Y"
-                              size="xs"
-                              min={0}
-                              max={CANVAS_HEIGHT - tempValues.height}
-                              value={tempValues.y}
-                              onChange={(value) => setTempValues((prev) => ({ ...prev, y: Number(value) || 0 }))}
-                            />
-                          </Group>
-                          <Group gap="xs">
-                            <NumberInput
-                              label="幅"
-                              size="xs"
-                              min={1}
-                              max={CANVAS_WIDTH - tempValues.x}
-                              value={tempValues.width}
-                              onChange={(value) => setTempValues((prev) => ({ ...prev, width: Number(value) || 1 }))}
-                            />
-                            <NumberInput
-                              label="高さ"
-                              size="xs"
-                              min={1}
-                              max={CANVAS_HEIGHT - tempValues.y}
-                              value={tempValues.height}
-                              onChange={(value) => setTempValues((prev) => ({ ...prev, height: Number(value) || 1 }))}
-                            />
-                          </Group>
-                          <Group gap="xs" mt="xs">
-                            <Button size="xs" onClick={handleEditSave}>
-                              保存
-                            </Button>
-                            <Button size="xs" variant="light" onClick={handleEditCancel}>
-                              キャンセル
-                            </Button>
-                          </Group>
-                        </Stack>
-                      </Popover.Dropdown>
-                    </Popover>
+                            <Text size="sm" fw={500}>
+                              位置とサイズ
+                            </Text>
+                            <Group gap="xs">
+                              <NumberInput
+                                label="X"
+                                size="xs"
+                                min={0}
+                                max={CANVAS_WIDTH - tempValues.width}
+                                value={tempValues.x}
+                                onChange={(value) => setTempValues((prev) => ({ ...prev, x: Number(value) || 0 }))}
+                              />
+                              <NumberInput
+                                label="Y"
+                                size="xs"
+                                min={0}
+                                max={CANVAS_HEIGHT - tempValues.height}
+                                value={tempValues.y}
+                                onChange={(value) => setTempValues((prev) => ({ ...prev, y: Number(value) || 0 }))}
+                              />
+                            </Group>
+                            <Group gap="xs">
+                              <NumberInput
+                                label="幅"
+                                size="xs"
+                                min={1}
+                                max={CANVAS_WIDTH - tempValues.x}
+                                value={tempValues.width}
+                                onChange={(value) => setTempValues((prev) => ({ ...prev, width: Number(value) || 1 }))}
+                              />
+                              <NumberInput
+                                label="高さ"
+                                size="xs"
+                                min={1}
+                                max={CANVAS_HEIGHT - tempValues.y}
+                                value={tempValues.height}
+                                onChange={(value) => setTempValues((prev) => ({ ...prev, height: Number(value) || 1 }))}
+                              />
+                            </Group>
+                            <Group gap="xs" mt="xs">
+                              <Button size="xs" onClick={handleEditSave}>
+                                保存
+                              </Button>
+                              <Button size="xs" variant="light" onClick={handleEditCancel}>
+                                キャンセル
+                              </Button>
+                            </Group>
+                          </Stack>
+                        </Popover.Dropdown>
+                      </Popover>
 
-                    <ActionIcon
-                      size="xs"
-                      variant="filled"
-                      color="red"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteRegion(region.id);
-                      }}
-                    >
-                      <IconTrash size={10} />
-                    </ActionIcon>
-                  </Group>
-                </Box>
-              </button>
+                      <ActionIcon
+                        size="xs"
+                        variant="filled"
+                        color="red"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteRegion(region.id);
+                        }}
+                      >
+                        <IconTrash size={10} />
+                      </ActionIcon>
+                    </Group>
+                  </Box>
+                </button>
 
-              {/* Moveable - 常に有効、選択時のみリサイズハンドルを表示 */}
-              <Moveable
-                target={`#region-${region.id}`}
-                container={containerRef.current}
-                draggable
-                resizable={selectedRegion === region.id}
-                keepRatio={false}
-                throttleDrag={0}
-                throttleResize={0}
-                onDragStart={() => {
-                  // ドラッグ開始時の選択状態を記録するが、まだ選択状態は変更しない
-                  setDragStartSelection(selectedRegion);
-                  setIsDragging(true);
-                  setHasActuallyDragged(false);
-                }}
-                onDrag={(e) => {
-                  // 実際にドラッグが開始された時点で選択状態にする
-                  if (!hasActuallyDragged) {
-                    setHasActuallyDragged(true);
+                {/* Moveable - 常に有効、選択時のみリサイズハンドルを表示 */}
+                {containerRef.current && scale > 0 && isContainerReady && (
+                  <Moveable
+                    key={`${region.id}-${scale}-${displayWidth}-${displayHeight}`}
+                    target={`#region-${region.id}`}
+                    container={containerRef.current}
+                    draggable
+                    resizable={selectedRegion === region.id}
+                    keepRatio={false}
+                    throttleDrag={0}
+                    throttleResize={0}
+                  onDragStart={() => {
+                    // ドラッグ開始時の選択状態を記録するが、まだ選択状態は変更しない
+                    setDragStartSelection(selectedRegion);
+                    setIsDragging(true);
+                    setHasActuallyDragged(false);
+                  }}
+                  onDrag={(e) => {
+                    // 実際にドラッグが開始された時点で選択状態にする
+                    if (!hasActuallyDragged) {
+                      setHasActuallyDragged(true);
+                      setSelectedRegion(region.id);
+                    }
+
+                    const rawX = e.left / scale;
+                    const rawY = e.top / scale;
+                    const newX = freeTransform
+                      ? Math.max(0, Math.min(CANVAS_WIDTH - region.width, Math.round(rawX)))
+                      : Math.max(0, Math.min(CANVAS_WIDTH - region.width, snapToGrid(rawX)));
+                    const newY = freeTransform
+                      ? Math.max(0, Math.min(CANVAS_HEIGHT - region.height, Math.round(rawY)))
+                      : Math.max(0, Math.min(CANVAS_HEIGHT - region.height, snapToGrid(rawY)));
+
+                    e.target.style.left = `${newX * scale}px`;
+                    e.target.style.top = `${newY * scale}px`;
+
+                    // リアルタイム更新
+                    updateRegion(region.id, { x: newX, y: newY });
+                  }}
+                  onDragEnd={() => {
+                    // ドラッグ終了時にフラグをリセット（選択状態は維持）
+                    setIsDragging(false);
+                    setDragStartSelection(null);
+                    setHasActuallyDragged(false);
+                  }}
+                  onResizeStart={() => {
+                    // リサイズ開始時に自動選択（既に選択されているはずだが念のため）
                     setSelectedRegion(region.id);
-                  }
+                  }}
+                  onResize={(e) => {
+                    const rawWidth = e.width / scale;
+                    const rawHeight = e.height / scale;
+                    const newWidth = freeTransform
+                      ? Math.max(1, Math.min(CANVAS_WIDTH - region.x, Math.round(rawWidth)))
+                      : Math.max(GRID_SIZE, Math.min(CANVAS_WIDTH - region.x, snapToGrid(rawWidth)));
+                    const newHeight = freeTransform
+                      ? Math.max(1, Math.min(CANVAS_HEIGHT - region.y, Math.round(rawHeight)))
+                      : Math.max(GRID_SIZE, Math.min(CANVAS_HEIGHT - region.y, snapToGrid(rawHeight)));
 
-                  const rawX = e.left / scale;
-                  const rawY = e.top / scale;
-                  const newX = freeTransform
-                    ? Math.max(0, Math.min(CANVAS_WIDTH - region.width, Math.round(rawX)))
-                    : Math.max(0, Math.min(CANVAS_WIDTH - region.width, snapToGrid(rawX)));
-                  const newY = freeTransform
-                    ? Math.max(0, Math.min(CANVAS_HEIGHT - region.height, Math.round(rawY)))
-                    : Math.max(0, Math.min(CANVAS_HEIGHT - region.height, snapToGrid(rawY)));
+                    e.target.style.width = `${newWidth * scale}px`;
+                    e.target.style.height = `${newHeight * scale}px`;
 
-                  e.target.style.left = `${newX * scale}px`;
-                  e.target.style.top = `${newY * scale}px`;
-
-                  // リアルタイム更新
-                  updateRegion(region.id, { x: newX, y: newY });
-                }}
-                onDragEnd={() => {
-                  // ドラッグ終了時にフラグをリセット（選択状態は維持）
-                  setIsDragging(false);
-                  setDragStartSelection(null);
-                  setHasActuallyDragged(false);
-                }}
-                onResizeStart={() => {
-                  // リサイズ開始時に自動選択（既に選択されているはずだが念のため）
-                  setSelectedRegion(region.id);
-                }}
-                onResize={(e) => {
-                  const rawWidth = e.width / scale;
-                  const rawHeight = e.height / scale;
-                  const newWidth = freeTransform
-                    ? Math.max(1, Math.min(CANVAS_WIDTH - region.x, Math.round(rawWidth)))
-                    : Math.max(GRID_SIZE, Math.min(CANVAS_WIDTH - region.x, snapToGrid(rawWidth)));
-                  const newHeight = freeTransform
-                    ? Math.max(1, Math.min(CANVAS_HEIGHT - region.y, Math.round(rawHeight)))
-                    : Math.max(GRID_SIZE, Math.min(CANVAS_HEIGHT - region.y, snapToGrid(rawHeight)));
-
-                  e.target.style.width = `${newWidth * scale}px`;
-                  e.target.style.height = `${newHeight * scale}px`;
-
-                  // リアルタイム更新
-                  updateRegion(region.id, { width: newWidth, height: newHeight });
-                }}
-                onResizeEnd={() => {
-                  // リアルタイム更新により不要
-                }}
-              />
-            </div>
-          );
-        })}
+                    // リアルタイム更新
+                    updateRegion(region.id, { width: newWidth, height: newHeight });
+                  }}
+                  onResizeEnd={() => {
+                    // リアルタイム更新により不要
+                  }}
+                />
+                )}
+              </div>
+            );
+          })}
       </div>
 
       {/* 選択中のリージョン情報 - 固定高さ */}

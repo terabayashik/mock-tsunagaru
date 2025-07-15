@@ -29,7 +29,13 @@ export const ContentPreviewModal = ({
   const [loading, setLoading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ name: "", url: "", title: "", description: "" });
+  const [editForm, setEditForm] = useState({
+    name: "",
+    url: "",
+    title: "",
+    description: "",
+    richTextContent: "",
+  });
   const { getContentById, updateContent, deleteContent } = useContent();
 
   useEffect(() => {
@@ -52,6 +58,7 @@ export const ContentPreviewModal = ({
             url: contentData.urlInfo?.url || "",
             title: contentData.urlInfo?.title || "",
             description: contentData.urlInfo?.description || "",
+            richTextContent: contentData.richTextInfo?.content || "",
           });
         }
 
@@ -175,6 +182,70 @@ export const ContentPreviewModal = ({
       }
     }
 
+    // リッチテキストプレビュー
+    if (content.type === "rich-text" && content.richTextInfo) {
+      const {
+        content: textContent,
+        writingMode,
+        fontFamily,
+        textAlign,
+        color,
+        backgroundColor,
+        fontSize,
+        scrollType = "none",
+        scrollSpeed = 3,
+      } = content.richTextInfo;
+
+      // テキストの長さに応じて適切な幅を計算
+      const singleLineText = textContent.replace(/\n/g, " ");
+      const textLength = singleLineText.length;
+      const estimatedWidth = Math.max(400, Math.min(textLength * fontSize * 0.6, 1200));
+
+      // スクロールアニメーションのCSS
+      const scrollAnimation =
+        scrollType !== "none"
+          ? `@keyframes textScrollModal {
+              0% { transform: translate${scrollType === "horizontal" ? "X" : "Y"}(100%); }
+              100% { transform: translate${scrollType === "horizontal" ? "X" : "Y"}(calc(-100% - ${estimatedWidth}px)); }
+            }`
+          : "";
+
+      return (
+        <Box
+          style={{
+            minHeight: "400px",
+            backgroundColor,
+            border: "1px solid #e5e5e5",
+            borderRadius: "8px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: textAlign === "center" ? "center" : textAlign === "end" ? "flex-end" : "flex-start",
+            overflow: "hidden",
+            position: "relative",
+            width: "100%",
+            maxWidth: "100%",
+          }}
+        >
+          <style>{scrollAnimation}</style>
+          <div
+            style={{
+              fontFamily,
+              fontSize: `${fontSize}px`,
+              color,
+              writingMode: writingMode === "vertical" ? "vertical-rl" : "horizontal-tb",
+              whiteSpace: "nowrap",
+              padding: "20px",
+              minWidth: `${estimatedWidth}px`,
+              width: "max-content",
+              ...(scrollType !== "none" ? { animation: `textScrollModal ${11 - scrollSpeed}s linear infinite` } : {}),
+            }}
+          >
+            {singleLineText}
+          </div>
+        </Box>
+      );
+    }
+
     // その他のタイプ（テキスト、URL等）
     return (
       <Box style={{ height: "400px", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -244,6 +315,7 @@ export const ContentPreviewModal = ({
         url: content.urlInfo?.url || "",
         title: content.urlInfo?.title || "",
         description: content.urlInfo?.description || "",
+        richTextContent: content.richTextInfo?.content || "",
       });
     }
   };
@@ -262,6 +334,14 @@ export const ContentPreviewModal = ({
           url: editForm.url,
           title: editForm.title || undefined,
           description: editForm.description || undefined,
+        };
+      }
+
+      // リッチテキストコンテンツの場合はrichTextInfoも更新
+      if (content.type === "rich-text" && content.richTextInfo) {
+        updateData.richTextInfo = {
+          ...content.richTextInfo,
+          content: editForm.richTextContent,
         };
       }
 
@@ -368,6 +448,17 @@ export const ContentPreviewModal = ({
           </>
         )}
 
+        {content.type === "rich-text" && (
+          <Textarea
+            label="テキストコンテンツ"
+            value={editForm.richTextContent}
+            onChange={(e) => setEditForm((prev) => ({ ...prev, richTextContent: e.target.value }))}
+            rows={6}
+            placeholder="表示したいテキストを入力してください"
+            required
+          />
+        )}
+
         <Group gap="sm" mt="sm">
           <Button size="sm" onClick={handleEditSave}>
             保存
@@ -469,6 +560,7 @@ const getContentTypeLabel = (type: string): string => {
     video: "動画",
     image: "画像",
     text: "テキスト",
+    "rich-text": "リッチテキスト",
     youtube: "YouTube",
     url: "URL",
   };

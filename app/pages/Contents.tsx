@@ -177,8 +177,13 @@ export default function ContentsPage() {
   };
 
   const handleContentClick = (contentId: string, contentType: ContentType) => {
-    // 動画と画像のみプレビューモーダルを開く
-    if (contentType === "video" || contentType === "image" || contentType === "youtube") {
+    // 動画、画像、YouTube、リッチテキストでプレビューモーダルを開く
+    if (
+      contentType === "video" ||
+      contentType === "image" ||
+      contentType === "youtube" ||
+      contentType === "rich-text"
+    ) {
       modalDispatch({ type: "OPEN_CONTENT_PREVIEW", contentId });
     }
   };
@@ -322,9 +327,13 @@ export default function ContentsPage() {
       // 編集後に未使用状態を更新（名前やタグの変更があるため）
       const contentsData = await getContentsIndex();
       await refreshUnusedStatus(contentsData);
+
+      // 成功したらモーダルを閉じる
+      handleContentEditModalClose();
     } catch (error) {
       logger.error("Contents", "Content edit failed", error);
       contentDispatch({ type: "SET_ERROR", error: `コンテンツの編集に失敗しました: ${error}` });
+      throw error; // エラーを再throwしてContentEditModalでキャッチできるようにする
     }
   };
 
@@ -396,7 +405,10 @@ export default function ContentsPage() {
             ) : (
               contents.map((content) => {
                 const isPreviewable =
-                  content.type === "video" || content.type === "image" || content.type === "youtube";
+                  content.type === "video" ||
+                  content.type === "image" ||
+                  content.type === "youtube" ||
+                  content.type === "rich-text";
                 return (
                   <Table.Tr
                     key={content.id}

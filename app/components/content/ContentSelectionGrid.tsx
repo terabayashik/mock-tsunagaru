@@ -1,6 +1,6 @@
 import { Box, Checkbox, Flex, SimpleGrid, Text } from "@mantine/core";
 import { useViewportSize } from "@mantine/hooks";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import type { ContentIndex } from "~/types/content";
 import { ContentPreview } from "./ContentPreview";
 
@@ -25,7 +25,6 @@ export const ContentSelectionGrid = ({
   maxItems = 50, // デフォルトで50個まで表示
 }: ContentSelectionGridProps) => {
   const { width } = useViewportSize();
-  const [visibleContents, setVisibleContents] = useState<ContentIndex[]>([]);
 
   // レスポンシブグリッド設定（プレイリスト作成画面用に調整）
   const getGridConfig = (viewportWidth: number): GridConfig => {
@@ -46,10 +45,8 @@ export const ContentSelectionGrid = ({
 
   const gridConfig = getGridConfig(width);
 
-  useEffect(() => {
-    // 表示するコンテンツを制限
-    setVisibleContents(contents.slice(0, maxItems));
-  }, [contents, maxItems]);
+  // 表示するコンテンツを制限（直接計算）
+  const visibleContents = contents.slice(0, maxItems);
 
   const handleContentToggle = useCallback(
     (contentId: string) => {

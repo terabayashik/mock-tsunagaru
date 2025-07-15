@@ -15,6 +15,7 @@ import {
 import { IconDeviceFloppy } from "@tabler/icons-react";
 import { memo, useEffect, useState } from "react";
 import { ContentUsageDisplay } from "~/components/content/ContentUsageDisplay";
+import { useContent } from "~/hooks/useContent";
 import { type ContentIndex, FONT_FAMILIES, type RichTextContent } from "~/types/content";
 
 interface ContentEditModalProps {
@@ -36,6 +37,7 @@ const MIN_FONT_SIZE = 8;
 const MAX_FONT_SIZE = 200;
 
 export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: ContentEditModalProps) => {
+  const { getContentById } = useContent();
   const [loading, setLoading] = useState(false);
 
   // 基本情報
@@ -50,10 +52,19 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
   const [color, setColor] = useState("#000000");
   const [backgroundColor, setBackgroundColor] = useState("#ffffff");
   const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE);
+  const [scrollType, setScrollType] = useState<"none" | "horizontal" | "vertical">("none");
+  const [scrollSpeed, setScrollSpeed] = useState(3);
 
   // URL情報（type === "url" or "youtube"の場合のみ使用）
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+
+  // モーダルが閉じられたときにローディング状態をリセット
+  useEffect(() => {
+    if (!opened) {
+      setLoading(false);
+    }
+  }, [opened]);
 
   // contentが変更されたときに状態を初期化
   useEffect(() => {
@@ -62,22 +73,73 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
     setName(content.name);
     setTags(content.tags.join(", "));
 
-    // コンテンツタイプごとの初期化は実際のコンテンツ詳細データが必要
-    // ここでは基本的な値をセット
-    if (content.type === "rich-text") {
-      // リッチテキストの場合のデフォルト値
-      setRichTextContent("");
-      setWritingMode("horizontal");
-      setFontFamily("Inter, sans-serif");
-      setTextAlign("start");
-      setColor("#000000");
-      setBackgroundColor("#ffffff");
-      setFontSize(DEFAULT_FONT_SIZE);
-    } else if (content.type === "url" || content.type === "youtube") {
-      setTitle("");
-      setDescription("");
-    }
-  }, [content]);
+    // 実際のコンテンツ詳細データを取得して初期化
+    const loadContentDetails = async () => {
+      try {
+        const contentDetail = await getContentById(content.id);
+
+        if (content.type === "rich-text" && contentDetail?.richTextInfo) {
+          const {
+            content: textContent,
+            writingMode: mode,
+            fontFamily: font,
+            textAlign: align,
+            color: textColor,
+            backgroundColor: bgColor,
+            fontSize: size,
+            scrollType: scroll,
+            scrollSpeed: speed,
+          } = contentDetail.richTextInfo;
+
+          setRichTextContent(textContent);
+          setWritingMode(mode);
+          setFontFamily(font);
+          setTextAlign(align);
+          setColor(textColor);
+          setBackgroundColor(bgColor);
+          setFontSize(size);
+          setScrollType(scroll || "none");
+          setScrollSpeed(speed || 3);
+        } else if (content.type === "rich-text") {
+          // フォールバック: リッチテキストのデフォルト値
+          setRichTextContent("");
+          setWritingMode("horizontal");
+          setFontFamily("Inter, sans-serif");
+          setTextAlign("start");
+          setColor("#000000");
+          setBackgroundColor("#ffffff");
+          setFontSize(DEFAULT_FONT_SIZE);
+          setScrollType("none");
+          setScrollSpeed(3);
+        } else if ((content.type === "url" || content.type === "youtube") && contentDetail?.urlInfo) {
+          setTitle(contentDetail.urlInfo.title || "");
+          setDescription(contentDetail.urlInfo.description || "");
+        } else if (content.type === "url" || content.type === "youtube") {
+          setTitle("");
+          setDescription("");
+        }
+      } catch (error) {
+        console.error("Failed to load content details:", error);
+        // エラー時はデフォルト値を使用
+        if (content.type === "rich-text") {
+          setRichTextContent("");
+          setWritingMode("horizontal");
+          setFontFamily("Inter, sans-serif");
+          setTextAlign("start");
+          setColor("#000000");
+          setBackgroundColor("#ffffff");
+          setFontSize(DEFAULT_FONT_SIZE);
+          setScrollType("none");
+          setScrollSpeed(3);
+        } else if (content.type === "url" || content.type === "youtube") {
+          setTitle("");
+          setDescription("");
+        }
+      }
+    };
+
+    loadContentDetails();
+  }, [content, getContentById]);
 
   const handleClose = () => {
     if (loading) return;
@@ -110,6 +172,8 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
           color,
           backgroundColor,
           fontSize,
+          scrollType,
+          scrollSpeed,
         };
       } else if (content.type === "url" || content.type === "youtube") {
         submitData.urlInfo = {
@@ -119,10 +183,11 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
       }
 
       await onSubmit(submitData);
-      handleClose();
+      // onSubmitが成功した場合は、親コンポーネントがモーダルを閉じるのを待つ
+      // ローディング状態はモーダルが閉じられるまで維持する
     } catch (error) {
       console.error("Content edit failed:", error);
-    } finally {
+      // エラー時のみローディング状態を解除
       setLoading(false);
     }
   };
@@ -282,6 +347,30 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
                 onChange={setBackgroundColor}
                 format="hex"
                 swatches={["#ffffff", "#000000", "#f5f5f5", "#e5e5e5", "#d4d4d4", "#a3a3a3", "#737373", "#525252"]}
+              />
+            </Group>
+
+            <Group grow>
+              <Select
+                label="スクロール方向"
+                value={scrollType}
+                onChange={(value) => setScrollType(value as "none" | "horizontal" | "vertical")}
+                data={[
+                  { value: "none", label: "スクロールなし" },
+                  { value: "horizontal", label: "横スクロール" },
+                  { value: "vertical", label: "縦スクロール" },
+                ]}
+                aria-label="スクロール方向の選択"
+              />
+
+              <NumberInput
+                label="スクロール速度"
+                value={scrollSpeed}
+                onChange={(value) => setScrollSpeed(Number(value) || 3)}
+                min={1}
+                max={10}
+                disabled={scrollType === "none"}
+                description="1: 遅い - 10: 速い"
               />
             </Group>
 

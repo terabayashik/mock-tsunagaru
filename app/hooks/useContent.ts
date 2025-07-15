@@ -292,11 +292,14 @@ export const useContent = () => {
     async (id: string, updateData: Partial<Omit<ContentItem, "id" | "createdAt">>): Promise<ContentItem> => {
       return await lock.withLock(`content-${id}`, async () => {
         try {
-          // 既存データを取得
-          const existingContent = await getContentById(id);
-          if (!existingContent) {
+          // 既存データを取得（デッドロックを避けるため、getContentByIdを使わずに直接読み込む）
+          const existingData = await opfs.readJSON<ContentItem>(`contents/content-${id}.json`);
+          if (!existingData) {
             throw new Error("コンテンツが見つかりません");
           }
+
+          // Zodでバリデーション
+          const existingContent = ContentItemSchema.parse(existingData);
 
           const updatedContent: ContentItem = {
             ...existingContent,
@@ -335,7 +338,7 @@ export const useContent = () => {
         }
       });
     },
-    [getContentById, getContentsIndex, lock.withLock, opfs.writeJSON],
+    [getContentsIndex, lock.withLock, opfs.readJSON, opfs.writeJSON],
   );
 
   /**
@@ -345,8 +348,9 @@ export const useContent = () => {
     async (id: string): Promise<void> => {
       return await lock.withLock(`content-${id}`, async () => {
         try {
-          // 既存データを取得してファイルパスを確認
-          const existingContent = await getContentById(id);
+          // 既存データを取得してファイルパスを確認（デッドロックを避けるため、直接読み込む）
+          const existingData = await opfs.readJSON<ContentItem>(`contents/content-${id}.json`);
+          const existingContent = existingData ? ContentItemSchema.parse(existingData) : null;
 
           // ファイルコンテンツの場合は実ファイルも削除
           if (existingContent?.fileInfo?.storagePath) {
@@ -381,7 +385,7 @@ export const useContent = () => {
         }
       });
     },
-    [getContentById, getContentsIndex, lock.clearTimestamp, lock.withLock, opfs.deleteFile, opfs.writeJSON],
+    [getContentsIndex, lock.clearTimestamp, lock.withLock, opfs.deleteFile, opfs.readJSON, opfs.writeJSON],
   );
 
   /**

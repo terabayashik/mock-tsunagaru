@@ -15,7 +15,7 @@ import {
 import type { FileWithPath } from "@mantine/dropzone";
 import { modals } from "@mantine/modals";
 import { IconArrowLeft, IconArrowRight, IconDeviceFloppy, IconLayoutGrid, IconPlus, IconX } from "@tabler/icons-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ContentSelectionGrid } from "~/components/content/ContentSelectionGrid";
 import { SelectedContentList } from "~/components/content/SelectedContentList";
 import { InteractiveLayoutPreview } from "~/components/layout/InteractiveLayoutPreview";
@@ -86,7 +86,6 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
   } | null>(null);
   const [selectedRegionId, setSelectedRegionId] = useState<string | null>(null);
   const [showContentAddModal, setShowContentAddModal] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
   const [showDurationModal, setShowDurationModal] = useState(false);
   const [durationModalContent, setDurationModalContent] = useState<{
     contentId: string;
@@ -166,16 +165,15 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
   }, [layouts.length]);
 
   // 変更を監視（初期値と比較）
-  useEffect(() => {
-    const hasAnyChange =
+  const hasChanges = useMemo(() => {
+    return (
       formData.name.trim() !== initialFormData.name.trim() ||
       formData.device.trim() !== initialFormData.device.trim() ||
       formData.layoutId !== initialFormData.layoutId ||
       JSON.stringify(formData.contentAssignments) !== JSON.stringify(initialFormData.contentAssignments) ||
       createNewLayout ||
-      tempLayoutData !== null;
-
-    setHasChanges(hasAnyChange);
+      tempLayoutData !== null
+    );
   }, [formData, initialFormData, createNewLayout, tempLayoutData]);
 
   const validateCurrentStep = (): boolean => {
@@ -347,7 +345,6 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
     setShowLayoutForm(false);
     setTempLayoutData(null);
     setSelectedRegionId(null);
-    setHasChanges(false);
   };
 
   const handleContentAssignmentChange = async (regionId: string, contentIds: string[]) => {

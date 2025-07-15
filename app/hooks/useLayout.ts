@@ -51,8 +51,18 @@ export const useLayout = () => {
             return null;
           }
 
+          // 後方互換性のためzIndexを追加
+          const layoutWithZIndex = {
+            ...layoutData,
+            regions:
+              layoutData.regions?.map((region, index) => ({
+                ...region,
+                zIndex: region.zIndex ?? index, // zIndexがない場合はindex順にする
+              })) || [],
+          };
+
           // Zodでバリデーション
-          const validated = LayoutItemSchema.parse(layoutData);
+          const validated = LayoutItemSchema.parse(layoutWithZIndex);
           lock.recordReadTimestamp(`layouts/layout-${id}.json`);
           return validated;
         } catch (error) {

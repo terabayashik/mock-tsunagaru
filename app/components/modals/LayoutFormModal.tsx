@@ -1,7 +1,8 @@
-import { Box, Button, Flex, Group, Modal, Select, Stack, Text, TextInput } from "@mantine/core";
+import { ActionIcon, Box, Button, Flex, Group, Modal, Paper, Select, Stack, Text, TextInput } from "@mantine/core";
 import { modals } from "@mantine/modals";
-import { IconDeviceFloppy, IconX } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
+import { IconDeviceFloppy, IconGripVertical, IconX } from "@tabler/icons-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { LayoutEditor } from "~/components/layout/LayoutEditor";
 import type { Orientation, Region } from "~/types/layout";
 
@@ -39,6 +40,8 @@ export const LayoutFormModal = ({
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const initialFormDataRef = useRef<LayoutFormData | null>(null);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   // 初期データとモーダル状態を監視
   useEffect(() => {
@@ -148,6 +151,62 @@ export const LayoutFormModal = ({
     setHasChanges(hasNameChange || hasOrientationChange || hasRegionsChange);
   };
 
+  // ドラッグ&ドロップハンドラー
+  const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
+    setDragIndex(index);
+    e.dataTransfer.setData("text/plain", index.toString());
+    e.dataTransfer.effectAllowed = "move";
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setDragIndex(null);
+    setDragOverIndex(null);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverIndex(index);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setDragOverIndex(null);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent, dropIndex: number) => {
+      e.preventDefault();
+      const dragStartIndex = Number.parseInt(e.dataTransfer.getData("text/plain"), 10);
+
+      if (dragStartIndex === dropIndex) {
+        setDragIndex(null);
+        setDragOverIndex(null);
+        return;
+      }
+
+      const sortedRegions = [...formData.regions].sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0));
+      const [draggedItem] = sortedRegions.splice(dragStartIndex, 1);
+      sortedRegions.splice(dropIndex, 0, draggedItem);
+
+      // zIndexを新しい順序で再設定（上が前面なので逆順）
+      const updatedRegions = sortedRegions.map((region, index) => ({
+        ...region,
+        zIndex: sortedRegions.length - 1 - index,
+      }));
+
+      // アニメーション用に少し遅延してからリセット
+      setTimeout(() => {
+        setDragIndex(null);
+        setDragOverIndex(null);
+      }, 50);
+
+      const newData = { ...formData, regions: updatedRegions };
+      setFormData(newData);
+      checkForChanges(newData);
+    },
+    [formData.regions, checkForChanges],
+  );
+
   return (
     <Modal
       opened={opened}
@@ -157,14 +216,24 @@ export const LayoutFormModal = ({
       size="95%"
       styles={{
         content: {
-          maxWidth: "1000px",
+          maxWidth: "1200px",
+          height: "750px",
+          maxHeight: "90vh",
+        },
+        body: {
+          height: "calc(750px - 60px)", // ヘッダー分を除いた高さ
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
         },
       }}
     >
-      <Flex gap="md" w="100%">
-        {/* 左側: フォーム */}
-        <Box component="form" onSubmit={handleSubmit} miw="300px" flex="0 0 auto">
-          <Stack gap="md">
+      <Flex gap="md" w="100%" flex={1} direction="column">
+        {/* メインコンテンツエリア */}
+        <Flex gap="md" w="100%" flex={1}>
+          {/* 左側: フォーム */}
+          <Box w="380px" flex="0 0 380px" style={{ overflow: "auto" }}>
+            <Stack gap="md">
             <TextInput
               label="レイアウト名"
               placeholder="レイアウト名を入力してください"
@@ -206,28 +275,150 @@ export const LayoutFormModal = ({
               </Text>
             )}
 
-            <Group justify="flex-end" mt="md">
-              <Button variant="subtle" leftSection={<IconX size={16} />} onClick={handleClose} disabled={loading}>
-                キャンセル
-              </Button>
-              <Button type="submit" leftSection={<IconDeviceFloppy size={16} />} loading={loading}>
-                {submitButtonText}
-              </Button>
-            </Group>
-          </Stack>
-        </Box>
+            {/* リージョンの表示順序設定 */}
+            {formData.regions.length > 1 && (
+              <Box>
+                <Text size="sm" fw={500} mb="xs">
+                  表示順序（上が前面、下が背面）
+                </Text>
+                <Stack gap="xs">
+                  <AnimatePresence>
+                    {[...formData.regions]
+                      .sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0))
+                      .map((region, index) => {
+                        const isDragging = dragIndex === index;
+                        const isDragOver = dragOverIndex === index;
+                        const originalIndex = formData.regions.findIndex((r) => r.id === region.id);
 
-        {/* 右側: レイアウトエディター */}
-        <Flex flex={1} justify="center" align="center">
-          {isInitialized && (
-            <LayoutEditor
-              regions={formData.regions}
-              onRegionsChange={handleRegionsChange}
-              canvasWidth={600}
-              canvasHeight={338}
-            />
-          )}
+                        return (
+                          <div key={`wrapper-${region.id}`}>
+                            {/* 挿入インジケーター */}
+                            <AnimatePresence>
+                              {isDragOver && dragIndex !== index && dragIndex !== null && (
+                                <motion.div
+                                  key={`indicator-${region.id}-${index}`}
+                                  initial={{ opacity: 0, height: 0, scaleY: 0 }}
+                                  animate={{ opacity: 1, height: 4, scaleY: 1 }}
+                                  exit={{ opacity: 0, height: 0, scaleY: 0 }}
+                                  transition={{ duration: 0.2, ease: "easeInOut" }}
+                                  style={{
+                                    backgroundColor: "#4a90e2",
+                                    borderRadius: "2px",
+                                    margin: "4px 0",
+                                    transformOrigin: "center",
+                                  }}
+                                />
+                              )}
+                            </AnimatePresence>
+
+                            <motion.div
+                              key={region.id}
+                              layout
+                              layoutId={`region-${region.id}`}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{
+                                opacity: 1,
+                                y: 0,
+                                scale: isDragging ? 1.02 : 1,
+                              }}
+                              exit={{ opacity: 0, y: -20 }}
+                              transition={{
+                                layout: { duration: 0.3, ease: "easeInOut" },
+                                opacity: { duration: 0.2 },
+                                scale: { duration: 0.2, ease: "easeOut" },
+                              }}
+                              whileDrag={{
+                                scale: 1.05,
+                                rotate: 1,
+                                zIndex: 100,
+                                boxShadow: "0 10px 30px rgba(0, 0, 0, 0.2)",
+                              }}
+                              dragConstraints={{ left: 0, right: 0 }}
+                              dragElastic={0.1}
+                            >
+                              <Paper
+                                p="xs"
+                                withBorder
+                                draggable
+                                style={{
+                                  cursor: isDragging ? "grabbing" : "grab",
+                                  opacity: isDragging ? 0.9 : 1,
+                                  backgroundColor: isDragOver && dragIndex !== index ? "#e3f2fd" : undefined,
+                                  borderColor: isDragOver && dragIndex !== index ? "#4a90e2" : undefined,
+                                }}
+                                onDragStart={(e) => handleDragStart(e, index)}
+                                onDragEnd={handleDragEnd}
+                                onDragOver={(e) => handleDragOver(e, index)}
+                                onDragLeave={handleDragLeave}
+                                onDrop={(e) => handleDrop(e, index)}
+                              >
+                                <Group gap="sm" wrap="nowrap">
+                                  {/* ドラッグハンドル */}
+                                  <Box c="gray.5">
+                                    <IconGripVertical size={16} />
+                                  </Box>
+
+                                  {/* 順序番号 */}
+                                  <Flex
+                                    miw="24px"
+                                    h="24px"
+                                    bg="#4a90e2"
+                                    style={{ borderRadius: "50%" }}
+                                    align="center"
+                                    justify="center"
+                                  >
+                                    <Text size="xs" c="white" fw={600}>
+                                      {index + 1}
+                                    </Text>
+                                  </Flex>
+
+                                  {/* リージョン情報 */}
+                                  <Box flex={1}>
+                                    <Text size="sm" fw={500}>
+                                      リージョン {originalIndex + 1}
+                                    </Text>
+                                    <Text size="xs" c="dimmed">
+                                      ({region.x}, {region.y}) {region.width}×{region.height}
+                                    </Text>
+                                  </Box>
+                                </Group>
+                              </Paper>
+                            </motion.div>
+                          </div>
+                        );
+                      })}
+                  </AnimatePresence>
+                </Stack>
+                <Text size="xs" c="dimmed" mt="xs">
+                  ドラッグして順序を変更できます。上にあるリージョンほど前面に表示されます。
+                </Text>
+              </Box>
+            )}
+            </Stack>
+          </Box>
+
+          {/* 右側: レイアウトエディター */}
+          <Box flex={1} style={{ minWidth: 0 }}>
+            {isInitialized && (
+              <LayoutEditor
+                regions={formData.regions}
+                onRegionsChange={handleRegionsChange}
+              />
+            )}
+          </Box>
         </Flex>
+
+        {/* 下部ボタンエリア */}
+        <Box component="form" onSubmit={handleSubmit}>
+          <Group justify="flex-end" mt="md" pt="md" style={{ borderTop: "1px solid var(--mantine-color-gray-3)" }}>
+            <Button variant="subtle" leftSection={<IconX size={16} />} onClick={handleClose} disabled={loading}>
+              キャンセル
+            </Button>
+            <Button type="submit" leftSection={<IconDeviceFloppy size={16} />} loading={loading}>
+              {submitButtonText}
+            </Button>
+          </Group>
+        </Box>
       </Flex>
     </Modal>
   );

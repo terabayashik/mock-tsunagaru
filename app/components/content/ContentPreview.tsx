@@ -14,6 +14,18 @@ import { memo, useCallback, useEffect, useState } from "react";
 import { useContent } from "~/hooks/useContent";
 import type { ContentIndex, ContentType } from "~/types/content";
 
+// HTMLエスケープ関数
+const escapeHtml = (str: string): string => {
+  const htmlEscapes: Record<string, string> = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  };
+  return str.replace(/[&<>"']/g, (match) => htmlEscapes[match]);
+};
+
 // Constants
 const PREVIEW_ASPECT_RATIO = 16 / 9;
 const INFO_SECTION_HEIGHT = 80; // 情報エリアの高さを80pxに増加（3段レイアウト用）
@@ -56,7 +68,7 @@ interface PreviewState {
 export const ContentPreview = memo(
   ({ content, onClick, onEdit, onDelete, aspectRatio = PREVIEW_ASPECT_RATIO }: ContentPreviewProps) => {
     const [previewState, setPreviewState] = useState<PreviewState>({ loading: false });
-    const { getThumbnailUrl } = useContent();
+    const { getThumbnailUrl, getContentById } = useContent();
 
     // Calculate heights based on constants
     const totalHeight = Math.round(BASE_WIDTH / PREVIEW_ASPECT_RATIO) + INFO_SECTION_HEIGHT;
@@ -93,18 +105,24 @@ export const ContentPreview = memo(
         const label = typeLabels[content.type as keyof typeof typeLabels] || "ファイル";
         const color = typeColors[content.type as keyof typeof typeColors] || "#6c757d";
 
-        setPreviewState({
-          loading: false,
-          previewUrl:
-            "data:image/svg+xml;base64," +
-            btoa(`
+        const svgContent = `
             <svg width="320" height="180" xmlns="http://www.w3.org/2000/svg">
               <rect width="100%" height="100%" fill="${color}"/>
               <text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="white" font-size="14">
-                ${label}プレビュー
+                ${escapeHtml(label)}プレビュー
               </text>
             </svg>
-          `),
+          `;
+
+        const encodedSvg = btoa(
+          encodeURIComponent(svgContent).replace(/%([0-9A-F]{2})/g, (_match, p1) => {
+            return String.fromCharCode(Number.parseInt(p1, 16));
+          }),
+        );
+
+        setPreviewState({
+          loading: false,
+          previewUrl: `data:image/svg+xml;base64,${encodedSvg}`,
         });
       }
     }, [content.id, content.type, getThumbnailUrl]);
@@ -137,24 +155,30 @@ export const ContentPreview = memo(
     const generateUrlPreview = useCallback(async () => {
       try {
         // URL用のプレースホルダープレビュー
-        setPreviewState({
-          loading: false,
-          previewUrl:
-            "data:image/svg+xml;base64," +
-            btoa(`
+        const svgContent = `
           <svg width="320" height="180" xmlns="http://www.w3.org/2000/svg">
             <rect width="100%" height="100%" fill="#7950f2"/>
             <text x="50%" y="30%" text-anchor="middle" dy=".3em" fill="white" font-size="12">
               Webページ
             </text>
             <text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="white" font-size="10">
-              ${new URL(content.url || "").hostname}
+              ${escapeHtml(new URL(content.url || "").hostname)}
             </text>
             <text x="50%" y="70%" text-anchor="middle" dy=".3em" fill="white" font-size="8">
               クリックしてアクセス
             </text>
           </svg>
-        `),
+        `;
+
+        const encodedSvg = btoa(
+          encodeURIComponent(svgContent).replace(/%([0-9A-F]{2})/g, (_match, p1) => {
+            return String.fromCharCode(Number.parseInt(p1, 16));
+          }),
+        );
+
+        setPreviewState({
+          loading: false,
+          previewUrl: `data:image/svg+xml;base64,${encodedSvg}`,
         });
       } catch (_error) {
         setPreviewState({
@@ -163,6 +187,103 @@ export const ContentPreview = memo(
         });
       }
     }, [content.url]);
+
+    const generateRichTextPreview = useCallback(async () => {
+      try {
+        const contentDetail = await getContentById(content.id);
+        if (!contentDetail?.richTextInfo) {
+          throw new Error("リッチテキスト情報が見つかりません");
+        }
+
+        const {
+          content: textContent,
+          writingMode,
+          fontFamily,
+          textAlign,
+          color,
+          backgroundColor,
+          fontSize,
+          scrollType = "none",
+          scrollSpeed = 3,
+        } = contentDetail.richTextInfo;
+
+        // スクロールアニメーションのCSS
+        // SVG内では100% = estimatedWidth pxなので、-100% - estimatedWidth px = -200%相当
+        const scrollAnimation =
+          scrollType !== "none"
+            ? `@keyframes textScroll {
+              0% { transform: translate${scrollType === "horizontal" ? "X" : "Y"}(100%); }
+              100% { transform: translate${scrollType === "horizontal" ? "X" : "Y"}(-200%); }
+            }`
+            : "";
+
+        const animationStyle =
+          scrollType !== "none" ? `animation: textScroll ${11 - scrollSpeed}s linear infinite;` : "";
+
+        // テキストの長さに応じて適切な幅を計算
+        const textLength = textContent.replace(/\n/g, " ").length;
+        const estimatedWidth = Math.max(320, Math.min(textLength * Math.min(fontSize, 24) * 0.6, 800));
+
+        // SVGをUTF-8対応でエンコード
+        const svgContent = `
+            <svg width="${estimatedWidth}" height="180" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${estimatedWidth} 180" preserveAspectRatio="xMidYMid slice">
+              <defs>
+                <style>
+                  ${scrollAnimation}
+                  .text-content {
+                    font-family: ${fontFamily};
+                    font-size: ${Math.min(fontSize, 24)}px;
+                    fill: ${color};
+                    text-anchor: ${textAlign === "center" ? "middle" : textAlign === "end" ? "end" : "start"};
+                    writing-mode: ${writingMode === "vertical" ? "tb-rl" : "lr-tb"};
+                    ${animationStyle}
+                  }
+                  .container {
+                    overflow: visible;
+                  }
+                </style>
+              </defs>
+              <rect width="100%" height="100%" fill="${backgroundColor}"/>
+              <foreignObject width="100%" height="100%" class="container">
+                <div xmlns="http://www.w3.org/1999/xhtml" style="
+                  width: 100%;
+                  height: 100%;
+                  display: flex;
+                  align-items: center;
+                  justify-content: ${textAlign === "center" ? "center" : textAlign === "end" ? "flex-end" : "flex-start"};
+                  padding: 10px;
+                  box-sizing: border-box;
+                  font-family: ${fontFamily};
+                  font-size: ${Math.min(fontSize, 24)}px;
+                  color: ${color};
+                  writing-mode: ${writingMode === "vertical" ? "vertical-rl" : "horizontal-tb"};
+                  white-space: nowrap;
+                  ${scrollType !== "none" ? animationStyle : ""}
+                ">
+                  ${escapeHtml(textContent.replace(/\n/g, " "))}
+                </div>
+              </foreignObject>
+            </svg>
+          `;
+
+        // UTF-8文字列をbase64エンコード
+        const encodedSvg = btoa(
+          encodeURIComponent(svgContent).replace(/%([0-9A-F]{2})/g, (_match, p1) => {
+            return String.fromCharCode(Number.parseInt(p1, 16));
+          }),
+        );
+
+        setPreviewState({
+          loading: false,
+          previewUrl: `data:image/svg+xml;base64,${encodedSvg}`,
+        });
+      } catch (_error) {
+        setPreviewState({
+          loading: false,
+          error: "リッチテキストプレビュー生成に失敗",
+        });
+      }
+    }, [content.id, getContentById]);
 
     const generatePreview = useCallback(async () => {
       setPreviewState({ loading: true });
@@ -180,6 +301,9 @@ export const ContentPreview = memo(
           case "url":
             await generateUrlPreview();
             break;
+          case "rich-text":
+            await generateRichTextPreview();
+            break;
           default:
             setPreviewState({ loading: false, error: "Unknown content type" });
         }
@@ -190,7 +314,7 @@ export const ContentPreview = memo(
           error: error instanceof Error ? error.message : "プレビュー生成に失敗しました",
         });
       }
-    }, [content.type, generateFilePreview, generateYouTubePreview, generateUrlPreview]);
+    }, [content.type, generateFilePreview, generateYouTubePreview, generateUrlPreview, generateRichTextPreview]);
 
     useEffect(() => {
       generatePreview();
@@ -204,6 +328,8 @@ export const ContentPreview = memo(
         case "image":
           return <IconPhoto {...iconProps} />;
         case "text":
+          return <IconFileText {...iconProps} />;
+        case "rich-text":
           return <IconFileText {...iconProps} />;
         case "youtube":
           return <IconBrandYoutube {...iconProps} />;
@@ -221,6 +347,8 @@ export const ContentPreview = memo(
         case "image":
           return "green";
         case "text":
+          return "orange";
+        case "rich-text":
           return "orange";
         case "youtube":
           return "red";

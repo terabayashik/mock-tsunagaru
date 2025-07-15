@@ -1,20 +1,17 @@
 import { ActionIcon, Tooltip, useMantineColorScheme } from "@mantine/core";
 import { IconMoon, IconSun } from "@tabler/icons-react";
 import { useAtom } from "jotai";
-import { useEffect } from "react";
 import { colorSchemeAtom } from "~/states";
 
 export const ThemeToggle = () => {
   const [colorScheme, setColorScheme] = useAtom(colorSchemeAtom);
   const { setColorScheme: setMantineColorScheme } = useMantineColorScheme();
 
-  useEffect(() => {
-    setMantineColorScheme(colorScheme);
-  }, [colorScheme, setMantineColorScheme]);
-
   const toggleColorScheme = () => {
     const newScheme = colorScheme === "dark" ? "light" : "dark";
     setColorScheme(newScheme);
+    // Mantineのカラースキームを直接更新
+    setMantineColorScheme(newScheme);
   };
 
   return (

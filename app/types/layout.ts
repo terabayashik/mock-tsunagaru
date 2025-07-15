@@ -6,6 +6,7 @@ export const RegionSchema = z.object({
   y: z.number().min(0, "Y座標は0以上である必要があります"),
   width: z.number().min(1, "幅は1以上である必要があります"),
   height: z.number().min(1, "高さは1以上である必要があります"),
+  zIndex: z.number().int().min(0, "z-indexは0以上の整数である必要があります").default(0),
 });
 
 export const LayoutItemSchema = z.object({
