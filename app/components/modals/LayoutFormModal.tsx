@@ -184,14 +184,23 @@ export const LayoutFormModal = ({
         return;
       }
 
+      // 現在の表示順序でソートされたリージョンを取得
       const sortedRegions = [...formData.regions].sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0));
+
+      // ドラッグされたアイテムを新しい位置に移動
       const [draggedItem] = sortedRegions.splice(dragStartIndex, 1);
       sortedRegions.splice(dropIndex, 0, draggedItem);
 
-      // zIndexを新しい順序で再設定（上が前面なので逆順）
-      const updatedRegions = sortedRegions.map((region, index) => ({
+      // 新しい順序に基づいてzIndexを更新（元のリージョン配列は保持）
+      const zIndexMap = new Map<string, number>();
+      sortedRegions.forEach((region, index) => {
+        zIndexMap.set(region.id, sortedRegions.length - 1 - index);
+      });
+
+      // 元のリージョン配列を保持しつつ、zIndexだけを更新
+      const updatedRegions = formData.regions.map((region) => ({
         ...region,
-        zIndex: sortedRegions.length - 1 - index,
+        zIndex: zIndexMap.get(region.id) || 0,
       }));
 
       // アニメーション用に少し遅延してからリセット

@@ -129,11 +129,23 @@ export const useLayout = () => {
     async (id: string, updateData: Partial<Omit<LayoutItem, "id" | "createdAt">>): Promise<LayoutItem> => {
       return await lock.withLock(`layout-${id}`, async () => {
         try {
-          // 既存データを取得
-          const existingLayout = await getLayoutById(id);
-          if (!existingLayout) {
+          // 既存データを取得（ロック内で直接読み込み）
+          const existingLayoutData = await opfs.readJSON<LayoutItem>(`layouts/layout-${id}.json`);
+          if (!existingLayoutData) {
             throw new Error("レイアウトが見つかりません");
           }
+
+          // 後方互換性のためzIndexを追加
+          const layoutWithZIndex = {
+            ...existingLayoutData,
+            regions:
+              existingLayoutData.regions?.map((region, index) => ({
+                ...region,
+                zIndex: region.zIndex ?? index,
+              })) || [],
+          };
+
+          const existingLayout = LayoutItemSchema.parse(layoutWithZIndex);
 
           const updatedLayout: LayoutItem = {
             ...existingLayout,
@@ -170,7 +182,7 @@ export const useLayout = () => {
         }
       });
     },
-    [getLayoutById, getLayoutsIndex, lock.withLock, opfs.writeJSON],
+    [getLayoutsIndex, lock.withLock, opfs.readJSON, opfs.writeJSON],
   );
 
   /**

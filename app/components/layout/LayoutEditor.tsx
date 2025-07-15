@@ -288,8 +288,10 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
             return (
               <div key={region.id} style={{ position: "absolute", zIndex: region.zIndex || 0 }}>
                 {/* 矩形 */}
-                <button
-                  type="button"
+                {/* biome-ignore lint/a11y/useSemanticElements: Avoiding button nesting issue */}
+                <div
+                  role="button"
+                  tabIndex={0}
                   id={`region-${region.id}`}
                   style={{
                     position: "absolute",
@@ -314,6 +316,19 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
                         setSelectedRegion(null);
                       } else {
                         setSelectedRegion(region.id);
+                      }
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (!isDragging && !hasActuallyDragged) {
+                        if (selectedRegion === region.id) {
+                          setSelectedRegion(null);
+                        } else {
+                          setSelectedRegion(region.id);
+                        }
                       }
                     }
                   }}
@@ -434,7 +449,7 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
                       </ActionIcon>
                     </Group>
                   </Box>
-                </button>
+                </div>
 
                 {/* Moveable - 常に有効、選択時のみリサイズハンドルを表示 */}
                 {containerRef.current && scale > 0 && isContainerReady && (
