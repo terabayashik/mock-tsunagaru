@@ -4,6 +4,7 @@ import { notifications } from "@mantine/notifications";
 import {
   IconDatabaseOff,
   IconExclamationCircle,
+  IconInfoCircle,
   IconPalette,
   IconPhoto,
   IconRefresh,
@@ -13,6 +14,7 @@ import {
 import { useAtom } from "jotai";
 import { useCallback, useEffect, useState } from "react";
 import { AuthGuard } from "~/components";
+import { getFormattedBuildDate, getFormattedVersion, getVersionInfo } from "~/config/version";
 import { useContent } from "~/hooks/useContent";
 import { DEFAULT_HEADER_COLOR, headerColorAtom, resetHeaderColorAtom } from "~/states";
 import { logger } from "~/utils/logger";
@@ -41,6 +43,9 @@ const Settings = () => {
   // ヘッダー色のstate
   const [headerColor, setHeaderColor] = useAtom(headerColorAtom);
   const [, resetHeaderColor] = useAtom(resetHeaderColorAtom);
+
+  // バージョン情報
+  const versionInfo = getVersionInfo();
 
   const loadStorageInfo = useCallback(async () => {
     try {
@@ -338,6 +343,38 @@ const Settings = () => {
                   デフォルト色: {DEFAULT_HEADER_COLOR}
                 </Text>
               </Stack>
+            </Stack>
+          </Paper>
+
+          {/* バージョン情報セクション */}
+          <Paper p="md" withBorder>
+            <Stack gap="md">
+              <Title order={2} size="h3">
+                バージョン情報
+              </Title>
+
+              <Alert color="gray" icon={<IconInfoCircle size={16} />}>
+                <Stack gap="xs">
+                  <Group justify="space-between">
+                    <Text size="sm" fw={500}>
+                      アプリケーション:
+                    </Text>
+                    <Text size="sm">{getFormattedVersion()}</Text>
+                  </Group>
+                  <Group justify="space-between">
+                    <Text size="sm" fw={500}>
+                      ビルド:
+                    </Text>
+                    <Text size="sm">{getFormattedBuildDate()}</Text>
+                  </Group>
+                  <Group justify="space-between">
+                    <Text size="sm" fw={500}>
+                      環境:
+                    </Text>
+                    <Text size="sm">{versionInfo.environment}</Text>
+                  </Group>
+                </Stack>
+              </Alert>
             </Stack>
           </Paper>
 
