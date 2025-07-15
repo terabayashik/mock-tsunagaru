@@ -15,6 +15,7 @@ import {
 import { ModalsProvider } from "@mantine/modals";
 import { Notifications } from "@mantine/notifications";
 import { Provider, useAtomValue } from "jotai";
+import { useEffect, useState } from "react";
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 import { AppLayout } from "~/components";
 import { colorSchemeAtom } from "~/states";
@@ -39,12 +40,16 @@ const theme = createTheme({
 
 const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const colorScheme = useAtomValue(colorSchemeAtom);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <MantineProvider
       theme={theme}
       defaultColorScheme="auto"
-      forceColorScheme={typeof window !== "undefined" ? (colorScheme === "auto" ? undefined : colorScheme) : undefined}
     >
       <ModalsProvider>
         <Notifications />
@@ -56,7 +61,7 @@ const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <html lang="en" style={{ height: "100%", margin: 0, padding: 0 }}>
+    <html lang="en" style={{ height: "100%", margin: 0, padding: 0 }} suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />

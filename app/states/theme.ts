@@ -3,6 +3,7 @@ import { atomWithStorage } from "jotai/utils";
 
 export type ColorScheme = "light" | "dark" | "auto";
 
+// SSR対応のcolorSchemeAtom
 export const colorSchemeAtom = atomWithStorage<ColorScheme>("tsunagaru-color-scheme", "auto");
 
 // デフォルトのヘッダー色
