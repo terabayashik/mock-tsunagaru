@@ -7,6 +7,7 @@ import {
   IconInfoCircle,
   IconPalette,
   IconPhoto,
+  IconPlus,
   IconRefresh,
   IconRefreshDot,
   IconTrash,
@@ -16,6 +17,7 @@ import { useCallback, useEffect, useState } from "react";
 import { AuthGuard } from "~/components";
 import { getFormattedBuildDate, getFormattedVersion, getVersionInfo } from "~/config/version";
 import { useContent } from "~/hooks/useContent";
+import { useTestData } from "~/hooks/useTestData";
 import { DEFAULT_HEADER_COLOR, headerColorAtom, resetHeaderColorAtom } from "~/states";
 import { logger } from "~/utils/logger";
 import { OPFSManager } from "~/utils/storage/opfs";
@@ -36,9 +38,11 @@ const Settings = () => {
   const [loading, setLoading] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [creatingTestData, setCreatingTestData] = useState(false);
 
   const opfs = OPFSManager.getInstance();
   const { regenerateAllThumbnails } = useContent();
+  const { createTestData } = useTestData();
 
   // ヘッダー色のstate
   const [headerColor, setHeaderColor] = useAtom(headerColorAtom);
@@ -195,6 +199,72 @@ const Settings = () => {
       });
     } finally {
       setRegenerating(false);
+    }
+  };
+
+  const handleCreateTestData = () => {
+    modals.openConfirmModal({
+      title: "テストデータの作成",
+      children: (
+        <Stack gap="md">
+          <Alert color="blue" icon={<IconPlus size={16} />}>
+            <Text size="sm" fw={500}>
+              テスト用のコンテンツを作成します
+            </Text>
+          </Alert>
+          <Text size="sm">以下のテストデータが作成されます：</Text>
+          <List size="sm">
+            <List.Item>画像ファイル: 4件</List.Item>
+            <List.Item>テキストコンテンツ: 4件</List.Item>
+            <List.Item>YouTube動画: 4件</List.Item>
+            <List.Item>URLリンク: 4件</List.Item>
+          </List>
+          <Text size="sm" c="dimmed">
+            合計16件のテストコンテンツが作成されます。
+          </Text>
+        </Stack>
+      ),
+      labels: { confirm: "作成開始", cancel: "キャンセル" },
+      confirmProps: { color: "blue", leftSection: <IconPlus size={16} /> },
+      onConfirm: performCreateTestData,
+    });
+  };
+
+  const performCreateTestData = async () => {
+    try {
+      setCreatingTestData(true);
+
+      const results = await createTestData();
+
+      if (results.failed.length > 0) {
+        notifications.show({
+          title: "一部のテストデータ作成に失敗",
+          message: `${results.success}/${results.total} 件が成功しました。失敗: ${results.failed.join(", ")}`,
+          color: "yellow",
+          icon: <IconExclamationCircle size={16} />,
+          autoClose: 10000,
+        });
+      } else {
+        notifications.show({
+          title: "テストデータ作成完了",
+          message: `${results.success} 件のテストコンテンツを作成しました`,
+          color: "green",
+          icon: <IconPlus size={16} />,
+        });
+      }
+
+      // ストレージ情報を再読み込み
+      await loadStorageInfo();
+    } catch (error) {
+      logger.error("Settings", "Failed to create test data", error);
+      notifications.show({
+        title: "テストデータ作成失敗",
+        message: "テストデータの作成中にエラーが発生しました",
+        color: "red",
+        icon: <IconExclamationCircle size={16} />,
+      });
+    } finally {
+      setCreatingTestData(false);
     }
   };
 
@@ -378,15 +448,32 @@ const Settings = () => {
             </Stack>
           </Paper>
 
-          {/* その他の設定セクション */}
+          {/* テストデータ作成セクション */}
           <Paper p="md" withBorder>
             <Stack gap="md">
               <Title order={2} size="h3">
-                その他の設定
+                テストデータ作成
               </Title>
-              <Text size="sm" c="dimmed">
-                その他の設定項目は今後実装予定です。
-              </Text>
+
+              <Alert color="blue" icon={<IconPlus size={16} />}>
+                <Text size="sm">
+                  デモンストレーション用のテストコンテンツを一括作成できます。
+                  画像、テキスト、YouTube動画、URLリンクの各種コンテンツが作成されます。
+                </Text>
+              </Alert>
+
+              <Group justify="flex-end">
+                <Button
+                  color="blue"
+                  variant="light"
+                  leftSection={<IconPlus size={16} />}
+                  onClick={handleCreateTestData}
+                  loading={creatingTestData}
+                  disabled={loading || clearing || regenerating}
+                >
+                  テストデータを作成
+                </Button>
+              </Group>
             </Stack>
           </Paper>
         </Stack>
