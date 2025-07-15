@@ -51,13 +51,13 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
       hour: "2-digit",
       minute: "2-digit",
     })}`,
-    device: "",
+    device: "テストデバイス",
     layoutId: "",
     contentAssignments: [],
   });
   const [initialFormData, setInitialFormData] = useState<PlaylistFormData>({
     name: "",
-    device: "",
+    device: "テストデバイス",
     layoutId: "",
     contentAssignments: [],
   });
@@ -131,7 +131,7 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
             hour: "2-digit",
             minute: "2-digit",
           })}`,
-          device: "",
+          device: "テストデバイス",
           layoutId: "",
           contentAssignments: [],
         };
@@ -161,9 +161,7 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
       if (formData.name.trim().length === 0) {
         newErrors.name = "プレイリスト名は必須です";
       }
-      if (formData.device.trim().length === 0) {
-        newErrors.device = "デバイス名は必須です";
-      }
+      // デバイス名は固定値なのでバリデーション不要
     } else if (currentStep === "layout") {
       // 既存レイアウトの選択も新規レイアウトの作成もされていない場合はエラー
       if (formData.layoutId.trim().length === 0 && !tempLayoutData) {
@@ -300,7 +298,7 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
         hour: "2-digit",
         minute: "2-digit",
       })}`,
-      device: "",
+      device: "テストデバイス",
       layoutId: "",
       contentAssignments: [],
     };
@@ -585,6 +583,7 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
               value={formData.device}
               onChange={(e) => setFormData((prev) => ({ ...prev, device: e.target.value }))}
               error={errors.device}
+              disabled
             />
           </Stack>
         );
