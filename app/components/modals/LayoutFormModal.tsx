@@ -1,4 +1,4 @@
-import { ActionIcon, Box, Button, Flex, Group, Modal, Paper, Select, Stack, Text, TextInput } from "@mantine/core";
+import { Box, Button, Flex, Group, Modal, Paper, Select, Stack, Text, TextInput } from "@mantine/core";
 import { modals } from "@mantine/modals";
 import { IconDeviceFloppy, IconGripVertical, IconX } from "@tabler/icons-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -141,7 +141,7 @@ export const LayoutFormModal = ({
   };
 
   // フォームデータの変更をチェック
-  const checkForChanges = (currentData: LayoutFormData) => {
+  const checkForChanges = useCallback((currentData: LayoutFormData) => {
     if (!initialFormDataRef.current) return;
 
     const hasNameChange = currentData.name !== initialFormDataRef.current.name;
@@ -149,7 +149,7 @@ export const LayoutFormModal = ({
     const hasRegionsChange = JSON.stringify(currentData.regions) !== JSON.stringify(initialFormDataRef.current.regions);
 
     setHasChanges(hasNameChange || hasOrientationChange || hasRegionsChange);
-  };
+  }, []);
 
   // ドラッグ&ドロップハンドラー
   const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
@@ -204,7 +204,7 @@ export const LayoutFormModal = ({
       setFormData(newData);
       checkForChanges(newData);
     },
-    [formData.regions, checkForChanges],
+    [formData, checkForChanges],
   );
 
   return (
@@ -234,177 +234,172 @@ export const LayoutFormModal = ({
           {/* 左側: フォーム */}
           <Box w="380px" flex="0 0 380px" style={{ overflow: "auto" }}>
             <Stack gap="md">
-            <TextInput
-              label="レイアウト名"
-              placeholder="レイアウト名を入力してください"
-              required
-              value={formData.name}
-              onChange={(e) => {
-                const newData = { ...formData, name: e.target.value };
-                setFormData(newData);
-                checkForChanges(newData);
-              }}
-              error={errors.name}
-              aria-required="true"
-              aria-label="レイアウト名入力"
-            />
+              <TextInput
+                label="レイアウト名"
+                placeholder="レイアウト名を入力してください"
+                required
+                value={formData.name}
+                onChange={(e) => {
+                  const newData = { ...formData, name: e.target.value };
+                  setFormData(newData);
+                  checkForChanges(newData);
+                }}
+                error={errors.name}
+                aria-required="true"
+                aria-label="レイアウト名入力"
+              />
 
-            <Select
-              label="向き"
-              placeholder="向きを選択してください"
-              required
-              value={formData.orientation}
-              onChange={(value) => {
-                const newData = { ...formData, orientation: value as Orientation };
-                setFormData(newData);
-                checkForChanges(newData);
-              }}
-              data={[
-                { value: "landscape", label: "横向き (1920x1080)" },
-                { value: "portrait-right", label: "縦向き右回転 (1080x1920)" },
-                { value: "portrait-left", label: "縦向き左回転 (1080x1920)" },
-              ]}
-              error={errors.orientation}
-              aria-required="true"
-              aria-label="画面向きの選択"
-            />
+              <Select
+                label="向き"
+                placeholder="向きを選択してください"
+                required
+                value={formData.orientation}
+                onChange={(value) => {
+                  const newData = { ...formData, orientation: value as Orientation };
+                  setFormData(newData);
+                  checkForChanges(newData);
+                }}
+                data={[
+                  { value: "landscape", label: "横向き (1920x1080)" },
+                  { value: "portrait-right", label: "縦向き右回転 (1080x1920)" },
+                  { value: "portrait-left", label: "縦向き左回転 (1080x1920)" },
+                ]}
+                error={errors.orientation}
+                aria-required="true"
+                aria-label="画面向きの選択"
+              />
 
-            {errors.regions && (
-              <Text c="red.6" size="sm">
-                {errors.regions}
-              </Text>
-            )}
-
-            {/* リージョンの表示順序設定 */}
-            {formData.regions.length > 1 && (
-              <Box>
-                <Text size="sm" fw={500} mb="xs">
-                  表示順序（上が前面、下が背面）
+              {errors.regions && (
+                <Text c="red.6" size="sm">
+                  {errors.regions}
                 </Text>
-                <Stack gap="xs">
-                  <AnimatePresence>
-                    {[...formData.regions]
-                      .sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0))
-                      .map((region, index) => {
-                        const isDragging = dragIndex === index;
-                        const isDragOver = dragOverIndex === index;
-                        const originalIndex = formData.regions.findIndex((r) => r.id === region.id);
+              )}
 
-                        return (
-                          <div key={`wrapper-${region.id}`}>
-                            {/* 挿入インジケーター */}
-                            <AnimatePresence>
-                              {isDragOver && dragIndex !== index && dragIndex !== null && (
-                                <motion.div
-                                  key={`indicator-${region.id}-${index}`}
-                                  initial={{ opacity: 0, height: 0, scaleY: 0 }}
-                                  animate={{ opacity: 1, height: 4, scaleY: 1 }}
-                                  exit={{ opacity: 0, height: 0, scaleY: 0 }}
-                                  transition={{ duration: 0.2, ease: "easeInOut" }}
-                                  style={{
-                                    backgroundColor: "#4a90e2",
-                                    borderRadius: "2px",
-                                    margin: "4px 0",
-                                    transformOrigin: "center",
-                                  }}
-                                />
-                              )}
-                            </AnimatePresence>
+              {/* リージョンの表示順序設定 */}
+              {formData.regions.length > 1 && (
+                <Box>
+                  <Text size="sm" fw={500} mb="xs">
+                    表示順序（上が前面、下が背面）
+                  </Text>
+                  <Stack gap="xs">
+                    <AnimatePresence>
+                      {[...formData.regions]
+                        .sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0))
+                        .map((region, index) => {
+                          const isDragging = dragIndex === index;
+                          const isDragOver = dragOverIndex === index;
+                          const originalIndex = formData.regions.findIndex((r) => r.id === region.id);
 
-                            <motion.div
-                              key={region.id}
-                              layout
-                              layoutId={`region-${region.id}`}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{
-                                opacity: 1,
-                                y: 0,
-                                scale: isDragging ? 1.02 : 1,
-                              }}
-                              exit={{ opacity: 0, y: -20 }}
-                              transition={{
-                                layout: { duration: 0.3, ease: "easeInOut" },
-                                opacity: { duration: 0.2 },
-                                scale: { duration: 0.2, ease: "easeOut" },
-                              }}
-                              whileDrag={{
-                                scale: 1.05,
-                                rotate: 1,
-                                zIndex: 100,
-                                boxShadow: "0 10px 30px rgba(0, 0, 0, 0.2)",
-                              }}
-                              dragConstraints={{ left: 0, right: 0 }}
-                              dragElastic={0.1}
-                            >
-                              <Paper
-                                p="xs"
-                                withBorder
-                                draggable
-                                style={{
-                                  cursor: isDragging ? "grabbing" : "grab",
-                                  opacity: isDragging ? 0.9 : 1,
-                                  backgroundColor: isDragOver && dragIndex !== index ? "#e3f2fd" : undefined,
-                                  borderColor: isDragOver && dragIndex !== index ? "#4a90e2" : undefined,
+                          return (
+                            <div key={`wrapper-${region.id}`}>
+                              {/* 挿入インジケーター */}
+                              <AnimatePresence>
+                                {isDragOver && dragIndex !== index && dragIndex !== null && (
+                                  <motion.div
+                                    key={`indicator-${region.id}-${index}`}
+                                    initial={{ opacity: 0, height: 0, scaleY: 0 }}
+                                    animate={{ opacity: 1, height: 4, scaleY: 1 }}
+                                    exit={{ opacity: 0, height: 0, scaleY: 0 }}
+                                    transition={{ duration: 0.2, ease: "easeInOut" }}
+                                    style={{
+                                      backgroundColor: "#4a90e2",
+                                      borderRadius: "2px",
+                                      margin: "4px 0",
+                                      transformOrigin: "center",
+                                    }}
+                                  />
+                                )}
+                              </AnimatePresence>
+
+                              <motion.div
+                                key={region.id}
+                                layout
+                                layoutId={`region-${region.id}`}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{
+                                  opacity: 1,
+                                  y: 0,
+                                  scale: isDragging ? 1.02 : 1,
                                 }}
-                                onDragStart={(e) => handleDragStart(e, index)}
-                                onDragEnd={handleDragEnd}
-                                onDragOver={(e) => handleDragOver(e, index)}
-                                onDragLeave={handleDragLeave}
-                                onDrop={(e) => handleDrop(e, index)}
+                                exit={{ opacity: 0, y: -20 }}
+                                transition={{
+                                  layout: { duration: 0.3, ease: "easeInOut" },
+                                  opacity: { duration: 0.2 },
+                                  scale: { duration: 0.2, ease: "easeOut" },
+                                }}
+                                whileDrag={{
+                                  scale: 1.05,
+                                  rotate: 1,
+                                  zIndex: 100,
+                                  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.2)",
+                                }}
+                                dragConstraints={{ left: 0, right: 0 }}
+                                dragElastic={0.1}
                               >
-                                <Group gap="sm" wrap="nowrap">
-                                  {/* ドラッグハンドル */}
-                                  <Box c="gray.5">
-                                    <IconGripVertical size={16} />
-                                  </Box>
+                                <Paper
+                                  p="xs"
+                                  withBorder
+                                  draggable
+                                  style={{
+                                    cursor: isDragging ? "grabbing" : "grab",
+                                    opacity: isDragging ? 0.9 : 1,
+                                    backgroundColor: isDragOver && dragIndex !== index ? "#e3f2fd" : undefined,
+                                    borderColor: isDragOver && dragIndex !== index ? "#4a90e2" : undefined,
+                                  }}
+                                  onDragStart={(e) => handleDragStart(e, index)}
+                                  onDragEnd={handleDragEnd}
+                                  onDragOver={(e) => handleDragOver(e, index)}
+                                  onDragLeave={handleDragLeave}
+                                  onDrop={(e) => handleDrop(e, index)}
+                                >
+                                  <Group gap="sm" wrap="nowrap">
+                                    {/* ドラッグハンドル */}
+                                    <Box c="gray.5">
+                                      <IconGripVertical size={16} />
+                                    </Box>
 
-                                  {/* 順序番号 */}
-                                  <Flex
-                                    miw="24px"
-                                    h="24px"
-                                    bg="#4a90e2"
-                                    style={{ borderRadius: "50%" }}
-                                    align="center"
-                                    justify="center"
-                                  >
-                                    <Text size="xs" c="white" fw={600}>
-                                      {index + 1}
-                                    </Text>
-                                  </Flex>
+                                    {/* 順序番号 */}
+                                    <Flex
+                                      miw="24px"
+                                      h="24px"
+                                      bg="#4a90e2"
+                                      style={{ borderRadius: "50%" }}
+                                      align="center"
+                                      justify="center"
+                                    >
+                                      <Text size="xs" c="white" fw={600}>
+                                        {index + 1}
+                                      </Text>
+                                    </Flex>
 
-                                  {/* リージョン情報 */}
-                                  <Box flex={1}>
-                                    <Text size="sm" fw={500}>
-                                      リージョン {originalIndex + 1}
-                                    </Text>
-                                    <Text size="xs" c="dimmed">
-                                      ({region.x}, {region.y}) {region.width}×{region.height}
-                                    </Text>
-                                  </Box>
-                                </Group>
-                              </Paper>
-                            </motion.div>
-                          </div>
-                        );
-                      })}
-                  </AnimatePresence>
-                </Stack>
-                <Text size="xs" c="dimmed" mt="xs">
-                  ドラッグして順序を変更できます。上にあるリージョンほど前面に表示されます。
-                </Text>
-              </Box>
-            )}
+                                    {/* リージョン情報 */}
+                                    <Box flex={1}>
+                                      <Text size="sm" fw={500}>
+                                        リージョン {originalIndex + 1}
+                                      </Text>
+                                      <Text size="xs" c="dimmed">
+                                        ({region.x}, {region.y}) {region.width}×{region.height}
+                                      </Text>
+                                    </Box>
+                                  </Group>
+                                </Paper>
+                              </motion.div>
+                            </div>
+                          );
+                        })}
+                    </AnimatePresence>
+                  </Stack>
+                  <Text size="xs" c="dimmed" mt="xs">
+                    ドラッグして順序を変更できます。上にあるリージョンほど前面に表示されます。
+                  </Text>
+                </Box>
+              )}
             </Stack>
           </Box>
 
           {/* 右側: レイアウトエディター */}
           <Box flex={1} style={{ minWidth: 0 }}>
-            {isInitialized && (
-              <LayoutEditor
-                regions={formData.regions}
-                onRegionsChange={handleRegionsChange}
-              />
-            )}
+            {isInitialized && <LayoutEditor regions={formData.regions} onRegionsChange={handleRegionsChange} />}
           </Box>
         </Flex>
 

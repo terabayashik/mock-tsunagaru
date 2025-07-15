@@ -160,8 +160,10 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
     // レイアウトが存在しない場合のみ自動的に新規作成モードに設定
     if (layouts.length === 0) {
       setCreateNewLayout(true);
+    } else {
+      // 既存レイアウトがある場合は明示的にfalseに設定
+      setCreateNewLayout(false);
     }
-    // 既存レイアウトがある場合はユーザーの選択を尊重し、自動リセットしない
   }, [layouts.length]);
 
   // 変更を監視（初期値と比較）

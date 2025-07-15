@@ -447,64 +447,64 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
                     keepRatio={false}
                     throttleDrag={0}
                     throttleResize={0}
-                  onDragStart={() => {
-                    // ドラッグ開始時の選択状態を記録するが、まだ選択状態は変更しない
-                    setDragStartSelection(selectedRegion);
-                    setIsDragging(true);
-                    setHasActuallyDragged(false);
-                  }}
-                  onDrag={(e) => {
-                    // 実際にドラッグが開始された時点で選択状態にする
-                    if (!hasActuallyDragged) {
-                      setHasActuallyDragged(true);
+                    onDragStart={() => {
+                      // ドラッグ開始時の選択状態を記録するが、まだ選択状態は変更しない
+                      setDragStartSelection(selectedRegion);
+                      setIsDragging(true);
+                      setHasActuallyDragged(false);
+                    }}
+                    onDrag={(e) => {
+                      // 実際にドラッグが開始された時点で選択状態にする
+                      if (!hasActuallyDragged) {
+                        setHasActuallyDragged(true);
+                        setSelectedRegion(region.id);
+                      }
+
+                      const rawX = e.left / scale;
+                      const rawY = e.top / scale;
+                      const newX = freeTransform
+                        ? Math.max(0, Math.min(CANVAS_WIDTH - region.width, Math.round(rawX)))
+                        : Math.max(0, Math.min(CANVAS_WIDTH - region.width, snapToGrid(rawX)));
+                      const newY = freeTransform
+                        ? Math.max(0, Math.min(CANVAS_HEIGHT - region.height, Math.round(rawY)))
+                        : Math.max(0, Math.min(CANVAS_HEIGHT - region.height, snapToGrid(rawY)));
+
+                      e.target.style.left = `${newX * scale}px`;
+                      e.target.style.top = `${newY * scale}px`;
+
+                      // リアルタイム更新
+                      updateRegion(region.id, { x: newX, y: newY });
+                    }}
+                    onDragEnd={() => {
+                      // ドラッグ終了時にフラグをリセット（選択状態は維持）
+                      setIsDragging(false);
+                      setDragStartSelection(null);
+                      setHasActuallyDragged(false);
+                    }}
+                    onResizeStart={() => {
+                      // リサイズ開始時に自動選択（既に選択されているはずだが念のため）
                       setSelectedRegion(region.id);
-                    }
+                    }}
+                    onResize={(e) => {
+                      const rawWidth = e.width / scale;
+                      const rawHeight = e.height / scale;
+                      const newWidth = freeTransform
+                        ? Math.max(1, Math.min(CANVAS_WIDTH - region.x, Math.round(rawWidth)))
+                        : Math.max(GRID_SIZE, Math.min(CANVAS_WIDTH - region.x, snapToGrid(rawWidth)));
+                      const newHeight = freeTransform
+                        ? Math.max(1, Math.min(CANVAS_HEIGHT - region.y, Math.round(rawHeight)))
+                        : Math.max(GRID_SIZE, Math.min(CANVAS_HEIGHT - region.y, snapToGrid(rawHeight)));
 
-                    const rawX = e.left / scale;
-                    const rawY = e.top / scale;
-                    const newX = freeTransform
-                      ? Math.max(0, Math.min(CANVAS_WIDTH - region.width, Math.round(rawX)))
-                      : Math.max(0, Math.min(CANVAS_WIDTH - region.width, snapToGrid(rawX)));
-                    const newY = freeTransform
-                      ? Math.max(0, Math.min(CANVAS_HEIGHT - region.height, Math.round(rawY)))
-                      : Math.max(0, Math.min(CANVAS_HEIGHT - region.height, snapToGrid(rawY)));
+                      e.target.style.width = `${newWidth * scale}px`;
+                      e.target.style.height = `${newHeight * scale}px`;
 
-                    e.target.style.left = `${newX * scale}px`;
-                    e.target.style.top = `${newY * scale}px`;
-
-                    // リアルタイム更新
-                    updateRegion(region.id, { x: newX, y: newY });
-                  }}
-                  onDragEnd={() => {
-                    // ドラッグ終了時にフラグをリセット（選択状態は維持）
-                    setIsDragging(false);
-                    setDragStartSelection(null);
-                    setHasActuallyDragged(false);
-                  }}
-                  onResizeStart={() => {
-                    // リサイズ開始時に自動選択（既に選択されているはずだが念のため）
-                    setSelectedRegion(region.id);
-                  }}
-                  onResize={(e) => {
-                    const rawWidth = e.width / scale;
-                    const rawHeight = e.height / scale;
-                    const newWidth = freeTransform
-                      ? Math.max(1, Math.min(CANVAS_WIDTH - region.x, Math.round(rawWidth)))
-                      : Math.max(GRID_SIZE, Math.min(CANVAS_WIDTH - region.x, snapToGrid(rawWidth)));
-                    const newHeight = freeTransform
-                      ? Math.max(1, Math.min(CANVAS_HEIGHT - region.y, Math.round(rawHeight)))
-                      : Math.max(GRID_SIZE, Math.min(CANVAS_HEIGHT - region.y, snapToGrid(rawHeight)));
-
-                    e.target.style.width = `${newWidth * scale}px`;
-                    e.target.style.height = `${newHeight * scale}px`;
-
-                    // リアルタイム更新
-                    updateRegion(region.id, { width: newWidth, height: newHeight });
-                  }}
-                  onResizeEnd={() => {
-                    // リアルタイム更新により不要
-                  }}
-                />
+                      // リアルタイム更新
+                      updateRegion(region.id, { width: newWidth, height: newHeight });
+                    }}
+                    onResizeEnd={() => {
+                      // リアルタイム更新により不要
+                    }}
+                  />
                 )}
               </div>
             );
