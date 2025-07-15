@@ -2,7 +2,8 @@ import { Anchor, AppShell, Avatar, Button, Group, Menu, Text, Title, UnstyledBut
 import { IconChartBar, IconDoorExit, IconHome, IconMenu2, IconSettings, IconUser } from "@tabler/icons-react";
 import { useAtom } from "jotai";
 import { Link, useLocation } from "react-router";
-import { headerColorAtom, logoutAtom, userAtom } from "~/states";
+import { useAuth } from "~/hooks/useAuth";
+import { headerColorAtom, logoutAtom } from "~/states";
 import { ThemeToggle } from "../common/ThemeToggle";
 import { LoginLayout } from "./LoginLayout";
 
@@ -17,7 +18,7 @@ const navigationItems = [
 ];
 
 export const AppLayout = ({ children }: AppLayoutProps) => {
-  const [user] = useAtom(userAtom);
+  const { user, isInitialized } = useAuth();
   const [, logout] = useAtom(logoutAtom);
   const [headerColor] = useAtom(headerColorAtom);
   const location = useLocation();
@@ -25,6 +26,11 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
   const handleLogout = () => {
     logout();
   };
+
+  // 初期化中は何も表示しない
+  if (!isInitialized) {
+    return null;
+  }
 
   if (!user) {
     return <LoginLayout>{children}</LoginLayout>;
