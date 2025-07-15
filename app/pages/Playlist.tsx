@@ -1,14 +1,20 @@
 import { ActionIcon, Alert, Box, Button, Group, LoadingOverlay, Table, Text } from "@mantine/core";
 import { modals } from "@mantine/modals";
-import { IconEdit, IconExclamationCircle, IconPlus, IconTrash } from "@tabler/icons-react";
+import { IconEdit, IconExclamationCircle, IconEye, IconPlus, IconTrash } from "@tabler/icons-react";
 import { useAtom } from "jotai";
 import { useEffect, useState } from "react";
 import type { PlaylistFormData } from "~/components/modals/PlaylistCreateModal";
 import { PlaylistCreateModal } from "~/components/modals/PlaylistCreateModal";
 import type { PlaylistEditFormData } from "~/components/modals/PlaylistEditModal";
 import { PlaylistEditModal } from "~/components/modals/PlaylistEditModal";
+import { PlaylistPreviewModal } from "~/components/modals/PlaylistPreviewModal";
 import { usePlaylist } from "~/hooks/usePlaylist";
-import { modalActionsAtom, playlistCreateModalAtom, playlistEditModalAtom } from "~/states/modal";
+import {
+  modalActionsAtom,
+  playlistCreateModalAtom,
+  playlistEditModalAtom,
+  playlistPreviewModalAtom,
+} from "~/states/modal";
 import { playlistActionsAtom, playlistsAtom, playlistsErrorAtom, playlistsLoadingAtom } from "~/states/playlist";
 import type { PlaylistItem } from "~/types/playlist";
 
@@ -18,6 +24,7 @@ export default function PlaylistPage() {
   const [error] = useAtom(playlistsErrorAtom);
   const [createModalOpened] = useAtom(playlistCreateModalAtom);
   const [editModalState] = useAtom(playlistEditModalAtom);
+  const [previewModalState] = useAtom(playlistPreviewModalAtom);
   const [, dispatch] = useAtom(playlistActionsAtom);
   const [, modalDispatch] = useAtom(modalActionsAtom);
   const { getPlaylistsIndex, deletePlaylist, createPlaylist, getPlaylistById, updatePlaylist } = usePlaylist();
@@ -43,6 +50,10 @@ export default function PlaylistPage() {
 
   const handleEdit = (id: string) => {
     modalDispatch({ type: "OPEN_PLAYLIST_EDIT", playlistId: id });
+  };
+
+  const handlePreview = (id: string) => {
+    modalDispatch({ type: "OPEN_PLAYLIST_PREVIEW", playlistId: id });
   };
 
   const handleDelete = async (id: string) => {
@@ -104,6 +115,10 @@ export default function PlaylistPage() {
 
   const handleEditModalClose = () => {
     modalDispatch({ type: "CLOSE_PLAYLIST_EDIT" });
+  };
+
+  const handlePreviewModalClose = () => {
+    modalDispatch({ type: "CLOSE_PLAYLIST_PREVIEW" });
   };
 
   const handleEditSubmit = async (data: PlaylistEditFormData) => {
@@ -188,15 +203,26 @@ export default function PlaylistPage() {
             playlists.map((playlist) => (
               <Table.Tr key={playlist.id}>
                 <Table.Td>
-                  <ActionIcon
-                    variant="subtle"
-                    color="blue"
-                    size="sm"
-                    onClick={() => handleEdit(playlist.id)}
-                    aria-label="編集"
-                  >
-                    <IconEdit size={16} />
-                  </ActionIcon>
+                  <Group gap="xs">
+                    <ActionIcon
+                      variant="subtle"
+                      color="blue"
+                      size="sm"
+                      onClick={() => handleEdit(playlist.id)}
+                      aria-label="編集"
+                    >
+                      <IconEdit size={16} />
+                    </ActionIcon>
+                    <ActionIcon
+                      variant="subtle"
+                      color="green"
+                      size="sm"
+                      onClick={() => handlePreview(playlist.id)}
+                      aria-label="プレビュー"
+                    >
+                      <IconEye size={16} />
+                    </ActionIcon>
+                  </Group>
                 </Table.Td>
                 <Table.Td>
                   <Text fw={500}>{playlist.name}</Text>
@@ -233,6 +259,11 @@ export default function PlaylistPage() {
         onClose={handleEditModalClose}
         onSubmit={handleEditSubmit}
         playlist={currentPlaylist}
+      />
+      <PlaylistPreviewModal
+        opened={previewModalState.opened}
+        onClose={handlePreviewModalClose}
+        playlistId={previewModalState.playlistId}
       />
     </Box>
   );
