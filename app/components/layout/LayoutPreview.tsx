@@ -20,8 +20,22 @@ const REGION_COLORS = [
 ];
 
 // レイアウトエディターと同じ座標系定数
-const CANVAS_WIDTH = 1920;
-const CANVAS_HEIGHT = 1080;
+const BASE_CANVAS_WIDTH = 1920;
+const BASE_CANVAS_HEIGHT = 1080;
+
+// orientationに基づいてキャンバスの実際の幅と高さを取得
+const getCanvasDimensions = (orientation: string) => {
+  if (orientation === "portrait-right" || orientation === "portrait-left") {
+    return {
+      width: BASE_CANVAS_HEIGHT, // 縦向きの場合は幅と高さを入れ替え
+      height: BASE_CANVAS_WIDTH,
+    };
+  }
+  return {
+    width: BASE_CANVAS_WIDTH,
+    height: BASE_CANVAS_HEIGHT,
+  };
+};
 
 export const LayoutPreview = ({ layout, onClick, onEdit, onDelete }: LayoutPreviewProps) => {
   const [layoutDetails, setLayoutDetails] = useState<LayoutItem | null>(null);
@@ -74,9 +88,10 @@ export const LayoutPreview = ({ layout, onClick, onEdit, onDelete }: LayoutPrevi
   }, [layout.id, getLayoutById]);
 
   // プレビューのアスペクト比とサイズ設定（動的幅計算）
+  const canvasDimensions = getCanvasDimensions(layout.orientation);
   const previewWidth = containerWidth;
-  const scale = previewWidth / CANVAS_WIDTH; // 動的スケール
-  const previewHeight = CANVAS_HEIGHT * scale; // 正確な高さ
+  const scale = previewWidth / canvasDimensions.width; // 動的スケール
+  const previewHeight = canvasDimensions.height * scale; // 正確な高さ
   const totalHeight = Math.round(previewHeight) + 60; // プレビュー + 情報エリア
 
   const renderRegions = () => {

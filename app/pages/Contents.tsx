@@ -52,7 +52,7 @@ export default function ContentsPage() {
     getContentsIndex,
     deleteContentSafely,
     checkContentUsageStatus,
-    createFileContent,
+    createFileOrTextContent,
     createUrlContent,
     createRichTextContent,
     updateContent,
@@ -193,7 +193,7 @@ export default function ContentsPage() {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const name = names?.[i];
-        const newContent = await createFileContent(file, name);
+        const newContent = await createFileOrTextContent(file, name);
 
         // インデックス用のデータに変換
         const contentIndex = {

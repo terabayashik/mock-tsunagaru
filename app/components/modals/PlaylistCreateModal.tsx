@@ -85,7 +85,8 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
   } | null>(null);
 
   const { getLayoutsIndex, getLayoutById, createLayout } = useLayout();
-  const { getContentsIndex, getContentById, createFileContent, createUrlContent, createRichTextContent } = useContent();
+  const { getContentsIndex, getContentById, createFileOrTextContent, createUrlContent, createRichTextContent } =
+    useContent();
 
   const steps: StepInfo[] = [
     { key: "basic", title: "基本情報", description: "プレイリスト名とデバイスを設定" },
@@ -480,7 +481,7 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
   // コンテンツ追加ハンドラー
   const handleFileContentSubmit = async (files: FileWithPath[], names?: string[]) => {
     for (let i = 0; i < files.length; i++) {
-      await createFileContent(files[i], names?.[i]);
+      await createFileOrTextContent(files[i], names?.[i]);
     }
     await loadContents(); // コンテンツリストを再読み込み
   };

@@ -19,8 +19,22 @@ const REGION_COLORS = [
 ];
 
 // レイアウトエディターと同じ座標系定数
-const CANVAS_WIDTH = 1920;
-const CANVAS_HEIGHT = 1080;
+const BASE_CANVAS_WIDTH = 1920;
+const BASE_CANVAS_HEIGHT = 1080;
+
+// orientationに基づいてキャンバスの実際の幅と高さを取得
+const getCanvasDimensions = (orientation: string) => {
+  if (orientation === "portrait-right" || orientation === "portrait-left") {
+    return {
+      width: BASE_CANVAS_HEIGHT, // 縦向きの場合は幅と高さを入れ替え
+      height: BASE_CANVAS_WIDTH,
+    };
+  }
+  return {
+    width: BASE_CANVAS_WIDTH,
+    height: BASE_CANVAS_HEIGHT,
+  };
+};
 
 interface LayoutSelectionCardProps {
   layout: LayoutIndex;
@@ -74,9 +88,10 @@ const LayoutSelectionCard = ({ layout, isSelected, onClick }: LayoutSelectionCar
     loadLayoutDetails();
   }, [layout.id, getLayoutById]);
 
+  const canvasDimensions = getCanvasDimensions(layout.orientation);
   const previewWidth = containerWidth;
-  const scale = previewWidth / CANVAS_WIDTH;
-  const previewHeight = CANVAS_HEIGHT * scale;
+  const scale = previewWidth / canvasDimensions.width;
+  const previewHeight = canvasDimensions.height * scale;
   const totalHeight = Math.round(previewHeight) + 80; // プレビュー + 情報エリア
 
   const renderRegions = () => {

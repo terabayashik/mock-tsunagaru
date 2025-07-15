@@ -408,7 +408,13 @@ export const LayoutFormModal = ({
 
           {/* 右側: レイアウトエディター */}
           <Box flex={1} style={{ minWidth: 0 }}>
-            {isInitialized && <LayoutEditor regions={formData.regions} onRegionsChange={handleRegionsChange} />}
+            {isInitialized && (
+              <LayoutEditor
+                regions={formData.regions}
+                onRegionsChange={handleRegionsChange}
+                orientation={formData.orientation}
+              />
+            )}
           </Box>
         </Flex>
 

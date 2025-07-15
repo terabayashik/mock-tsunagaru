@@ -8,6 +8,51 @@ import { OPFSError, OPFSManager } from "~/utils/storage/opfs";
 import { OPFSLock } from "~/utils/storage/opfsLock";
 import { usePlaylist } from "./usePlaylist";
 
+// テキストファイルかどうかを判定する関数
+const isTextFile = (file: File): boolean => {
+  // MIMEタイプでの判定
+  if (file.type.startsWith("text/")) {
+    return true;
+  }
+
+  // 拡張子での判定
+  const textExtensions = [
+    ".txt",
+    ".md",
+    ".markdown",
+    ".json",
+    ".xml",
+    ".csv",
+    ".log",
+    ".ini",
+    ".cfg",
+    ".conf",
+    ".yml",
+    ".yaml",
+    ".toml",
+  ];
+
+  const fileName = file.name.toLowerCase();
+  return textExtensions.some((ext) => fileName.endsWith(ext));
+};
+
+// テキストファイルからテキストコンテンツを読み取る関数
+const readTextFromFile = async (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result;
+      if (typeof result === "string") {
+        resolve(result);
+      } else {
+        reject(new Error("Failed to read text from file"));
+      }
+    };
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.readAsText(file, "utf-8");
+  });
+};
+
 export const useContent = () => {
   const opfs = OPFSManager.getInstance();
   const lock = OPFSLock.getInstance();
@@ -537,10 +582,47 @@ export const useContent = () => {
     }
   }, [getContentsIndex, getContentById, opfs.readFile, opfs.writeFile, opfs.deleteFile, opfs.writeJSON]);
 
+  /**
+   * ファイルをアップロードして適切なコンテンツタイプで作成
+   * テキストファイルの場合はテキストコンテンツとして、それ以外はファイルコンテンツとして作成
+   */
+  const createFileOrTextContent = useCallback(
+    async (file: File, name?: string): Promise<ContentItem> => {
+      if (isTextFile(file)) {
+        // テキストファイルの場合はテキストコンテンツとして作成
+        try {
+          const textContent = await readTextFromFile(file);
+          const richTextInfo: RichTextContent = {
+            content: textContent,
+            writingMode: "horizontal",
+            fontFamily: "Noto Sans JP",
+            textAlign: "start",
+            color: "#000000",
+            backgroundColor: "#ffffff",
+            fontSize: 24,
+            scrollType: "none",
+            scrollSpeed: 3,
+          };
+
+          return await createRichTextContent(name || file.name.replace(/\.[^/.]+$/, ""), richTextInfo);
+        } catch (error) {
+          logger.error("Content", `Failed to read text from file ${file.name}`, error);
+          // テキスト読み込みに失敗した場合は通常のファイルコンテンツとして作成
+          return await createFileContent(file, name);
+        }
+      } else {
+        // テキストファイル以外は通常のファイルコンテンツとして作成
+        return await createFileContent(file, name);
+      }
+    },
+    [createFileContent, createRichTextContent],
+  );
+
   return {
     getContentsIndex,
     getContentById,
     createFileContent,
+    createFileOrTextContent,
     createUrlContent,
     createRichTextContent,
     updateContent,

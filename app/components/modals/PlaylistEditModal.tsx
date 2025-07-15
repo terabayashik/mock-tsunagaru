@@ -94,7 +94,8 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
   const [contentSearchQuery, setContentSearchQuery] = useState("");
 
   const { getLayoutById } = useLayout();
-  const { getContentsIndex, getContentById, createFileContent, createUrlContent, createRichTextContent } = useContent();
+  const { getContentsIndex, getContentById, createFileOrTextContent, createUrlContent, createRichTextContent } =
+    useContent();
 
   const steps: StepInfo[] = [
     { key: "basic", title: "基本情報", description: "プレイリスト名とデバイスを編集" },
@@ -496,7 +497,7 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
   // コンテンツ追加ハンドラー
   const handleFileContentSubmit = async (files: FileWithPath[], names?: string[]) => {
     for (let i = 0; i < files.length; i++) {
-      await createFileContent(files[i], names?.[i]);
+      await createFileOrTextContent(files[i], names?.[i]);
     }
     await loadContents(); // コンテンツリストを再読み込み
   };

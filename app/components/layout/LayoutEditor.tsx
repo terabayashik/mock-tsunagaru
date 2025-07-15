@@ -14,17 +14,32 @@ import {
 import { IconEdit, IconPlus, IconTrash, IconX } from "@tabler/icons-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Moveable from "react-moveable";
-import type { Region } from "~/types/layout";
+import type { Orientation, Region } from "~/types/layout";
 
 interface LayoutEditorProps {
   regions: Region[];
   onRegionsChange: (regions: Region[]) => void;
+  orientation?: Orientation;
   canvasWidth?: number;
   canvasHeight?: number;
 }
 
-const CANVAS_WIDTH = 1920;
-const CANVAS_HEIGHT = 1080;
+const BASE_CANVAS_WIDTH = 1920;
+const BASE_CANVAS_HEIGHT = 1080;
+
+// orientationに基づいてキャンバスの実際の幅と高さを取得
+const getCanvasDimensions = (orientation: Orientation = "landscape") => {
+  if (orientation === "portrait-right" || orientation === "portrait-left") {
+    return {
+      width: BASE_CANVAS_HEIGHT, // 縦向きの場合は幅と高さを入れ替え
+      height: BASE_CANVAS_WIDTH,
+    };
+  }
+  return {
+    width: BASE_CANVAS_WIDTH,
+    height: BASE_CANVAS_HEIGHT,
+  };
+};
 const GRID_SIZE = 20;
 const GRID_LINE_SPACING = 60; // グリッドライン間隔（仮想座標系での60px）
 
@@ -51,12 +66,19 @@ const getRegionColor = (regionIndex: number, isSelected = false) => {
 };
 
 // グリッドラインを生成する関数
-const generateGridLines = (canvasWidth: number, canvasHeight: number, scale: number, isDark: boolean) => {
+const generateGridLines = (
+  canvasWidth: number,
+  canvasHeight: number,
+  scale: number,
+  isDark: boolean,
+  virtualCanvasWidth: number,
+  virtualCanvasHeight: number,
+) => {
   const lines = [];
   const gridColor = isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.1)";
 
   // 縦のグリッドライン
-  for (let x = 0; x <= CANVAS_WIDTH; x += GRID_LINE_SPACING) {
+  for (let x = 0; x <= virtualCanvasWidth; x += GRID_LINE_SPACING) {
     lines.push(
       <Box
         key={`vertical-${x}`}
@@ -74,7 +96,7 @@ const generateGridLines = (canvasWidth: number, canvasHeight: number, scale: num
   }
 
   // 横のグリッドライン
-  for (let y = 0; y <= CANVAS_HEIGHT; y += GRID_LINE_SPACING) {
+  for (let y = 0; y <= virtualCanvasHeight; y += GRID_LINE_SPACING) {
     lines.push(
       <Box
         key={`horizontal-${y}`}
@@ -94,7 +116,13 @@ const generateGridLines = (canvasWidth: number, canvasHeight: number, scale: num
   return lines;
 };
 
-export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeight }: LayoutEditorProps) => {
+export const LayoutEditor = ({
+  regions,
+  onRegionsChange,
+  orientation = "landscape",
+  canvasWidth,
+  canvasHeight,
+}: LayoutEditorProps) => {
   const { colorScheme } = useMantineColorScheme();
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [editingRegion, setEditingRegion] = useState<string | null>(null);
@@ -113,6 +141,9 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
   const containerRef = useRef<HTMLDivElement>(null);
   const outerContainerRef = useRef<HTMLDivElement>(null);
 
+  // orientationに基づいて仮想キャンバスのサイズを取得
+  const virtualCanvasDimensions = getCanvasDimensions(orientation);
+
   // コンテナサイズを監視（固定サイズが指定されていない場合のみ）
   useEffect(() => {
     // 固定サイズが指定されている場合は動的サイズ計算をスキップ
@@ -126,7 +157,7 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
         const rect = outerContainerRef.current.getBoundingClientRect();
         // Stackコンテナの幅をそのまま使用（パディングは既に計算済み）
         const availableWidth = rect.width;
-        const aspectRatio = CANVAS_HEIGHT / CANVAS_WIDTH;
+        const aspectRatio = virtualCanvasDimensions.height / virtualCanvasDimensions.width;
         const calculatedHeight = availableWidth * aspectRatio;
 
         setContainerSize({
@@ -153,26 +184,26 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
       window.removeEventListener("resize", updateSize);
       resizeObserver.disconnect();
     };
-  }, [canvasWidth, canvasHeight]);
+  }, [canvasWidth, canvasHeight, virtualCanvasDimensions]);
 
   // 提供されたサイズまたは動的サイズを使用
   const actualCanvasWidth = canvasWidth || containerSize.width;
   const actualCanvasHeight = canvasHeight || containerSize.height;
 
   // スケール計算 - コンテナの幅を最大限活用
-  const scaleByWidth = actualCanvasWidth / CANVAS_WIDTH;
-  const heightByWidth = CANVAS_HEIGHT * scaleByWidth;
+  const scaleByWidth = actualCanvasWidth / virtualCanvasDimensions.width;
+  const heightByWidth = virtualCanvasDimensions.height * scaleByWidth;
 
   // 高さ制限がある場合は高さベースでも計算
-  const scaleByHeight = actualCanvasHeight / CANVAS_HEIGHT;
-  const _widthByHeight = CANVAS_WIDTH * scaleByHeight;
+  const scaleByHeight = actualCanvasHeight / virtualCanvasDimensions.height;
+  const _widthByHeight = virtualCanvasDimensions.width * scaleByHeight;
 
   // 両方の制約内に収まる最大スケールを選択
   const scale = heightByWidth <= actualCanvasHeight ? scaleByWidth : scaleByHeight;
 
   // 実際の表示サイズ
-  const displayWidth = CANVAS_WIDTH * scale;
-  const displayHeight = CANVAS_HEIGHT * scale;
+  const displayWidth = virtualCanvasDimensions.width * scale;
+  const displayHeight = virtualCanvasDimensions.height * scale;
 
   const updateRegion = useCallback(
     (id: string, updates: Partial<Region>) => {
@@ -189,13 +220,13 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
       id: crypto.randomUUID(),
       x: 100,
       y: 100,
-      width: 960,
-      height: 540,
+      width: virtualCanvasDimensions.width / 2,
+      height: virtualCanvasDimensions.height / 2,
       zIndex: regions.length, // 新しいリージョンは最前面に
     };
 
     onRegionsChange([...regions, newRegion]);
-  }, [regions, onRegionsChange]);
+  }, [regions, onRegionsChange, virtualCanvasDimensions]);
 
   const deleteRegion = useCallback(
     (id: string) => {
@@ -241,7 +272,7 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
     <Stack gap="md" ref={outerContainerRef}>
       <Group justify="space-between">
         <Text size="sm" fw={500}>
-          レイアウトエディター (1920×1080)
+          レイアウトエディター ({virtualCanvasDimensions.width}×{virtualCanvasDimensions.height})
         </Text>
         <Group gap="md">
           <Switch
@@ -276,7 +307,14 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
         }}
       >
         {/* グリッドライン */}
-        {generateGridLines(displayWidth, displayHeight, scale, colorScheme === "dark")}
+        {generateGridLines(
+          displayWidth,
+          displayHeight,
+          scale,
+          colorScheme === "dark",
+          virtualCanvasDimensions.width,
+          virtualCanvasDimensions.height,
+        )}
 
         {[...regions]
           .sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0))
@@ -393,7 +431,7 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
                                 label="X"
                                 size="xs"
                                 min={0}
-                                max={CANVAS_WIDTH - tempValues.width}
+                                max={virtualCanvasDimensions.width - tempValues.width}
                                 value={tempValues.x}
                                 onChange={(value) => setTempValues((prev) => ({ ...prev, x: Number(value) || 0 }))}
                               />
@@ -401,7 +439,7 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
                                 label="Y"
                                 size="xs"
                                 min={0}
-                                max={CANVAS_HEIGHT - tempValues.height}
+                                max={virtualCanvasDimensions.height - tempValues.height}
                                 value={tempValues.y}
                                 onChange={(value) => setTempValues((prev) => ({ ...prev, y: Number(value) || 0 }))}
                               />
@@ -411,7 +449,7 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
                                 label="幅"
                                 size="xs"
                                 min={1}
-                                max={CANVAS_WIDTH - tempValues.x}
+                                max={virtualCanvasDimensions.width - tempValues.x}
                                 value={tempValues.width}
                                 onChange={(value) => setTempValues((prev) => ({ ...prev, width: Number(value) || 1 }))}
                               />
@@ -419,7 +457,7 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
                                 label="高さ"
                                 size="xs"
                                 min={1}
-                                max={CANVAS_HEIGHT - tempValues.y}
+                                max={virtualCanvasDimensions.height - tempValues.y}
                                 value={tempValues.height}
                                 onChange={(value) => setTempValues((prev) => ({ ...prev, height: Number(value) || 1 }))}
                               />
@@ -478,11 +516,11 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
                       const rawX = e.left / scale;
                       const rawY = e.top / scale;
                       const newX = freeTransform
-                        ? Math.max(0, Math.min(CANVAS_WIDTH - region.width, Math.round(rawX)))
-                        : Math.max(0, Math.min(CANVAS_WIDTH - region.width, snapToGrid(rawX)));
+                        ? Math.max(0, Math.min(virtualCanvasDimensions.width - region.width, Math.round(rawX)))
+                        : Math.max(0, Math.min(virtualCanvasDimensions.width - region.width, snapToGrid(rawX)));
                       const newY = freeTransform
-                        ? Math.max(0, Math.min(CANVAS_HEIGHT - region.height, Math.round(rawY)))
-                        : Math.max(0, Math.min(CANVAS_HEIGHT - region.height, snapToGrid(rawY)));
+                        ? Math.max(0, Math.min(virtualCanvasDimensions.height - region.height, Math.round(rawY)))
+                        : Math.max(0, Math.min(virtualCanvasDimensions.height - region.height, snapToGrid(rawY)));
 
                       e.target.style.left = `${newX * scale}px`;
                       e.target.style.top = `${newY * scale}px`;
@@ -504,11 +542,14 @@ export const LayoutEditor = ({ regions, onRegionsChange, canvasWidth, canvasHeig
                       const rawWidth = e.width / scale;
                       const rawHeight = e.height / scale;
                       const newWidth = freeTransform
-                        ? Math.max(1, Math.min(CANVAS_WIDTH - region.x, Math.round(rawWidth)))
-                        : Math.max(GRID_SIZE, Math.min(CANVAS_WIDTH - region.x, snapToGrid(rawWidth)));
+                        ? Math.max(1, Math.min(virtualCanvasDimensions.width - region.x, Math.round(rawWidth)))
+                        : Math.max(GRID_SIZE, Math.min(virtualCanvasDimensions.width - region.x, snapToGrid(rawWidth)));
                       const newHeight = freeTransform
-                        ? Math.max(1, Math.min(CANVAS_HEIGHT - region.y, Math.round(rawHeight)))
-                        : Math.max(GRID_SIZE, Math.min(CANVAS_HEIGHT - region.y, snapToGrid(rawHeight)));
+                        ? Math.max(1, Math.min(virtualCanvasDimensions.height - region.y, Math.round(rawHeight)))
+                        : Math.max(
+                            GRID_SIZE,
+                            Math.min(virtualCanvasDimensions.height - region.y, snapToGrid(rawHeight)),
+                          );
 
                       e.target.style.width = `${newWidth * scale}px`;
                       e.target.style.height = `${newHeight * scale}px`;

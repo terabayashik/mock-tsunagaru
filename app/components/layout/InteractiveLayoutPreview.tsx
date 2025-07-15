@@ -11,8 +11,22 @@ interface InteractiveLayoutPreviewProps {
   canvasHeight?: number;
 }
 
-const CANVAS_WIDTH = 1920;
-const CANVAS_HEIGHT = 1080;
+const BASE_CANVAS_WIDTH = 1920;
+const BASE_CANVAS_HEIGHT = 1080;
+
+// orientationに基づいてキャンバスの実際の幅と高さを取得
+const getCanvasDimensions = (orientation: string) => {
+  if (orientation === "portrait-right" || orientation === "portrait-left") {
+    return {
+      width: BASE_CANVAS_HEIGHT, // 縦向きの場合は幅と高さを入れ替え
+      height: BASE_CANVAS_WIDTH,
+    };
+  }
+  return {
+    width: BASE_CANVAS_WIDTH,
+    height: BASE_CANVAS_HEIGHT,
+  };
+};
 
 // リージョンの色設定
 const REGION_COLORS = [
@@ -40,9 +54,10 @@ export const InteractiveLayoutPreview = ({
   canvasHeight = 338,
 }: InteractiveLayoutPreviewProps) => {
   const { colorScheme } = useMantineColorScheme();
-  const scale = Math.min(canvasWidth / CANVAS_WIDTH, canvasHeight / CANVAS_HEIGHT);
-  const actualCanvasWidth = CANVAS_WIDTH * scale;
-  const actualCanvasHeight = CANVAS_HEIGHT * scale;
+  const canvasDimensions = getCanvasDimensions(layout.orientation);
+  const scale = Math.min(canvasWidth / canvasDimensions.width, canvasHeight / canvasDimensions.height);
+  const actualCanvasWidth = canvasDimensions.width * scale;
+  const actualCanvasHeight = canvasDimensions.height * scale;
 
   const handleRegionClick = useCallback(
     (regionId: string) => {
