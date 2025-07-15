@@ -1,0 +1,1 @@
+import{j as t}from"./jsx-runtime-D_zvdyIk.js";import{N as e}from"./chunk-QMGIS6GS-npKyu-26.js";import"./content-D7L0e-wr.js";import{i}from"./user--7Rf_7ES.js";import{C as s}from"./react-Bl1EszzN.js";const A=({children:r})=>{const[o]=s(i);return o?t.jsx(t.Fragment,{children:r}):t.jsx(e,{to:"/login",replace:!0})};export{A};

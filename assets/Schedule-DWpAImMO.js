@@ -1,0 +1,1 @@
+import{w as r}from"./chunk-QMGIS6GS-npKyu-26.js";import{j as e}from"./jsx-runtime-D_zvdyIk.js";const n=r(function(){return e.jsxs("div",{children:[e.jsx("h2",{children:"スケジュール"}),e.jsx("p",{children:"スケジュール機能は実装予定です。"})]})});export{n as default};
