@@ -14,11 +14,9 @@ import {
 } from "@mantine/core";
 import { ModalsProvider } from "@mantine/modals";
 import { Notifications } from "@mantine/notifications";
-import { Provider, useAtomValue } from "jotai";
-import { useEffect, useState } from "react";
+import { Provider } from "jotai";
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 import { AppLayout } from "~/components";
-import { colorSchemeAtom } from "~/states";
 import type { Route } from "./+types/root";
 
 export const links: Route.LinksFunction = () => [
@@ -39,18 +37,8 @@ const theme = createTheme({
 });
 
 const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const colorScheme = useAtomValue(colorSchemeAtom);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   return (
-    <MantineProvider
-      theme={theme}
-      defaultColorScheme="auto"
-    >
+    <MantineProvider theme={theme} defaultColorScheme="auto">
       <ModalsProvider>
         <Notifications />
         {children}
