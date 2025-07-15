@@ -45,7 +45,7 @@ jobs:
         run: pnpm check
         
       - name: Build
-        run: pnpm build
+        run: NODE_ENV=production pnpm build
         
       - name: Copy index.html to 404.html for SPA fallback
         run: cp build/client/index.html build/client/404.html
