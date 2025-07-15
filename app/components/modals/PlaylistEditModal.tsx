@@ -570,7 +570,65 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                 </Paper>
               ) : (
                 <Group align="flex-start" gap="lg" wrap="nowrap" style={{ height: "100%" }}>
-                  {/* 左側: コンテンツ選択グリッド */}
+                  {/* 左側: レイアウトプレビューと順序変更 */}
+                  <Box
+                    style={{
+                      flex: "0 0 400px",
+                      minWidth: "400px",
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                  >
+                    <Stack gap="lg" style={{ height: "100%" }}>
+                      {/* レイアウトプレビュー */}
+                      <Box>
+                        <Text fw={600} mb="sm">
+                          レイアウトプレビュー
+                        </Text>
+                        <InteractiveLayoutPreview
+                          layout={layout}
+                          selectedRegionId={selectedRegionId}
+                          onRegionClick={handleRegionSelect}
+                          assignedContentCounts={getAssignedContentCounts()}
+                          canvasWidth={380}
+                          canvasHeight={214}
+                        />
+                      </Box>
+
+                      {/* 順序変更 */}
+                      {selectedRegionId && (
+                        <Box style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+                          <Text fw={600} mb="sm">
+                            順序変更
+                          </Text>
+                          <ScrollArea style={{ flex: 1, minHeight: 0 }} type="auto" scrollbarSize={8}>
+                            <SelectedContentList
+                              selectedContents={
+                                (getSelectedRegionAssignment()
+                                  ?.contentIds.map((contentId) => contents.find((content) => content.id === contentId))
+                                  .filter(Boolean) as ContentIndex[]) || []
+                              }
+                              onReorder={(reorderedContentIds) => {
+                                if (selectedRegionId) {
+                                  handleContentReorder(selectedRegionId, reorderedContentIds);
+                                }
+                              }}
+                              contentDurations={getSelectedRegionAssignment()?.contentDurations?.reduce(
+                                (acc, duration) => {
+                                  acc[duration.contentId] = duration.duration;
+                                  return acc;
+                                },
+                                {} as Record<string, number>,
+                              )}
+                            />
+                          </ScrollArea>
+                        </Box>
+                      )}
+                    </Stack>
+                  </Box>
+
+                  {/* 右側: コンテンツ選択グリッド */}
                   <Box style={{ flex: "1 1 auto", height: "100%", display: "flex", flexDirection: "column" }}>
                     {selectedRegionId ? (
                       <>
@@ -734,71 +792,13 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                         }}
                       >
                         <Text c="dimmed" mb="sm">
-                          右のレイアウトプレビューからリージョンを選択してください
+                          左のレイアウトプレビューからリージョンを選択してください
                         </Text>
                         <Text size="sm" c="dimmed">
                           選択したリージョンのコンテンツを編集できます
                         </Text>
                       </Paper>
                     )}
-                  </Box>
-
-                  {/* 右側: レイアウトプレビューと順序変更 */}
-                  <Box
-                    style={{
-                      flex: "0 0 400px",
-                      minWidth: "400px",
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                    }}
-                  >
-                    <Stack gap="lg" style={{ height: "100%" }}>
-                      {/* レイアウトプレビュー */}
-                      <Box>
-                        <Text fw={600} mb="sm">
-                          レイアウトプレビュー
-                        </Text>
-                        <InteractiveLayoutPreview
-                          layout={layout}
-                          selectedRegionId={selectedRegionId}
-                          onRegionClick={handleRegionSelect}
-                          assignedContentCounts={getAssignedContentCounts()}
-                          canvasWidth={380}
-                          canvasHeight={214}
-                        />
-                      </Box>
-
-                      {/* 順序変更 */}
-                      {selectedRegionId && (
-                        <Box style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-                          <Text fw={600} mb="sm">
-                            順序変更
-                          </Text>
-                          <ScrollArea style={{ flex: 1, minHeight: 0 }} type="auto" scrollbarSize={8}>
-                            <SelectedContentList
-                              selectedContents={
-                                (getSelectedRegionAssignment()
-                                  ?.contentIds.map((contentId) => contents.find((content) => content.id === contentId))
-                                  .filter(Boolean) as ContentIndex[]) || []
-                              }
-                              onReorder={(reorderedContentIds) => {
-                                if (selectedRegionId) {
-                                  handleContentReorder(selectedRegionId, reorderedContentIds);
-                                }
-                              }}
-                              contentDurations={getSelectedRegionAssignment()?.contentDurations?.reduce(
-                                (acc, duration) => {
-                                  acc[duration.contentId] = duration.duration;
-                                  return acc;
-                                },
-                                {} as Record<string, number>,
-                              )}
-                            />
-                          </ScrollArea>
-                        </Box>
-                      )}
-                    </Stack>
                   </Box>
                 </Group>
               )
