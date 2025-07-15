@@ -1,17 +1,4 @@
-import {
-  Box,
-  Button,
-  Checkbox,
-  Divider,
-  Group,
-  Modal,
-  Paper,
-  Progress,
-  Select,
-  Stack,
-  Text,
-  TextInput,
-} from "@mantine/core";
+import { Box, Button, Divider, Group, Modal, Paper, Progress, Stack, Text, TextInput } from "@mantine/core";
 import type { FileWithPath } from "@mantine/dropzone";
 import { modals } from "@mantine/modals";
 import { IconArrowLeft, IconArrowRight, IconDeviceFloppy, IconLayoutGrid, IconPlus, IconX } from "@tabler/icons-react";
@@ -19,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ContentSelectionGrid } from "~/components/content/ContentSelectionGrid";
 import { SelectedContentList } from "~/components/content/SelectedContentList";
 import { InteractiveLayoutPreview } from "~/components/layout/InteractiveLayoutPreview";
+import { LayoutSelectionGrid } from "~/components/layout/LayoutSelectionGrid";
 import { useContent } from "~/hooks/useContent";
 import { useLayout } from "~/hooks/useLayout";
 import type { ContentIndex, RichTextContent } from "~/types/content";
@@ -77,7 +65,6 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
   const [layouts, setLayouts] = useState<LayoutIndex[]>([]);
   const [selectedLayout, setSelectedLayout] = useState<LayoutItem | null>(null);
   const [contents, setContents] = useState<ContentIndex[]>([]);
-  const [createNewLayout, setCreateNewLayout] = useState(false);
   const [showLayoutForm, setShowLayoutForm] = useState(false);
   const [tempLayoutData, setTempLayoutData] = useState<{
     name: string;
@@ -155,17 +142,6 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
     }
   }, [opened, loadLayouts, loadContents]);
 
-  // レイアウトが読み込まれた後、利用可能なレイアウトがない場合は自動的に新規作成モードに
-  useEffect(() => {
-    // レイアウトが存在しない場合のみ自動的に新規作成モードに設定
-    if (layouts.length === 0) {
-      setCreateNewLayout(true);
-    } else {
-      // 既存レイアウトがある場合は明示的にfalseに設定
-      setCreateNewLayout(false);
-    }
-  }, [layouts.length]);
-
   // 変更を監視（初期値と比較）
   const hasChanges = useMemo(() => {
     return (
@@ -173,10 +149,9 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
       formData.device.trim() !== initialFormData.device.trim() ||
       formData.layoutId !== initialFormData.layoutId ||
       JSON.stringify(formData.contentAssignments) !== JSON.stringify(initialFormData.contentAssignments) ||
-      createNewLayout ||
       tempLayoutData !== null
     );
-  }, [formData, initialFormData, createNewLayout, tempLayoutData]);
+  }, [formData, initialFormData, tempLayoutData]);
 
   const validateCurrentStep = (): boolean => {
     const newErrors: Partial<Record<keyof PlaylistFormData, string>> = {};
@@ -189,13 +164,9 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
         newErrors.device = "デバイス名は必須です";
       }
     } else if (currentStep === "layout") {
-      // 利用可能なレイアウトがある場合のみバリデーション
-      if (layouts.length > 0 && !createNewLayout && formData.layoutId.trim().length === 0) {
-        newErrors.layoutId = "レイアウトを選択してください";
-      }
-      // 利用可能なレイアウトがない場合は、レイアウト作成が必須
-      if (layouts.length === 0 && !tempLayoutData) {
-        newErrors.layoutId = "レイアウトを作成してください";
+      // 既存レイアウトの選択も新規レイアウトの作成もされていない場合はエラー
+      if (formData.layoutId.trim().length === 0 && !tempLayoutData) {
+        newErrors.layoutId = "レイアウトを選択するか、新しいレイアウトを作成してください";
       }
     }
 
@@ -214,32 +185,25 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
 
       // レイアウト選択ステップからコンテンツステップに移る時
       if (currentStep === "layout" && nextStep === "content") {
-        if (createNewLayout) {
+        if (tempLayoutData) {
           // 新規レイアウト作成の場合
-          if (tempLayoutData) {
-            // 一時的なレイアウトデータからLayoutItemを作成
-            const tempLayout: LayoutItem = {
-              id: "temp-layout",
-              name: tempLayoutData.name,
-              orientation: tempLayoutData.orientation,
-              regions: tempLayoutData.regions,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            };
-            setSelectedLayout(tempLayout);
+          const tempLayout: LayoutItem = {
+            id: "temp-layout",
+            name: tempLayoutData.name,
+            orientation: tempLayoutData.orientation,
+            regions: tempLayoutData.regions,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          setSelectedLayout(tempLayout);
 
-            // contentAssignmentsを初期化
-            const assignments: ContentAssignment[] = tempLayoutData.regions.map((region) => ({
-              regionId: region.id,
-              contentIds: [],
-              contentDurations: [],
-            }));
-            setFormData((prev) => ({ ...prev, contentAssignments: assignments }));
-          } else {
-            // レイアウトが作成されていない場合はレイアウト作成モーダルを表示
-            setShowLayoutForm(true);
-            return;
-          }
+          // contentAssignmentsを初期化
+          const assignments: ContentAssignment[] = tempLayoutData.regions.map((region) => ({
+            regionId: region.id,
+            contentIds: [],
+            contentDurations: [],
+          }));
+          setFormData((prev) => ({ ...prev, contentAssignments: assignments }));
         } else if (formData.layoutId) {
           // 既存レイアウト選択の場合
           try {
@@ -283,7 +247,7 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
       let layoutId = formData.layoutId;
 
       // 新規レイアウトを作成する場合
-      if (createNewLayout && tempLayoutData) {
+      if (tempLayoutData) {
         const newLayout = await createLayout({
           name: tempLayoutData.name,
           orientation: tempLayoutData.orientation,
@@ -343,7 +307,6 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
     setInitialFormData(newInitialData);
     setErrors({});
     setSelectedLayout(null);
-    setCreateNewLayout(false);
     setShowLayoutForm(false);
     setTempLayoutData(null);
     setSelectedRegionId(null);
@@ -482,6 +445,7 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
   const handleLayoutCreate = async (data: { name: string; orientation: Orientation; regions: Region[] }) => {
     setTempLayoutData(data);
     setShowLayoutForm(false);
+    setFormData((prev) => ({ ...prev, layoutId: "" })); // 既存レイアウト選択をクリア
 
     // レイアウトが作成されたので、次のステップに進む
     const tempLayout: LayoutItem = {
@@ -627,73 +591,72 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
       case "layout":
         return (
           <Stack gap="md">
-            {layouts.length > 0 ? (
-              <Checkbox
-                label="新しいレイアウトを作成する"
-                checked={createNewLayout}
-                onChange={(e) => {
-                  setCreateNewLayout(e.currentTarget.checked);
-                  if (e.currentTarget.checked) {
-                    setFormData((prev) => ({ ...prev, layoutId: "" }));
-                  }
-                }}
-              />
-            ) : (
-              <Text size="sm" c="dimmed" mb="md">
-                利用可能なレイアウトがありません。新しいレイアウトを作成してください。
-              </Text>
-            )}
-
-            {!createNewLayout && layouts.length > 0 && (
-              <Select
-                label="レイアウトを選択"
-                placeholder="レイアウトを選択してください"
-                required
-                data={layouts.map((layout) => ({
-                  value: layout.id,
-                  label: `${layout.name} (${
-                    layout.orientation === "landscape"
-                      ? "横"
-                      : layout.orientation === "portrait-right"
-                        ? "縦(右)"
-                        : "縦(左)"
-                  }, ${layout.regionCount}リージョン)`,
-                }))}
-                value={formData.layoutId}
-                onChange={(value) => setFormData((prev) => ({ ...prev, layoutId: value || "" }))}
-                error={errors.layoutId}
-              />
-            )}
-
-            {(createNewLayout || layouts.length === 0) && (
-              <Stack gap="sm">
-                {tempLayoutData ? (
-                  <Paper p="md" withBorder>
-                    <Text size="sm" fw={500}>
-                      作成済みレイアウト: {tempLayoutData.name}
-                    </Text>
-                    <Text size="xs" c="dimmed">
-                      {tempLayoutData.orientation === "landscape"
-                        ? "横向き"
-                        : tempLayoutData.orientation === "portrait-right"
-                          ? "縦向き(右)"
-                          : "縦向き(左)"}{" "}
-                      - {tempLayoutData.regions.length}リージョン
-                    </Text>
-                  </Paper>
-                ) : (
-                  <Button
-                    variant="light"
-                    onClick={() => setShowLayoutForm(true)}
-                    leftSection={<IconLayoutGrid size={16} />}
-                    size="lg"
-                    fullWidth={layouts.length === 0}
-                  >
-                    レイアウトを作成
-                  </Button>
+            {layouts.length > 0 && (
+              <Box>
+                <Text size="sm" fw={500} mb="sm">
+                  既存のレイアウトから選択
+                </Text>
+                <LayoutSelectionGrid
+                  layouts={layouts}
+                  selectedLayoutId={formData.layoutId}
+                  onLayoutSelect={(layout) => {
+                    setFormData((prev) => ({ ...prev, layoutId: layout.id }));
+                    setTempLayoutData(null);
+                  }}
+                />
+                {errors.layoutId && !tempLayoutData && (
+                  <Text size="sm" c="red" mt="xs">
+                    {errors.layoutId}
+                  </Text>
                 )}
-              </Stack>
+              </Box>
             )}
+
+            {layouts.length > 0 && <Divider label="または" labelPosition="center" />}
+
+            <Box>
+              <Text size="sm" fw={500} mb="sm">
+                新しいレイアウトを作成
+              </Text>
+              {tempLayoutData ? (
+                <Paper p="md" withBorder>
+                  <Group justify="space-between" align="flex-start">
+                    <Box>
+                      <Text size="sm" fw={500}>
+                        作成済みレイアウト: {tempLayoutData.name}
+                      </Text>
+                      <Text size="xs" c="dimmed">
+                        {tempLayoutData.orientation === "landscape"
+                          ? "横向き"
+                          : tempLayoutData.orientation === "portrait-right"
+                            ? "縦向き(右)"
+                            : "縦向き(左)"}{" "}
+                        - {tempLayoutData.regions.length}リージョン
+                      </Text>
+                    </Box>
+                    <Button
+                      variant="subtle"
+                      size="xs"
+                      onClick={() => {
+                        setTempLayoutData(null);
+                      }}
+                    >
+                      削除
+                    </Button>
+                  </Group>
+                </Paper>
+              ) : (
+                <Button
+                  variant="light"
+                  onClick={() => setShowLayoutForm(true)}
+                  leftSection={<IconLayoutGrid size={16} />}
+                  size="lg"
+                  fullWidth
+                >
+                  新しいレイアウトを作成
+                </Button>
+              )}
+            </Box>
           </Stack>
         );
 
@@ -825,10 +788,13 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
     }
   };
 
-  // コンテンツ割り当てステップでは大きなモーダルサイズを使用
+  // コンテンツ割り当てとレイアウト選択ステップでは大きなモーダルサイズを使用
   const getModalSize = () => {
     if (currentStep === "content") {
       return "95%";
+    }
+    if (currentStep === "layout") {
+      return "xl";
     }
     return "lg";
   };
@@ -838,6 +804,13 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
       return {
         content: {
           maxWidth: "1400px",
+        },
+      };
+    }
+    if (currentStep === "layout") {
+      return {
+        content: {
+          maxWidth: "1000px",
         },
       };
     }
