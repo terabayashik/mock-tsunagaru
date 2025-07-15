@@ -34,7 +34,7 @@ import { SelectedContentList } from "~/components/content/SelectedContentList";
 import { InteractiveLayoutPreview } from "~/components/layout/InteractiveLayoutPreview";
 import { useContent } from "~/hooks/useContent";
 import { useLayout } from "~/hooks/useLayout";
-import type { ContentIndex, ContentType, RichTextContent } from "~/types/content";
+import type { ContentIndex, ContentType, TextContent } from "~/types/content";
 import { extractYouTubeVideoId } from "~/types/content";
 import type { LayoutItem } from "~/types/layout";
 import type { ContentAssignment, ContentDuration, PlaylistItem } from "~/types/playlist";
@@ -94,7 +94,7 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
   const [contentSearchQuery, setContentSearchQuery] = useState("");
 
   const { getLayoutById } = useLayout();
-  const { getContentsIndex, getContentById, createFileOrTextContent, createUrlContent, createRichTextContent } =
+  const { getContentsIndex, getContentById, createFileOrTextContent, createUrlContent, createTextContent } =
     useContent();
 
   const steps: StepInfo[] = [
@@ -507,8 +507,8 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
     await loadContents(); // コンテンツリストを再読み込み
   };
 
-  const handleRichTextContentSubmit = async (data: { name: string; richTextInfo: RichTextContent }) => {
-    await createRichTextContent(data.name, data.richTextInfo);
+  const handleTextContentSubmit = async (data: { name: string; textInfo: TextContent }) => {
+    await createTextContent(data.name, data.textInfo);
     await loadContents(); // コンテンツリストを再読み込み
   };
 
@@ -920,7 +920,7 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
         onClose={() => setShowContentAddModal(false)}
         onFileSubmit={handleFileContentSubmit}
         onUrlSubmit={handleUrlContentSubmit}
-        onRichTextSubmit={handleRichTextContentSubmit}
+        onTextSubmit={handleTextContentSubmit}
       />
 
       {/* 再生時間設定モーダル */}

@@ -9,7 +9,7 @@ import { InteractiveLayoutPreview } from "~/components/layout/InteractiveLayoutP
 import { LayoutSelectionGrid } from "~/components/layout/LayoutSelectionGrid";
 import { useContent } from "~/hooks/useContent";
 import { useLayout } from "~/hooks/useLayout";
-import type { ContentIndex, RichTextContent } from "~/types/content";
+import type { ContentIndex, TextContent } from "~/types/content";
 import { extractYouTubeVideoId } from "~/types/content";
 import type { LayoutIndex, LayoutItem, Orientation, Region } from "~/types/layout";
 import type { ContentAssignment, ContentDuration } from "~/types/playlist";
@@ -85,7 +85,7 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
   } | null>(null);
 
   const { getLayoutsIndex, getLayoutById, createLayout } = useLayout();
-  const { getContentsIndex, getContentById, createFileOrTextContent, createUrlContent, createRichTextContent } =
+  const { getContentsIndex, getContentById, createFileOrTextContent, createUrlContent, createTextContent } =
     useContent();
 
   const steps: StepInfo[] = [
@@ -491,8 +491,8 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
     await loadContents(); // コンテンツリストを再読み込み
   };
 
-  const handleRichTextContentSubmit = async (data: { name: string; richTextInfo: RichTextContent }) => {
-    await createRichTextContent(data.name, data.richTextInfo);
+  const handleTextContentSubmit = async (data: { name: string; textInfo: TextContent }) => {
+    await createTextContent(data.name, data.textInfo);
     await loadContents(); // コンテンツリストを再読み込み
   };
 
@@ -898,7 +898,7 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
         onClose={() => setShowContentAddModal(false)}
         onFileSubmit={handleFileContentSubmit}
         onUrlSubmit={handleUrlContentSubmit}
-        onRichTextSubmit={handleRichTextContentSubmit}
+        onTextSubmit={handleTextContentSubmit}
       />
 
       {/* 再生時間設定モーダル */}

@@ -4,6 +4,7 @@ import { useAtom } from "jotai";
 import { Link, useLocation } from "react-router";
 import { headerColorAtom, logoutAtom, userAtom } from "~/states";
 import { ThemeToggle } from "../common/ThemeToggle";
+import { MigrationRunner } from "../MigrationRunner";
 import { LoginLayout } from "./LoginLayout";
 
 interface AppLayoutProps {
@@ -31,92 +32,95 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
   }
 
   return (
-    <AppShell header={{ height: 60 }} padding="md">
-      <AppShell.Header bg={headerColor}>
-        <Group h="100%" px="md" justify="space-between">
-          <Group>
-            <Anchor component={Link} to="/" td="none">
-              <Title order={3} c="white">
-                もっく！つながる
-              </Title>
-            </Anchor>
-          </Group>
-
-          <Group gap="sm">
-            {/* Desktop Navigation */}
-            <Group gap="xs" visibleFrom="sm">
-              {navigationItems.map((item) => (
-                <Button
-                  key={item.href}
-                  component={Link}
-                  to={item.href}
-                  color="white"
-                  bg={location.pathname === item.href ? "#ffffff20" : "#ffffff00"}
-                  variant={location.pathname === item.href ? "outline" : "subtle"}
-                  leftSection={item.icon}
-                  size="sm"
-                >
-                  {item.label}
-                </Button>
-              ))}
+    <>
+      <MigrationRunner />
+      <AppShell header={{ height: 60 }} padding="md">
+        <AppShell.Header bg={headerColor}>
+          <Group h="100%" px="md" justify="space-between">
+            <Group>
+              <Anchor component={Link} to="/" td="none">
+                <Title order={3} c="white">
+                  もっく！つながる
+                </Title>
+              </Anchor>
             </Group>
 
-            {/* Mobile Navigation Menu */}
-            <Menu shadow="md" width={200}>
-              <Menu.Target>
-                <Button variant="subtle" size="sm" hiddenFrom="sm" leftSection={<IconMenu2 size={16} />}>
-                  メニュー
-                </Button>
-              </Menu.Target>
-              <Menu.Dropdown>
-                <Menu.Label>ナビゲーション</Menu.Label>
+            <Group gap="sm">
+              {/* Desktop Navigation */}
+              <Group gap="xs" visibleFrom="sm">
                 {navigationItems.map((item) => (
-                  <Menu.Item key={item.href} component={Link} to={item.href} leftSection={item.icon}>
+                  <Button
+                    key={item.href}
+                    component={Link}
+                    to={item.href}
+                    color="white"
+                    bg={location.pathname === item.href ? "#ffffff20" : "#ffffff00"}
+                    variant={location.pathname === item.href ? "outline" : "subtle"}
+                    leftSection={item.icon}
+                    size="sm"
+                  >
                     {item.label}
-                  </Menu.Item>
+                  </Button>
                 ))}
-                <Menu.Divider />
-                <Menu.Label>アカウント</Menu.Label>
-                <Menu.Item leftSection={<IconUser size={16} />}>プロフィール</Menu.Item>
-                <Menu.Item leftSection={<IconSettings size={16} />}>設定</Menu.Item>
-                <Menu.Item leftSection={<IconDoorExit size={16} />} color="red" onClick={handleLogout}>
-                  ログアウト
-                </Menu.Item>
-              </Menu.Dropdown>
-            </Menu>
+              </Group>
 
-            <ThemeToggle />
+              {/* Mobile Navigation Menu */}
+              <Menu shadow="md" width={200}>
+                <Menu.Target>
+                  <Button variant="subtle" size="sm" hiddenFrom="sm" leftSection={<IconMenu2 size={16} />}>
+                    メニュー
+                  </Button>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Label>ナビゲーション</Menu.Label>
+                  {navigationItems.map((item) => (
+                    <Menu.Item key={item.href} component={Link} to={item.href} leftSection={item.icon}>
+                      {item.label}
+                    </Menu.Item>
+                  ))}
+                  <Menu.Divider />
+                  <Menu.Label>アカウント</Menu.Label>
+                  <Menu.Item leftSection={<IconUser size={16} />}>プロフィール</Menu.Item>
+                  <Menu.Item leftSection={<IconSettings size={16} />}>設定</Menu.Item>
+                  <Menu.Item leftSection={<IconDoorExit size={16} />} color="red" onClick={handleLogout}>
+                    ログアウト
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
 
-            {/* Desktop User Menu */}
-            <Menu shadow="md" width={200}>
-              <Menu.Target>
-                <UnstyledButton visibleFrom="sm">
-                  <Group gap="xs">
-                    <Avatar size="sm" color="white">
-                      {user.name.charAt(0).toUpperCase()}
-                    </Avatar>
-                    <Text size="sm" fw={500} c="white">
-                      {user.name}
-                    </Text>
-                  </Group>
-                </UnstyledButton>
-              </Menu.Target>
+              <ThemeToggle />
 
-              <Menu.Dropdown>
-                <Menu.Label>アカウント</Menu.Label>
-                <Menu.Item leftSection={<IconUser size={16} />}>プロフィール</Menu.Item>
-                <Menu.Item leftSection={<IconSettings size={16} />}>設定</Menu.Item>
-                <Menu.Divider />
-                <Menu.Item leftSection={<IconDoorExit size={16} />} color="red" onClick={handleLogout}>
-                  ログアウト
-                </Menu.Item>
-              </Menu.Dropdown>
-            </Menu>
+              {/* Desktop User Menu */}
+              <Menu shadow="md" width={200}>
+                <Menu.Target>
+                  <UnstyledButton visibleFrom="sm">
+                    <Group gap="xs">
+                      <Avatar size="sm" color="white">
+                        {user.name.charAt(0).toUpperCase()}
+                      </Avatar>
+                      <Text size="sm" fw={500} c="white">
+                        {user.name}
+                      </Text>
+                    </Group>
+                  </UnstyledButton>
+                </Menu.Target>
+
+                <Menu.Dropdown>
+                  <Menu.Label>アカウント</Menu.Label>
+                  <Menu.Item leftSection={<IconUser size={16} />}>プロフィール</Menu.Item>
+                  <Menu.Item leftSection={<IconSettings size={16} />}>設定</Menu.Item>
+                  <Menu.Divider />
+                  <Menu.Item leftSection={<IconDoorExit size={16} />} color="red" onClick={handleLogout}>
+                    ログアウト
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+            </Group>
           </Group>
-        </Group>
-      </AppShell.Header>
+        </AppShell.Header>
 
-      <AppShell.Main>{children}</AppShell.Main>
-    </AppShell>
+        <AppShell.Main>{children}</AppShell.Main>
+      </AppShell>
+    </>
   );
 };

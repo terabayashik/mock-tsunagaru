@@ -1,7 +1,7 @@
 import { Box, Text } from "@mantine/core";
 import type { CSSProperties } from "react";
 import { memo, useEffect, useRef, useState } from "react";
-import type { ContentItem, RichTextContent } from "~/types/content";
+import type { ContentItem, TextContent } from "~/types/content";
 import { extractYouTubeVideoId } from "~/types/content";
 import { logger } from "~/utils/logger";
 import { OPFSManager } from "~/utils/storage/opfs";
@@ -134,9 +134,9 @@ export const ContentRenderer = memo(function ContentRenderer({
       case "image":
         return <img src={imageUrl || undefined} alt={content.name} style={commonStyle} />;
 
-      case "rich-text":
-        if (!content.richTextInfo) return null;
-        return <RichTextRenderer richText={content.richTextInfo} width={width} height={height} />;
+      case "text":
+        if (!content.textInfo) return null;
+        return <TextRenderer textContent={content.textInfo} width={width} height={height} />;
 
       case "youtube": {
         if (!content.urlInfo?.url) return null;
@@ -170,23 +170,23 @@ export const ContentRenderer = memo(function ContentRenderer({
   return <Box style={{ width, height, position: "relative", overflow: "hidden" }}>{renderContent()}</Box>;
 });
 
-// リッチテキスト表示コンポーネント
-interface RichTextRendererProps {
-  richText: RichTextContent;
+// テキスト表示コンポーネント
+interface TextRendererProps {
+  textContent: TextContent;
   width: number;
   height: number;
 }
 
-function RichTextRenderer({ richText, width, height }: RichTextRendererProps) {
+function TextRenderer({ textContent, width, height }: TextRendererProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container || richText.scrollType === "none") return;
+    if (!container || textContent.scrollType === "none") return;
 
     const scrollDistance =
-      richText.scrollType === "horizontal" ? container.scrollWidth - width : container.scrollHeight - height;
-    const scrollDuration = (scrollDistance / richText.scrollSpeed) * 1000; // スクロール速度に基づく
+      textContent.scrollType === "horizontal" ? container.scrollWidth - width : container.scrollHeight - height;
+    const scrollDuration = (scrollDistance / textContent.scrollSpeed) * 1000; // スクロール速度に基づく
 
     let startTime: number;
     const animate = (currentTime: number) => {
@@ -194,7 +194,7 @@ function RichTextRenderer({ richText, width, height }: RichTextRendererProps) {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / scrollDuration, 1);
 
-      if (richText.scrollType === "horizontal") {
+      if (textContent.scrollType === "horizontal") {
         container.scrollLeft = progress * scrollDistance;
       } else {
         container.scrollTop = progress * scrollDistance;
@@ -206,24 +206,24 @@ function RichTextRenderer({ richText, width, height }: RichTextRendererProps) {
     };
 
     requestAnimationFrame(animate);
-  }, [richText, width, height]);
+  }, [textContent, width, height]);
 
   const textStyle: CSSProperties = {
-    fontFamily: richText.fontFamily,
-    fontSize: `${richText.fontSize}px`,
-    color: richText.color,
-    backgroundColor: richText.backgroundColor,
-    textAlign: richText.textAlign,
-    writingMode: richText.writingMode === "vertical" ? "vertical-rl" : ("horizontal-tb" as const),
-    whiteSpace: richText.scrollType !== "none" ? "nowrap" : "pre-wrap",
+    fontFamily: textContent.fontFamily,
+    fontSize: `${textContent.fontSize}px`,
+    color: textContent.color,
+    backgroundColor: textContent.backgroundColor,
+    textAlign: textContent.textAlign,
+    writingMode: textContent.writingMode === "vertical" ? "vertical-rl" : ("horizontal-tb" as const),
+    whiteSpace: textContent.scrollType !== "none" ? "nowrap" : "pre-wrap",
     padding: "16px",
-    width: richText.scrollType === "horizontal" ? "max-content" : "100%",
-    height: richText.scrollType === "vertical" ? "max-content" : "100%",
+    width: textContent.scrollType === "horizontal" ? "max-content" : "100%",
+    height: textContent.scrollType === "vertical" ? "max-content" : "100%",
     minHeight: "100%",
     display: "flex",
-    alignItems: richText.scrollType === "none" ? "center" : "flex-start",
+    alignItems: textContent.scrollType === "none" ? "center" : "flex-start",
     justifyContent:
-      richText.textAlign === "center" ? "center" : richText.textAlign === "end" ? "flex-end" : "flex-start",
+      textContent.textAlign === "center" ? "center" : textContent.textAlign === "end" ? "flex-end" : "flex-start",
   };
 
   return (
@@ -232,11 +232,11 @@ function RichTextRenderer({ richText, width, height }: RichTextRendererProps) {
       style={{
         width,
         height,
-        overflow: richText.scrollType !== "none" ? "hidden" : "auto",
-        backgroundColor: richText.backgroundColor,
+        overflow: textContent.scrollType !== "none" ? "hidden" : "auto",
+        backgroundColor: textContent.backgroundColor,
       }}
     >
-      <Box style={textStyle}>{richText.content}</Box>
+      <Box style={textStyle}>{textContent.content}</Box>
     </Box>
   );
 }

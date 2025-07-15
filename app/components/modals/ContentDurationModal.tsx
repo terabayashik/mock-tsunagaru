@@ -60,10 +60,7 @@ export const ContentDurationModal = ({
           の再生時間を設定してください。
         </Text>
 
-        {(contentType === "image" ||
-          contentType === "text" ||
-          contentType === "rich-text" ||
-          contentType === "url") && (
+        {(contentType === "image" || contentType === "text" || contentType === "url") && (
           <Text size="xs" c="dimmed">
             このコンテンツタイプは自動的に再生時間を決定できないため、手動で設定する必要があります。
           </Text>

@@ -31,7 +31,7 @@ import {
   filteredContentsAtom,
 } from "~/states/content";
 import { contentPreviewModalAtom, modalActionsAtom } from "~/states/modal";
-import type { ContentType, RichTextContent } from "~/types/content";
+import type { ContentType, TextContent } from "~/types/content";
 import { formatFileSize, getContentTypeBadge } from "~/utils/contentTypeUtils";
 import { logger } from "~/utils/logger";
 
@@ -54,7 +54,7 @@ export default function ContentsPage() {
     checkContentUsageStatus,
     createFileOrTextContent,
     createUrlContent,
-    createRichTextContent,
+    createTextContent,
     updateContent,
     getContentById,
   } = useContent();
@@ -178,12 +178,7 @@ export default function ContentsPage() {
 
   const handleContentClick = (contentId: string, contentType: ContentType) => {
     // 動画、画像、YouTube、リッチテキストでプレビューモーダルを開く
-    if (
-      contentType === "video" ||
-      contentType === "image" ||
-      contentType === "youtube" ||
-      contentType === "rich-text"
-    ) {
+    if (contentType === "video" || contentType === "image" || contentType === "youtube" || contentType === "text") {
       modalDispatch({ type: "OPEN_CONTENT_PREVIEW", contentId });
     }
   };
@@ -248,9 +243,9 @@ export default function ContentsPage() {
     }
   };
 
-  const handleRichTextContentSubmit = async (data: { name: string; richTextInfo: RichTextContent }) => {
+  const handleTextContentSubmit = async (data: { name: string; textInfo: TextContent }) => {
     try {
-      const newContent = await createRichTextContent(data.name, data.richTextInfo);
+      const newContent = await createTextContent(data.name, data.textInfo);
 
       // インデックス形式に変換
       const contentIndex = {
@@ -269,7 +264,7 @@ export default function ContentsPage() {
     } catch (error) {
       contentDispatch({
         type: "SET_ERROR",
-        error: error instanceof Error ? error.message : "リッチテキストコンテンツの作成に失敗しました",
+        error: error instanceof Error ? error.message : "テキストコンテンツの作成に失敗しました",
       });
       throw error;
     }
@@ -283,7 +278,7 @@ export default function ContentsPage() {
     id: string;
     name: string;
     tags: string[];
-    richTextInfo?: RichTextContent;
+    textInfo?: TextContent;
     urlInfo?: { title?: string; description?: string };
   }) => {
     try {
@@ -295,8 +290,8 @@ export default function ContentsPage() {
       };
 
       // コンテンツタイプに応じて追加情報を設定
-      if (data.richTextInfo) {
-        updateData.richTextInfo = data.richTextInfo;
+      if (data.textInfo) {
+        updateData.textInfo = data.textInfo;
       }
       if (data.urlInfo) {
         // 既存のurlInfo取得のためコンテンツを再取得
@@ -408,7 +403,7 @@ export default function ContentsPage() {
                   content.type === "video" ||
                   content.type === "image" ||
                   content.type === "youtube" ||
-                  content.type === "rich-text";
+                  content.type === "text";
                 return (
                   <Table.Tr
                     key={content.id}
@@ -516,7 +511,7 @@ export default function ContentsPage() {
         onClose={handleContentAddModalClose}
         onFileSubmit={handleFileUploadSubmit}
         onUrlSubmit={handleUrlContentSubmit}
-        onRichTextSubmit={handleRichTextContentSubmit}
+        onTextSubmit={handleTextContentSubmit}
       />
 
       <ContentPreviewModal

@@ -16,7 +16,7 @@ import { IconDeviceFloppy } from "@tabler/icons-react";
 import { memo, useEffect, useState } from "react";
 import { ContentUsageDisplay } from "~/components/content/ContentUsageDisplay";
 import { useContent } from "~/hooks/useContent";
-import { type ContentIndex, FONT_FAMILIES, type RichTextContent } from "~/types/content";
+import { type ContentIndex, FONT_FAMILIES, type TextContent } from "~/types/content";
 
 interface ContentEditModalProps {
   opened: boolean;
@@ -26,7 +26,7 @@ interface ContentEditModalProps {
     id: string;
     name: string;
     tags: string[];
-    richTextInfo?: RichTextContent;
+    textInfo?: TextContent;
     urlInfo?: { title?: string; description?: string };
   }) => Promise<void>;
 }
@@ -44,8 +44,8 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
   const [name, setName] = useState("");
   const [tags, setTags] = useState("");
 
-  // リッチテキスト関連の状態（type === "rich-text"の場合のみ使用）
-  const [richTextContent, setRichTextContent] = useState("");
+  // テキスト関連の状態（type === "text"の場合のみ使用）
+  const [textContent, setTextContent] = useState("");
   const [writingMode, setWritingMode] = useState<"horizontal" | "vertical">("horizontal");
   const [fontFamily, setFontFamily] = useState("Inter, sans-serif");
   const [textAlign, setTextAlign] = useState<"start" | "center" | "end">("start");
@@ -78,7 +78,7 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
       try {
         const contentDetail = await getContentById(content.id);
 
-        if (content.type === "rich-text" && contentDetail?.richTextInfo) {
+        if (content.type === "text" && contentDetail?.textInfo) {
           const {
             content: textContent,
             writingMode: mode,
@@ -89,9 +89,9 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
             fontSize: size,
             scrollType: scroll,
             scrollSpeed: speed,
-          } = contentDetail.richTextInfo;
+          } = contentDetail.textInfo;
 
-          setRichTextContent(textContent);
+          setTextContent(textContent);
           setWritingMode(mode);
           setFontFamily(font);
           setTextAlign(align);
@@ -100,9 +100,9 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
           setFontSize(size);
           setScrollType(scroll || "none");
           setScrollSpeed(speed || 3);
-        } else if (content.type === "rich-text") {
-          // フォールバック: リッチテキストのデフォルト値
-          setRichTextContent("");
+        } else if (content.type === "text") {
+          // フォールバック: テキストのデフォルト値
+          setTextContent("");
           setWritingMode("horizontal");
           setFontFamily("Inter, sans-serif");
           setTextAlign("start");
@@ -121,8 +121,8 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
       } catch (error) {
         console.error("Failed to load content details:", error);
         // エラー時はデフォルト値を使用
-        if (content.type === "rich-text") {
-          setRichTextContent("");
+        if (content.type === "text") {
+          setTextContent("");
           setWritingMode("horizontal");
           setFontFamily("Inter, sans-serif");
           setTextAlign("start");
@@ -163,9 +163,9 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
       };
 
       // コンテンツタイプごとの追加データ
-      if (content.type === "rich-text") {
-        submitData.richTextInfo = {
-          content: richTextContent.trim(),
+      if (content.type === "text") {
+        submitData.textInfo = {
+          content: textContent.trim(),
           writingMode,
           fontFamily,
           textAlign,
@@ -194,7 +194,7 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
 
   const canSubmit = name.trim().length > 0;
 
-  const isRichText = content.type === "rich-text";
+  const isText = content.type === "text";
   const isUrl = content.type === "url" || content.type === "youtube";
   const isFileType = content.type === "video" || content.type === "image" || content.type === "text";
 
@@ -268,15 +268,15 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
         )}
 
         {/* リッチテキストの場合 */}
-        {isRichText && (
+        {isText && (
           <Stack gap="md">
             <Textarea
               label="テキストコンテンツ"
               placeholder="表示したいテキストを入力してください"
               required
               minRows={4}
-              value={richTextContent}
-              onChange={(event) => setRichTextContent(event.currentTarget.value)}
+              value={textContent}
+              onChange={(event) => setTextContent(event.currentTarget.value)}
               aria-required="true"
               aria-label="テキストコンテンツ入力"
             />
@@ -410,7 +410,7 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
                       : "stretch",
                 }}
               >
-                {richTextContent || "プレビューテキスト"}
+                {textContent || "プレビューテキスト"}
               </Box>
             </Box>
           </Stack>

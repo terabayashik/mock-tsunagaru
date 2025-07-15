@@ -188,11 +188,11 @@ export const ContentPreview = memo(
       }
     }, [content.url]);
 
-    const generateRichTextPreview = useCallback(async () => {
+    const generateTextPreview = useCallback(async () => {
       try {
         const contentDetail = await getContentById(content.id);
-        if (!contentDetail?.richTextInfo) {
-          throw new Error("リッチテキスト情報が見つかりません");
+        if (!contentDetail?.textInfo) {
+          throw new Error("テキスト情報が見つかりません");
         }
 
         const {
@@ -205,7 +205,7 @@ export const ContentPreview = memo(
           fontSize,
           scrollType = "none",
           scrollSpeed = 3,
-        } = contentDetail.richTextInfo;
+        } = contentDetail.textInfo;
 
         // スクロールアニメーションのCSS
         // SVG内では100% = estimatedWidth pxなので、-100% - estimatedWidth px = -200%相当
@@ -292,17 +292,16 @@ export const ContentPreview = memo(
         switch (content.type) {
           case "video":
           case "image":
-          case "text":
             await generateFilePreview();
+            break;
+          case "text":
+            await generateTextPreview();
             break;
           case "youtube":
             await generateYouTubePreview();
             break;
           case "url":
             await generateUrlPreview();
-            break;
-          case "rich-text":
-            await generateRichTextPreview();
             break;
           default:
             setPreviewState({ loading: false, error: "Unknown content type" });
@@ -314,7 +313,7 @@ export const ContentPreview = memo(
           error: error instanceof Error ? error.message : "プレビュー生成に失敗しました",
         });
       }
-    }, [content.type, generateFilePreview, generateYouTubePreview, generateUrlPreview, generateRichTextPreview]);
+    }, [content.type, generateFilePreview, generateYouTubePreview, generateUrlPreview, generateTextPreview]);
 
     useEffect(() => {
       generatePreview();
@@ -328,8 +327,6 @@ export const ContentPreview = memo(
         case "image":
           return <IconPhoto {...iconProps} />;
         case "text":
-          return <IconFileText {...iconProps} />;
-        case "rich-text":
           return <IconFileText {...iconProps} />;
         case "youtube":
           return <IconBrandYoutube {...iconProps} />;
@@ -347,8 +344,6 @@ export const ContentPreview = memo(
         case "image":
           return "green";
         case "text":
-          return "orange";
-        case "rich-text":
           return "orange";
         case "youtube":
           return "red";

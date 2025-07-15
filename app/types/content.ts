@@ -4,8 +4,7 @@ import { z } from "zod";
 export const ContentTypeSchema = z.enum([
   "video", // 動画ファイル
   "image", // 画像ファイル
-  "text", // テキストファイル
-  "rich-text", // リッチテキスト（ユーザー入力）
+  "text", // テキストファイル（スタイル情報を含む）
   "youtube", // YouTubeのURL
   "url", // その他のURL
 ]);
@@ -34,8 +33,8 @@ export const UrlContentSchema = z.object({
   thumbnail: z.string().optional(), // サムネイルURL
 });
 
-// リッチテキストコンテンツの詳細情報
-export const RichTextContentSchema = z.object({
+// テキストコンテンツの詳細情報（スタイル情報を含む）
+export const TextContentSchema = z.object({
   content: z.string().min(1, "テキストコンテンツは必須です"),
   writingMode: z.enum(["horizontal", "vertical"], "書字方向を選択してください"),
   fontFamily: z.string().min(1, "フォントファミリーは必須です"),
@@ -52,10 +51,10 @@ export const ContentItemSchema = z.object({
   id: z.string().min(1, "IDは必須です"),
   name: z.string().min(1, "名前は必須です"),
   type: ContentTypeSchema,
-  // ファイルの場合はfileInfo、URLの場合はurlInfo、リッチテキストの場合はrichTextInfo
+  // ファイルの場合はfileInfo、URLの場合はurlInfo、テキストの場合はtextInfo
   fileInfo: FileContentSchema.optional(),
   urlInfo: UrlContentSchema.optional(),
-  richTextInfo: RichTextContentSchema.optional(),
+  textInfo: TextContentSchema.optional(),
   tags: z.array(z.string()).default([]), // タグ
   createdAt: z.string().datetime("無効な作成日時です"),
   updatedAt: z.string().datetime("無効な更新日時です").optional(),
@@ -79,7 +78,7 @@ export const ContentsIndexSchema = z.array(ContentIndexSchema);
 export type ContentType = z.infer<typeof ContentTypeSchema>;
 export type FileContent = z.infer<typeof FileContentSchema>;
 export type UrlContent = z.infer<typeof UrlContentSchema>;
-export type RichTextContent = z.infer<typeof RichTextContentSchema>;
+export type TextContent = z.infer<typeof TextContentSchema>;
 export type ContentItem = z.infer<typeof ContentItemSchema>;
 export type ContentIndex = z.infer<typeof ContentIndexSchema>;
 

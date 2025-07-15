@@ -34,7 +34,7 @@ export const ContentPreviewModal = ({
     url: "",
     title: "",
     description: "",
-    richTextContent: "",
+    textContent: "",
   });
   const { getContentById, updateContent, deleteContent } = useContent();
 
@@ -58,7 +58,7 @@ export const ContentPreviewModal = ({
             url: contentData.urlInfo?.url || "",
             title: contentData.urlInfo?.title || "",
             description: contentData.urlInfo?.description || "",
-            richTextContent: contentData.richTextInfo?.content || "",
+            textContent: contentData.textInfo?.content || "",
           });
         }
 
@@ -182,8 +182,8 @@ export const ContentPreviewModal = ({
       }
     }
 
-    // リッチテキストプレビュー
-    if (content.type === "rich-text" && content.richTextInfo) {
+    // テキストプレビュー
+    if (content.type === "text" && content.textInfo) {
       const {
         content: textContent,
         writingMode,
@@ -194,7 +194,7 @@ export const ContentPreviewModal = ({
         fontSize,
         scrollType = "none",
         scrollSpeed = 3,
-      } = content.richTextInfo;
+      } = content.textInfo;
 
       // テキストの長さに応じて適切な幅を計算
       const singleLineText = textContent.replace(/\n/g, " ");
@@ -315,7 +315,7 @@ export const ContentPreviewModal = ({
         url: content.urlInfo?.url || "",
         title: content.urlInfo?.title || "",
         description: content.urlInfo?.description || "",
-        richTextContent: content.richTextInfo?.content || "",
+        textContent: content.textInfo?.content || "",
       });
     }
   };
@@ -337,11 +337,11 @@ export const ContentPreviewModal = ({
         };
       }
 
-      // リッチテキストコンテンツの場合はrichTextInfoも更新
-      if (content.type === "rich-text" && content.richTextInfo) {
-        updateData.richTextInfo = {
-          ...content.richTextInfo,
-          content: editForm.richTextContent,
+      // テキストコンテンツの場合はtextInfoも更新
+      if (content.type === "text" && content.textInfo) {
+        updateData.textInfo = {
+          ...content.textInfo,
+          content: editForm.textContent,
         };
       }
 
@@ -448,11 +448,11 @@ export const ContentPreviewModal = ({
           </>
         )}
 
-        {content.type === "rich-text" && (
+        {content.type === "text" && (
           <Textarea
             label="テキストコンテンツ"
-            value={editForm.richTextContent}
-            onChange={(e) => setEditForm((prev) => ({ ...prev, richTextContent: e.target.value }))}
+            value={editForm.textContent}
+            onChange={(e) => setEditForm((prev) => ({ ...prev, textContent: e.target.value }))}
             rows={6}
             placeholder="表示したいテキストを入力してください"
             required
@@ -560,7 +560,6 @@ const getContentTypeLabel = (type: string): string => {
     video: "動画",
     image: "画像",
     text: "テキスト",
-    "rich-text": "リッチテキスト",
     youtube: "YouTube",
     url: "URL",
   };

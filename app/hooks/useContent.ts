@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import type { ContentIndex, ContentItem, ContentType, RichTextContent } from "~/types/content";
+import type { ContentIndex, ContentItem, ContentType, TextContent } from "~/types/content";
 import { ContentItemSchema, ContentsIndexSchema, getContentTypeFromMimeType, isYouTubeUrl } from "~/types/content";
 import { type ContentUsageInfo, checkContentUsage } from "~/utils/contentUsage";
 import { logger } from "~/utils/logger";
@@ -276,18 +276,18 @@ export const useContent = () => {
   );
 
   /**
-   * リッチテキストコンテンツを作成
+   * テキストコンテンツを作成
    */
-  const createRichTextContent = useCallback(
-    async (name: string, richTextInfo: RichTextContent): Promise<ContentItem> => {
+  const createTextContent = useCallback(
+    async (name: string, textInfo: TextContent): Promise<ContentItem> => {
       const id = crypto.randomUUID();
       const now = new Date().toISOString();
 
       const newContent: ContentItem = {
         id,
         name,
-        type: "rich-text",
-        richTextInfo,
+        type: "text",
+        textInfo,
         tags: [],
         createdAt: now,
         updatedAt: now,
@@ -323,7 +323,7 @@ export const useContent = () => {
           } catch {
             // クリーンアップエラーは無視
           }
-          throw new Error(`リッチテキストコンテンツの作成に失敗しました: ${error}`);
+          throw new Error(`テキストコンテンツの作成に失敗しました: ${error}`);
         }
       });
     },
@@ -592,7 +592,7 @@ export const useContent = () => {
         // テキストファイルの場合はテキストコンテンツとして作成
         try {
           const textContent = await readTextFromFile(file);
-          const richTextInfo: RichTextContent = {
+          const textInfo: TextContent = {
             content: textContent,
             writingMode: "horizontal",
             fontFamily: "Noto Sans JP",
@@ -604,7 +604,7 @@ export const useContent = () => {
             scrollSpeed: 3,
           };
 
-          return await createRichTextContent(name || file.name.replace(/\.[^/.]+$/, ""), richTextInfo);
+          return await createTextContent(name || file.name.replace(/\.[^/.]+$/, ""), textInfo);
         } catch (error) {
           logger.error("Content", `Failed to read text from file ${file.name}`, error);
           // テキスト読み込みに失敗した場合は通常のファイルコンテンツとして作成
@@ -615,7 +615,7 @@ export const useContent = () => {
         return await createFileContent(file, name);
       }
     },
-    [createFileContent, createRichTextContent],
+    [createFileContent, createTextContent],
   );
 
   return {
@@ -624,7 +624,7 @@ export const useContent = () => {
     createFileContent,
     createFileOrTextContent,
     createUrlContent,
-    createRichTextContent,
+    createTextContent,
     updateContent,
     deleteContent,
     deleteContentSafely,

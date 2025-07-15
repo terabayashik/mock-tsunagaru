@@ -10,8 +10,6 @@ export const getContentTypeIcon = (type: ContentType) => {
       return <IconPhoto size={16} />;
     case "text":
       return <IconFileText size={16} />;
-    case "rich-text":
-      return <IconFileText size={16} />;
     case "youtube":
       return <IconBrandYoutube size={16} />;
     case "url":
@@ -26,7 +24,6 @@ export const getContentTypeBadge = (type: ContentType) => {
     video: "blue",
     image: "green",
     text: "orange",
-    "rich-text": "teal",
     youtube: "red",
     url: "purple",
   };
@@ -35,7 +32,6 @@ export const getContentTypeBadge = (type: ContentType) => {
     video: "動画",
     image: "画像",
     text: "テキスト",
-    "rich-text": "リッチテキスト",
     youtube: "YouTube",
     url: "URL",
   };

@@ -15,16 +15,16 @@ import {
 import { Dropzone, type FileWithPath } from "@mantine/dropzone";
 import { IconCloudUpload, IconDeviceFloppy, IconFile, IconLink, IconPencil, IconX } from "@tabler/icons-react";
 import { memo, useState } from "react";
-import { ACCEPTED_MIME_TYPES, FONT_FAMILIES, type RichTextContent } from "~/types/content";
+import { ACCEPTED_MIME_TYPES, FONT_FAMILIES, type TextContent } from "~/types/content";
 
-type ContentMode = "file" | "url" | "rich-text";
+type ContentMode = "file" | "url" | "text";
 
 interface ContentAddModalProps {
   opened: boolean;
   onClose: () => void;
   onFileSubmit: (files: FileWithPath[], names?: string[]) => Promise<void>;
   onUrlSubmit: (data: { url: string; name?: string; title?: string; description?: string }) => Promise<void>;
-  onRichTextSubmit: (data: { name: string; richTextInfo: RichTextContent }) => Promise<void>;
+  onTextSubmit: (data: { name: string; textInfo: TextContent }) => Promise<void>;
 }
 
 // 定数
@@ -39,7 +39,7 @@ const getAllAcceptedMimeTypes = () => {
 };
 
 export const ContentAddModal = memo(
-  ({ opened, onClose, onFileSubmit, onUrlSubmit, onRichTextSubmit }: ContentAddModalProps) => {
+  ({ opened, onClose, onFileSubmit, onUrlSubmit, onTextSubmit }: ContentAddModalProps) => {
     const [mode, setMode] = useState<ContentMode>("file");
     const [loading, setLoading] = useState(false);
 
@@ -54,8 +54,8 @@ export const ContentAddModal = memo(
     const [description, setDescription] = useState("");
 
     // リッチテキスト関連の状態
-    const [richTextName, setRichTextName] = useState("");
-    const [richTextContent, setRichTextContent] = useState("");
+    const [textName, setTextName] = useState("");
+    const [textContent, setTextContent] = useState("");
     const [writingMode, setWritingMode] = useState<"horizontal" | "vertical">("horizontal");
     const [fontFamily, setFontFamily] = useState("Inter, sans-serif");
     const [textAlign, setTextAlign] = useState<"start" | "center" | "end">("start");
@@ -76,8 +76,8 @@ export const ContentAddModal = memo(
       setName("");
       setTitle("");
       setDescription("");
-      setRichTextName("");
-      setRichTextContent("");
+      setTextName("");
+      setTextContent("");
       setWritingMode("horizontal");
       setFontFamily("Inter, sans-serif");
       setTextAlign("start");
@@ -141,15 +141,15 @@ export const ContentAddModal = memo(
       }
     };
 
-    const handleRichTextSubmit = async () => {
-      if (!richTextName.trim() || !richTextContent.trim()) return;
+    const handleTextSubmit = async () => {
+      if (!textName.trim() || !textContent.trim()) return;
 
       setLoading(true);
       try {
-        await onRichTextSubmit({
-          name: richTextName.trim(),
-          richTextInfo: {
-            content: richTextContent.trim(),
+        await onTextSubmit({
+          name: textName.trim(),
+          textInfo: {
+            content: textContent.trim(),
             writingMode,
             fontFamily,
             textAlign,
@@ -178,13 +178,13 @@ export const ContentAddModal = memo(
 
     const isFileMode = mode === "file";
     const isUrlMode = mode === "url";
-    const isRichTextMode = mode === "rich-text";
+    const isTextMode = mode === "text";
 
     const canSubmit = isFileMode
       ? selectedFiles.length > 0
       : isUrlMode
         ? url.trim().length > 0
-        : richTextName.trim().length > 0 && richTextContent.trim().length > 0;
+        : textName.trim().length > 0 && textContent.trim().length > 0;
 
     return (
       <Modal opened={opened} onClose={handleClose} title="コンテンツを追加" centered size="lg">
@@ -192,7 +192,7 @@ export const ContentAddModal = memo(
           {/* モード切り替え */}
           <SegmentedControl
             value={mode}
-            onChange={(value) => setMode(value as "file" | "url" | "rich-text")}
+            onChange={(value) => setMode(value as "file" | "url" | "text")}
             data={[
               {
                 label: (
@@ -219,7 +219,7 @@ export const ContentAddModal = memo(
                     <Text size="sm">テキスト</Text>
                   </Group>
                 ),
-                value: "rich-text",
+                value: "text",
               },
             ]}
             fullWidth
@@ -356,14 +356,14 @@ export const ContentAddModal = memo(
           )}
 
           {/* リッチテキストモード */}
-          {isRichTextMode && (
+          {isTextMode && (
             <Stack gap="md">
               <TextInput
                 label="コンテンツ名"
                 placeholder="テキストコンテンツの名前を入力してください"
                 required
-                value={richTextName}
-                onChange={(event) => setRichTextName(event.currentTarget.value)}
+                value={textName}
+                onChange={(event) => setTextName(event.currentTarget.value)}
                 aria-required="true"
                 aria-label="コンテンツ名入力"
               />
@@ -373,8 +373,8 @@ export const ContentAddModal = memo(
                 placeholder="表示したいテキストを入力してください"
                 required
                 minRows={4}
-                value={richTextContent}
-                onChange={(event) => setRichTextContent(event.currentTarget.value)}
+                value={textContent}
+                onChange={(event) => setTextContent(event.currentTarget.value)}
                 aria-required="true"
                 aria-label="テキストコンテンツ入力"
               />
@@ -510,7 +510,7 @@ export const ContentAddModal = memo(
                         : "stretch",
                   }}
                 >
-                  {richTextContent || "プレビューテキスト"}
+                  {textContent || "プレビューテキスト"}
                 </Box>
               </Box>
             </Stack>
@@ -531,7 +531,7 @@ export const ContentAddModal = memo(
                   <IconPencil size={16} />
                 )
               }
-              onClick={isFileMode ? handleFileSubmit : isUrlMode ? handleUrlSubmit : handleRichTextSubmit}
+              onClick={isFileMode ? handleFileSubmit : isUrlMode ? handleUrlSubmit : handleTextSubmit}
               loading={loading}
               disabled={!canSubmit}
             >
