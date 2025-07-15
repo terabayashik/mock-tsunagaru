@@ -672,7 +672,7 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
                   </Text>
                 </Paper>
               ) : (
-                <Group align="flex-start" gap="md" style={{ minHeight: "600px" }}>
+                <Group align="flex-start" gap="md" mih="600px" wrap="nowrap">
                   <Stack>
                     {/* レイアウトプレビュー */}
                     <Box>
