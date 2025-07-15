@@ -1,6 +1,8 @@
+import packageJson from "../../package.json";
+
 // バージョン情報の設定
 export const VERSION_INFO = {
-  version: "1.0.0",
+  version: packageJson.version,
   buildDate: new Date().toISOString(),
   environment: process.env.NODE_ENV || "development",
 } as const;
