@@ -539,23 +539,57 @@ export const LayoutEditor = ({
                       setSelectedRegion(region.id);
                     }}
                     onResize={(e) => {
+                      // 現在の位置を取得
+                      let newX = region.x;
+                      let newY = region.y;
+                      
+                      // リサイズの方向を取得 (direction は [horizontal, vertical] の配列)
+                      const direction = e.direction;
+                      
+                      // 新しいサイズを計算
                       const rawWidth = e.width / scale;
                       const rawHeight = e.height / scale;
+                      
+                      // 左側からリサイズしている場合、X座標を調整
+                      if (direction[0] === -1) {
+                        const deltaWidth = (region.width * scale - e.width) / scale;
+                        newX = freeTransform
+                          ? Math.max(0, Math.min(region.x + region.width - 1, Math.round(region.x + deltaWidth)))
+                          : Math.max(0, Math.min(region.x + region.width - GRID_SIZE, snapToGrid(region.x + deltaWidth)));
+                      }
+                      
+                      // 上側からリサイズしている場合、Y座標を調整
+                      if (direction[1] === -1) {
+                        const deltaHeight = (region.height * scale - e.height) / scale;
+                        newY = freeTransform
+                          ? Math.max(0, Math.min(region.y + region.height - 1, Math.round(region.y + deltaHeight)))
+                          : Math.max(0, Math.min(region.y + region.height - GRID_SIZE, snapToGrid(region.y + deltaHeight)));
+                      }
+                      
+                      // 新しい幅と高さを計算
                       const newWidth = freeTransform
-                        ? Math.max(1, Math.min(virtualCanvasDimensions.width - region.x, Math.round(rawWidth)))
-                        : Math.max(GRID_SIZE, Math.min(virtualCanvasDimensions.width - region.x, snapToGrid(rawWidth)));
+                        ? Math.max(1, Math.min(virtualCanvasDimensions.width - newX, Math.round(rawWidth)))
+                        : Math.max(GRID_SIZE, Math.min(virtualCanvasDimensions.width - newX, snapToGrid(rawWidth)));
                       const newHeight = freeTransform
-                        ? Math.max(1, Math.min(virtualCanvasDimensions.height - region.y, Math.round(rawHeight)))
+                        ? Math.max(1, Math.min(virtualCanvasDimensions.height - newY, Math.round(rawHeight)))
                         : Math.max(
                             GRID_SIZE,
-                            Math.min(virtualCanvasDimensions.height - region.y, snapToGrid(rawHeight)),
+                            Math.min(virtualCanvasDimensions.height - newY, snapToGrid(rawHeight)),
                           );
 
+                      // スタイルを更新
+                      e.target.style.left = `${newX * scale}px`;
+                      e.target.style.top = `${newY * scale}px`;
                       e.target.style.width = `${newWidth * scale}px`;
                       e.target.style.height = `${newHeight * scale}px`;
 
                       // リアルタイム更新
-                      updateRegion(region.id, { width: newWidth, height: newHeight });
+                      updateRegion(region.id, { 
+                        x: newX, 
+                        y: newY, 
+                        width: newWidth, 
+                        height: newHeight 
+                      });
                     }}
                     onResizeEnd={() => {
                       // リアルタイム更新により不要
