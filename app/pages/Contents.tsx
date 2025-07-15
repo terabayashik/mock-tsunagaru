@@ -177,7 +177,7 @@ export default function ContentsPage() {
   };
 
   const handleContentClick = (contentId: string, contentType: ContentType) => {
-    // 動画、画像、YouTube、リッチテキストでプレビューモーダルを開く
+    // 動画、画像、YouTube、テキストでプレビューモーダルを開く
     if (contentType === "video" || contentType === "image" || contentType === "youtube" || contentType === "text") {
       modalDispatch({ type: "OPEN_CONTENT_PREVIEW", contentId });
     }

@@ -280,7 +280,7 @@ export const ContentPreview = memo(
       } catch (_error) {
         setPreviewState({
           loading: false,
-          error: "リッチテキストプレビュー生成に失敗",
+          error: "テキストプレビュー生成に失敗",
         });
       }
     }, [content.id, getContentById]);

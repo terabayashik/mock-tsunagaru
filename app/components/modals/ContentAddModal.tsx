@@ -53,7 +53,7 @@ export const ContentAddModal = memo(
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
 
-    // リッチテキスト関連の状態
+    // テキスト関連の状態
     const [textName, setTextName] = useState("");
     const [textContent, setTextContent] = useState("");
     const [writingMode, setWritingMode] = useState<"horizontal" | "vertical">("horizontal");
@@ -355,7 +355,7 @@ export const ContentAddModal = memo(
             </Stack>
           )}
 
-          {/* リッチテキストモード */}
+          {/* テキストモード */}
           {isTextMode && (
             <Stack gap="md">
               <TextInput

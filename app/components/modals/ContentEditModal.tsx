@@ -267,7 +267,7 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
           </Stack>
         )}
 
-        {/* リッチテキストの場合 */}
+        {/* テキストの場合 */}
         {isText && (
           <Stack gap="md">
             <Textarea
