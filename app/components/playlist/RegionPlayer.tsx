@@ -117,17 +117,19 @@ export const RegionPlayer = memo(function RegionPlayer({ region, assignment, onP
     return elapsed;
   }, [currentContentIndex, contents, contentDurations]);
 
-  // 次のコンテンツに進む
+  // 次のコンテンツに進む（ループ対応）
   const handleContentComplete = useCallback(() => {
-    if (currentContentIndex < contents.length - 1) {
-      setCurrentContentIndex((prev) => prev + 1);
-    } else {
-      // 全コンテンツ完了時は最初に戻る
-      setCurrentContentIndex(0);
-    }
+    setCurrentContentIndex((prev) => {
+      // 最後のコンテンツの場合は先頭に戻る（ループ）
+      if (prev >= contents.length - 1) {
+        return 0;
+      }
+      // 次のコンテンツに進む
+      return prev + 1;
+    });
     // 次のコンテンツに進む時に進捗をリセット
     setCurrentContentProgress(0);
-  }, [currentContentIndex, contents.length]);
+  }, [contents.length]);
 
   // コンテンツの進捗を受け取るコールバック
   const handleContentProgress = useCallback((progress: number) => {
