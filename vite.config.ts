@@ -6,6 +6,6 @@ export default defineConfig({
   base: process.env.NODE_ENV === "production" ? "/mock-tsunagaru/" : "/",
   plugins: [reactRouter(), tsconfigPaths()],
   define: {
-    'process.env.BUILD_DATE': JSON.stringify(process.env.BUILD_DATE || new Date().toISOString()),
+    "process.env.BUILD_DATE": JSON.stringify(process.env.BUILD_DATE || new Date().toISOString()),
   },
 });

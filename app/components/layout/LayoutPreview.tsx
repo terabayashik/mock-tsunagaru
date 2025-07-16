@@ -71,6 +71,7 @@ export const LayoutPreview = ({ layout, onClick, onEdit, onDelete }: LayoutPrevi
     };
   }, []);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: layout.updatedAt is intentionally included to trigger re-fetch when layout is updated
   useEffect(() => {
     const loadLayoutDetails = async () => {
       try {
@@ -85,7 +86,7 @@ export const LayoutPreview = ({ layout, onClick, onEdit, onDelete }: LayoutPrevi
     };
 
     loadLayoutDetails();
-  }, [layout.id, getLayoutById]);
+  }, [layout.id, layout.updatedAt, getLayoutById]);
 
   // プレビューのアスペクト比とサイズ設定（動的幅計算）
   const canvasDimensions = getCanvasDimensions(layout.orientation);
