@@ -1,12 +1,15 @@
 import { useCallback } from "react";
+import { usePlaylist } from "~/hooks/usePlaylist";
 import type { LayoutIndex, LayoutItem } from "~/types/layout";
 import { LayoutItemSchema, LayoutsIndexSchema } from "~/types/layout";
+import { checkLayoutUsage, type LayoutUsageInfo } from "~/utils/layoutUsage";
 import { OPFSError, OPFSManager } from "~/utils/storage/opfs";
 import { OPFSLock } from "~/utils/storage/opfsLock";
 
 export const useLayout = () => {
   const opfs = OPFSManager.getInstance();
   const lock = OPFSLock.getInstance();
+  const { getPlaylistsIndex, getPlaylistById } = usePlaylist();
 
   /**
    * レイアウト一覧を取得
@@ -216,11 +219,22 @@ export const useLayout = () => {
     ],
   );
 
+  /**
+   * レイアウトの使用状況をチェック
+   */
+  const checkLayoutUsageStatus = useCallback(
+    async (layoutId: string): Promise<LayoutUsageInfo> => {
+      return await checkLayoutUsage(layoutId, getPlaylistsIndex, getPlaylistById);
+    },
+    [getPlaylistsIndex, getPlaylistById],
+  );
+
   return {
     getLayoutsIndex,
     getLayoutById,
     createLayout,
     updateLayout,
     deleteLayout,
+    checkLayoutUsageStatus,
   };
 };

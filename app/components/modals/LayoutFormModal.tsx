@@ -19,6 +19,7 @@ interface LayoutFormModalProps {
   title: string;
   submitButtonText: string;
   initialData?: Partial<LayoutFormData>;
+  additionalContent?: React.ReactNode;
 }
 
 export const LayoutFormModal = ({
@@ -28,6 +29,7 @@ export const LayoutFormModal = ({
   title,
   submitButtonText,
   initialData,
+  additionalContent,
 }: LayoutFormModalProps) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<LayoutFormData>({
@@ -226,11 +228,11 @@ export const LayoutFormModal = ({
       styles={{
         content: {
           maxWidth: "1200px",
-          height: "750px",
-          maxHeight: "90vh",
+          height: "85vh",
+          maxHeight: "85vh",
         },
         body: {
-          height: "calc(750px - 60px)", // ヘッダー分を除いた高さ
+          height: "calc(85vh - 60px)", // ヘッダー分を除いた高さ
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
@@ -241,7 +243,7 @@ export const LayoutFormModal = ({
         {/* メインコンテンツエリア */}
         <Flex gap="md" w="100%" flex={1}>
           {/* 左側: フォーム */}
-          <Box w="380px" flex="0 0 380px" style={{ overflow: "auto" }}>
+          <Box w="380px" flex="0 0 380px" style={{ overflow: "auto", maxHeight: "100%" }}>
             <Stack gap="md">
               <TextInput
                 label="レイアウト名"
@@ -401,6 +403,13 @@ export const LayoutFormModal = ({
                   <Text size="xs" c="dimmed" mt="xs">
                     ドラッグして順序を変更できます。上にあるリージョンほど前面に表示されます。
                   </Text>
+                </Box>
+              )}
+
+              {/* 追加コンテンツ */}
+              {additionalContent && (
+                <Box mt="md" style={{ flex: 1, minHeight: 0 }}>
+                  {additionalContent}
                 </Box>
               )}
             </Stack>

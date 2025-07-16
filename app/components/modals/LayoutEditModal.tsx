@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { LayoutUsageDisplay } from "~/components/layout/LayoutUsageDisplay";
 import { useLayout } from "~/hooks/useLayout";
 import type { LayoutItem, Orientation, Region } from "~/types/layout";
 import { LayoutFormModal } from "./LayoutFormModal";
@@ -75,6 +76,7 @@ export const LayoutEditModal = ({ opened, layoutId, onClose, onSubmit }: LayoutE
       title="レイアウトを編集"
       submitButtonText="保存"
       initialData={initialData}
+      additionalContent={layoutId ? <LayoutUsageDisplay layoutId={layoutId} /> : undefined}
     />
   );
 };

@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Badge, Box, Button, Group, LoadingOverlay, Table, Text } from "@mantine/core";
+import { ActionIcon, Alert, Badge, Box, Button, Group, List, LoadingOverlay, Table, Text } from "@mantine/core";
 import { modals } from "@mantine/modals";
 import {
   IconEdit,
@@ -35,7 +35,7 @@ export default function LayoutPage() {
   const [layoutEditModal] = useAtom(layoutEditModalAtom);
   const [, layoutDispatch] = useAtom(layoutActionsAtom);
   const [, modalDispatch] = useAtom(modalActionsAtom);
-  const { getLayoutsIndex, deleteLayout, createLayout, updateLayout } = useLayout();
+  const { getLayoutsIndex, deleteLayout, createLayout, updateLayout, checkLayoutUsageStatus } = useLayout();
 
   // レイアウト一覧を読み込み
   useEffect(() => {
@@ -126,6 +126,43 @@ export default function LayoutPage() {
     if (!layoutEditModal.layoutId) return;
 
     try {
+      // 使用状況をチェック
+      const usageInfo = await checkLayoutUsageStatus(layoutEditModal.layoutId);
+
+      if (usageInfo.isUsed) {
+        // 使用中の場合は確認ダイアログを表示
+        const confirmationPromise = new Promise<void>((resolve, reject) => {
+          modals.openConfirmModal({
+            title: "レイアウトの変更確認",
+            children: (
+              <div>
+                <Text size="sm" mb="sm">
+                  このレイアウトは以下のプレイリストで使用されています：
+                </Text>
+                <List size="sm" mb="sm">
+                  {usageInfo.playlists.map((playlist) => (
+                    <List.Item key={playlist.id}>
+                      <Text size="sm" style={{ fontWeight: 500 }}>
+                        {playlist.name} (デバイス: {playlist.device})
+                      </Text>
+                    </List.Item>
+                  ))}
+                </List>
+                <Text size="sm">
+                  変更を保存すると、これらのプレイリストに影響を与える可能性があります。続行しますか？
+                </Text>
+              </div>
+            ),
+            labels: { confirm: "変更を保存", cancel: "キャンセル" },
+            confirmProps: { color: "orange" },
+            onConfirm: () => resolve(),
+            onCancel: () => reject(new Error("User cancelled")),
+          });
+        });
+
+        await confirmationPromise;
+      }
+
       const updatedLayout = await updateLayout(layoutEditModal.layoutId, {
         name: data.name,
         orientation: data.orientation,
@@ -142,6 +179,10 @@ export default function LayoutPage() {
       };
       layoutDispatch({ type: "UPDATE_LAYOUT", layout: layoutIndex });
     } catch (error) {
+      // ユーザーがキャンセルした場合は何もしない
+      if (error instanceof Error && error.message === "User cancelled") {
+        return;
+      }
       layoutDispatch({
         type: "SET_ERROR",
         error: error instanceof Error ? error.message : "レイアウトの更新に失敗しました",
