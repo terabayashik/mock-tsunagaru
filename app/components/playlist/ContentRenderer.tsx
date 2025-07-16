@@ -129,7 +129,7 @@ export const ContentRenderer = memo(function ContentRenderer({
 
     switch (content.type) {
       case "video":
-        return <video ref={videoRef} src={videoUrl || undefined} style={commonStyle} autoPlay muted playsInline loop />;
+        return <video ref={videoRef} src={videoUrl || undefined} style={commonStyle} autoPlay muted playsInline />;
 
       case "image":
         return <img src={imageUrl || undefined} alt={content.name} style={commonStyle} />;
@@ -144,7 +144,7 @@ export const ContentRenderer = memo(function ContentRenderer({
         if (!videoId) return null;
         return (
           <iframe
-            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&loop=1&playlist=${videoId}`}
+            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0`}
             style={{ width: "100%", height: "100%", border: "none" }}
             allow="autoplay; encrypted-media"
             title={content.name}
