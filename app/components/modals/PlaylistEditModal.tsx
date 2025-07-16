@@ -560,7 +560,7 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
 
       case "content":
         return (
-          <Box style={{ height: "100%" }}>
+          <Box h="100%">
             {layout ? (
               layout.regions.length === 0 ? (
                 <Paper p="md" withBorder>
@@ -569,18 +569,18 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                   </Text>
                 </Paper>
               ) : (
-                <Group align="flex-start" gap="lg" wrap="nowrap" style={{ height: "100%" }}>
+                <Group align="flex-start" gap="lg" wrap="nowrap" h="100%">
                   {/* 左側: レイアウトプレビューと順序変更 */}
                   <Box
+                    h="100%"
                     style={{
                       flex: "0 0 400px",
                       minWidth: "400px",
-                      height: "100%",
                       display: "flex",
                       flexDirection: "column",
                     }}
                   >
-                    <Stack gap="lg" style={{ height: "100%" }}>
+                    <Stack gap="lg" h="100%">
                       {/* レイアウトプレビュー */}
                       <Box>
                         <Text fw={600} mb="sm">
@@ -629,7 +629,7 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                   </Box>
 
                   {/* 右側: コンテンツ選択グリッド */}
-                  <Box style={{ flex: "1 1 auto", height: "100%", display: "flex", flexDirection: "column" }}>
+                  <Box h="100%" style={{ flex: "1 1 auto", display: "flex", flexDirection: "column" }}>
                     {selectedRegionId ? (
                       <>
                         <Group justify="space-between" mb="sm">
@@ -732,14 +732,14 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                               },
                             ]}
                             size="xs"
-                            style={{ fontSize: "11px" }}
+                            fz="11px"
                           />
                         </Group>
                         <ScrollArea style={{ flex: 1 }} type="auto">
                           {(() => {
                             const filteredContents = getFilteredContents();
                             return contents.length === 0 ? (
-                              <Paper p="xl" withBorder style={{ textAlign: "center" }}>
+                              <Paper p="xl" withBorder ta="center">
                                 <Text c="dimmed" mb="sm">
                                   利用可能なコンテンツがありません
                                 </Text>
@@ -755,7 +755,7 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                                 </Button>
                               </Paper>
                             ) : filteredContents.length === 0 ? (
-                              <Paper p="xl" withBorder style={{ textAlign: "center" }}>
+                              <Paper p="xl" withBorder ta="center">
                                 <Text c="dimmed" mb="sm">
                                   条件に一致するコンテンツがありません
                                 </Text>
@@ -783,9 +783,9 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                       <Paper
                         p="xl"
                         withBorder
+                        h="100%"
+                        ta="center"
                         style={{
-                          textAlign: "center",
-                          height: "100%",
                           display: "flex",
                           flexDirection: "column",
                           justifyContent: "center",
@@ -852,7 +852,7 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
         size={getModalSize()}
         styles={getModalStyles()}
       >
-        <Stack gap="lg" style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+        <Stack gap="lg" h="100%">
           {/* プログレスバー */}
           <Box px={currentStep === "content" ? 20 : 0} pt={currentStep === "content" ? 20 : 0}>
             <Group justify="space-between" mb="xs">

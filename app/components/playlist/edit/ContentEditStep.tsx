@@ -85,9 +85,9 @@ export const ContentEditStep = ({
   }
 
   return (
-    <Group align="flex-start" gap="lg" wrap="nowrap" style={{ height: "100%" }}>
+    <Group align="flex-start" gap="lg" wrap="nowrap" h="100%">
       {/* 左側: コンテンツ選択グリッド */}
-      <Box style={{ flex: "1 1 auto", height: "100%", display: "flex", flexDirection: "column" }}>
+      <Box h="100%" display="flex" style={{ flex: "1 1 auto", flexDirection: "column" }}>
         {selectedRegionId ? (
           <>
             <Group justify="space-between" mb="sm">
@@ -111,7 +111,7 @@ export const ContentEditStep = ({
               {(() => {
                 const filteredContents = getFilteredContents();
                 return contents.length === 0 ? (
-                  <Paper p="xl" withBorder style={{ textAlign: "center" }}>
+                  <Paper p="xl" withBorder ta="center">
                     <Text c="dimmed" mb="sm">
                       利用可能なコンテンツがありません
                     </Text>
@@ -123,7 +123,7 @@ export const ContentEditStep = ({
                     </Button>
                   </Paper>
                 ) : filteredContents.length === 0 ? (
-                  <Paper p="xl" withBorder style={{ textAlign: "center" }}>
+                  <Paper p="xl" withBorder ta="center">
                     <Text c="dimmed" mb="sm">
                       条件に一致するコンテンツがありません
                     </Text>
@@ -151,10 +151,10 @@ export const ContentEditStep = ({
           <Paper
             p="xl"
             withBorder
+            h="100%"
+            ta="center"
+            display="flex"
             style={{
-              textAlign: "center",
-              height: "100%",
-              display: "flex",
               flexDirection: "column",
               justifyContent: "center",
             }}
@@ -171,15 +171,15 @@ export const ContentEditStep = ({
 
       {/* 右側: レイアウトプレビューと順序変更 */}
       <Box
+        h="100%"
+        display="flex"
         style={{
           flex: "0 0 400px",
           minWidth: "400px",
-          height: "100%",
-          display: "flex",
           flexDirection: "column",
         }}
       >
-        <Stack gap="lg" style={{ height: "100%" }}>
+        <Stack gap="lg" h="100%">
           {/* レイアウトプレビュー */}
           <Box>
             <Text fw={600} mb="sm">

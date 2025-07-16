@@ -100,12 +100,12 @@ const LayoutSelectionCard = ({ layout, isSelected, onClick }: LayoutSelectionCar
         <Box
           w="100%"
           h="100%"
+          display="flex"
           style={{
-            display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            backgroundColor: "#f8f9fa",
-            color: "#868e96",
+            backgroundColor: "var(--mantine-color-gray-0)",
+            color: "var(--mantine-color-gray-6)",
             fontSize: "11px",
           }}
         >
@@ -115,7 +115,7 @@ const LayoutSelectionCard = ({ layout, isSelected, onClick }: LayoutSelectionCar
     }
 
     return (
-      <Box w="100%" h="100%" pos="relative" bg="#f8f9fa">
+      <Box w="100%" h="100%" pos="relative" bg="gray.0">
         {layoutDetails.regions.map((region, index) => {
           const colors = REGION_COLORS[index % REGION_COLORS.length];
           return (
@@ -169,9 +169,9 @@ const LayoutSelectionCard = ({ layout, isSelected, onClick }: LayoutSelectionCar
       h={totalHeight}
       style={{
         cursor: "pointer",
-        borderColor: isSelected ? "#228be6" : undefined,
+        borderColor: isSelected ? "var(--mantine-color-blue-6)" : undefined,
         borderWidth: isSelected ? "2px" : "1px",
-        backgroundColor: isSelected ? "#f0f8ff" : undefined,
+        backgroundColor: isSelected ? "var(--mantine-color-blue-0)" : undefined,
         transition: "all 0.2s ease",
       }}
       onClick={onClick}
@@ -187,8 +187,8 @@ const LayoutSelectionCard = ({ layout, isSelected, onClick }: LayoutSelectionCar
               zIndex: 10,
               width: "20px",
               height: "20px",
-              backgroundColor: "#228be6",
-              borderRadius: "50%",
+              backgroundColor: "var(--mantine-color-blue-6)",
+              borderRadius: "var(--mantine-radius-xl)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -220,7 +220,7 @@ const LayoutSelectionCard = ({ layout, isSelected, onClick }: LayoutSelectionCar
           {layout.name}
         </Text>
 
-        <Box style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+        <Box display="flex" style={{ flexDirection: "column", gap: "4px" }}>
           <Text size="xs" c="dimmed">
             {new Date(layout.createdAt).toLocaleDateString("ja-JP")}
           </Text>
@@ -254,7 +254,7 @@ export const LayoutSelectionGrid = ({
     return (
       <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="md">
         {Array.from({ length: 6 }, () => crypto.randomUUID()).map((id) => (
-          <Box key={id} h="180px" bg="#f8f9fa" style={{ borderRadius: "8px" }} />
+          <Box key={id} h="180px" bg="gray.0" style={{ borderRadius: "var(--mantine-radius-md)" }} />
         ))}
       </SimpleGrid>
     );
@@ -262,7 +262,7 @@ export const LayoutSelectionGrid = ({
 
   if (layouts.length === 0) {
     return (
-      <Paper p="xl" withBorder style={{ textAlign: "center" }}>
+      <Paper p="xl" withBorder ta="center">
         <Text c="dimmed" mb="sm">
           利用可能なレイアウトがありません
         </Text>

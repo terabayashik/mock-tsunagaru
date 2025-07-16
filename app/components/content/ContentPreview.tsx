@@ -449,7 +449,7 @@ export const ContentPreview = memo(
         >
           <Box pos="relative">
             {/* ローディング表示 */}
-            <Flex h={imageHeight} w="100%" style={{ overflow: "hidden" }} align="center" justify="center" bg="#f8f9fa">
+            <Flex h={imageHeight} w="100%" style={{ overflow: "hidden" }} align="center" justify="center" bg="gray.0">
               <Text size="sm" c="dimmed">
                 読み込み中...
               </Text>
@@ -464,7 +464,7 @@ export const ContentPreview = memo(
               c="white"
               p="2px 6px"
               fz="10px"
-              style={{ borderRadius: "4px" }}
+              style={{ borderRadius: "var(--mantine-radius-xs)" }}
               align="center"
               gap="4px"
             >
@@ -510,7 +510,7 @@ export const ContentPreview = memo(
               direction="column"
               align="center"
               justify="center"
-              bg="#f8f9fa"
+              bg="gray.0"
             >
               {getTypeIcon(content.type)}
               <Text size="xs" c="dimmed" mt="xs" ta="center">
@@ -527,7 +527,7 @@ export const ContentPreview = memo(
               c="white"
               p="2px 6px"
               fz="10px"
-              style={{ borderRadius: "4px" }}
+              style={{ borderRadius: "var(--mantine-radius-xs)" }}
               align="center"
               gap="4px"
             >
@@ -565,13 +565,13 @@ export const ContentPreview = memo(
       >
         <Box pos="relative">
           {/* プレビュー画像 */}
-          <Flex h={imageHeight} w="100%" style={{ overflow: "hidden" }} align="center" justify="center" bg="#f8f9fa">
+          <Flex h={imageHeight} w="100%" style={{ overflow: "hidden" }} align="center" justify="center" bg="gray.0">
             <Image
               src={previewState.previewUrl}
               alt={content.name}
               maw="100%"
               mah="100%"
-              style={{ objectFit: "contain" }}
+              fit="contain"
               fallbackSrc="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjFmM2Y0Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIiBmaWxsPSIjOWNhM2FmIiBmb250LXNpemU9IjE0Ij5ObyBQcmV2aWV3PC90ZXh0Pjwvc3ZnPg=="
             />
           </Flex>
@@ -602,7 +602,7 @@ export const ContentPreview = memo(
               c="white"
               p="2px 6px"
               fz="11px"
-              style={{ borderRadius: "4px" }}
+              style={{ borderRadius: "var(--mantine-radius-xs)" }}
             >
               {formatDuration(previewState.metadata.duration)}
             </Box>
@@ -616,7 +616,8 @@ export const ContentPreview = memo(
             bg={`${getTypeColor(content.type)}.6`}
             c="white"
             p="2px 6px"
-            style={{ borderRadius: "4px", fontSize: "10px" }}
+            fz="10px"
+            style={{ borderRadius: "var(--mantine-radius-xs)" }}
             align="center"
             gap="4px"
           >

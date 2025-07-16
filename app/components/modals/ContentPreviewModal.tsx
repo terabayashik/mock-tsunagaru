@@ -130,7 +130,7 @@ export const ContentPreviewModal = ({
   const renderPreview = () => {
     if (loading) {
       return (
-        <Box style={{ height: "400px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Box h="400px" display="flex" style={{ alignItems: "center", justifyContent: "center" }}>
           <Text>読み込み中...</Text>
         </Box>
       );
@@ -138,7 +138,7 @@ export const ContentPreviewModal = ({
 
     if (!content) {
       return (
-        <Box style={{ height: "400px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Box h="400px" display="flex" style={{ alignItems: "center", justifyContent: "center" }}>
           <Text>コンテンツが見つかりません</Text>
         </Box>
       );
@@ -147,7 +147,7 @@ export const ContentPreviewModal = ({
     // 画像プレビュー
     if (content.type === "image" && previewUrl) {
       return (
-        <Box style={{ textAlign: "center", maxHeight: "70vh", overflow: "hidden" }}>
+        <Box ta="center" style={{ maxHeight: "70vh", overflow: "hidden" }}>
           <img
             src={previewUrl}
             alt={content.name}
@@ -155,7 +155,7 @@ export const ContentPreviewModal = ({
               maxWidth: "100%",
               maxHeight: "70vh",
               objectFit: "contain",
-              borderRadius: "8px",
+              borderRadius: "var(--mantine-radius-md)",
             }}
           />
         </Box>
@@ -165,7 +165,7 @@ export const ContentPreviewModal = ({
     // 動画プレビュー
     if (content.type === "video" && previewUrl) {
       return (
-        <Box style={{ textAlign: "center", maxHeight: "70vh" }}>
+        <Box ta="center" style={{ maxHeight: "70vh" }}>
           <video
             src={previewUrl}
             controls
@@ -173,7 +173,7 @@ export const ContentPreviewModal = ({
             style={{
               maxWidth: "100%",
               maxHeight: "70vh",
-              borderRadius: "8px",
+              borderRadius: "var(--mantine-radius-md)",
             }}
           >
             <track kind="captions" />
@@ -196,7 +196,7 @@ export const ContentPreviewModal = ({
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
-              style={{ borderRadius: "8px" }}
+              style={{ borderRadius: "var(--mantine-radius-md)" }}
             />
           </Box>
         );
@@ -233,17 +233,17 @@ export const ContentPreviewModal = ({
 
       return (
         <Box
+          display="flex"
+          pos="relative"
+          w="100%"
           style={{
             minHeight: "400px",
             backgroundColor,
             border: "1px solid #e5e5e5",
-            borderRadius: "8px",
-            display: "flex",
+            borderRadius: "var(--mantine-radius-md)",
             alignItems: "center",
             justifyContent: textAlign === "center" ? "center" : textAlign === "end" ? "flex-end" : "flex-start",
             overflow: "hidden",
-            position: "relative",
-            width: "100%",
             maxWidth: "100%",
           }}
         >
@@ -269,7 +269,7 @@ export const ContentPreviewModal = ({
 
     // その他のタイプ（テキスト、URL等）
     return (
-      <Box style={{ height: "400px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <Box h="400px" display="flex" style={{ alignItems: "center", justifyContent: "center" }}>
         <Stack align="center" gap="md">
           {content.type === "url" ? <IconLink size={48} /> : <IconFile size={48} />}
           <Text size="lg" fw={500}>
@@ -400,7 +400,7 @@ export const ContentPreviewModal = ({
               <List size="sm" mb="md">
                 {usageInfo.playlists.map((playlist) => (
                   <List.Item key={playlist.id}>
-                    <Text size="sm" style={{ fontWeight: 500 }}>
+                    <Text size="sm" fw={500}>
                       {playlist.name} (デバイス: {playlist.device})
                     </Text>
                   </List.Item>
