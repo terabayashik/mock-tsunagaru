@@ -1,5 +1,5 @@
 import { Anchor, AppShell, Avatar, Button, Group, Menu, Text, Title, UnstyledButton } from "@mantine/core";
-import { IconChartBar, IconDoorExit, IconHome, IconMenu2, IconSettings, IconUser } from "@tabler/icons-react";
+import { IconDoorExit, IconHome, IconMenu2, IconSettings, IconUser } from "@tabler/icons-react";
 import { useAtom } from "jotai";
 import { Link, useLocation } from "react-router";
 import { useAuth } from "~/hooks/useAuth";
@@ -13,7 +13,6 @@ interface AppLayoutProps {
 
 const navigationItems = [
   { label: "ホーム", href: "/", icon: <IconHome size={16} /> },
-  { label: "ダッシュボード", href: "/dashboard", icon: <IconChartBar size={16} /> },
   { label: "設定", href: "/settings", icon: <IconSettings size={16} /> },
 ];
 
