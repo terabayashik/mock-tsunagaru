@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "react-router build",
+    "build": "BUILD_DATE=$(date -u +\"%Y-%m-%dT%H:%M:%SZ\") react-router build",
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
     "check": "biome check --write .",
