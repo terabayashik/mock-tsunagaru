@@ -11,6 +11,7 @@ import {
   Stack,
   Text,
   TextInput,
+  useMantineColorScheme,
 } from "@mantine/core";
 import type { FileWithPath } from "@mantine/dropzone";
 import { modals } from "@mantine/modals";
@@ -65,6 +66,7 @@ interface StepInfo {
 }
 
 export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: PlaylistEditModalProps) => {
+  const { colorScheme } = useMantineColorScheme();
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState<Step>("basic");
   const [formData, setFormData] = useState<PlaylistEditFormData>({
@@ -536,7 +538,7 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
 
             {/* レイアウト情報表示（編集不可） */}
             {layout && (
-              <Paper p="md" withBorder bg="gray.0">
+              <Paper p="md" withBorder bg={colorScheme === "dark" ? "dark.6" : "gray.0"}>
                 <Text size="sm" fw={500} mb="xs">
                   使用中のレイアウト
                 </Text>
