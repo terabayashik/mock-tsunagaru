@@ -1,4 +1,4 @@
-import { Box } from "@mantine/core";
+import { Box, useMantineColorScheme } from "@mantine/core";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useContent } from "~/hooks/useContent";
 import type { ContentItem } from "~/types/content";
@@ -25,6 +25,7 @@ export interface RegionProgressInfo {
 }
 
 export const RegionPlayer = memo(function RegionPlayer({ region, assignment, onProgress }: RegionPlayerProps) {
+  const { colorScheme } = useMantineColorScheme();
   const { getContentById } = useContent();
   const [currentContentIndex, setCurrentContentIndex] = useState(0);
   const [contents, setContents] = useState<ContentItem[]>([]);
@@ -186,7 +187,7 @@ export const RegionPlayer = memo(function RegionPlayer({ region, assignment, onP
           width: region.width,
           height: region.height,
           zIndex: region.zIndex,
-          backgroundColor: "#f0f0f0",
+          backgroundColor: colorScheme === "dark" ? "var(--mantine-color-dark-6)" : "var(--mantine-color-gray-1)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -207,13 +208,13 @@ export const RegionPlayer = memo(function RegionPlayer({ region, assignment, onP
           width: region.width,
           height: region.height,
           zIndex: region.zIndex,
-          backgroundColor: "#f8f9fa",
-          border: "2px dashed #dee2e6",
+          backgroundColor: colorScheme === "dark" ? "var(--mantine-color-dark-6)" : "var(--mantine-color-gray-0)",
+          border: `2px dashed ${colorScheme === "dark" ? "var(--mantine-color-dark-4)" : "var(--mantine-color-gray-4)"}`,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           fontSize: "14px",
-          color: "#868e96",
+          color: colorScheme === "dark" ? "var(--mantine-color-dark-2)" : "var(--mantine-color-gray-6)",
         }}
       >
         コンテンツが設定されていません

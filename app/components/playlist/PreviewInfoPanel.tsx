@@ -1,4 +1,4 @@
-import { Box, Group, Progress, Stack, Text } from "@mantine/core";
+import { Box, Group, Progress, Stack, Text, useMantineColorScheme } from "@mantine/core";
 import type { RegionProgressInfo } from "./RegionPlayer";
 
 interface PreviewInfoPanelProps {
@@ -7,6 +7,8 @@ interface PreviewInfoPanelProps {
 }
 
 export function PreviewInfoPanel({ progressInfos, playlistName }: PreviewInfoPanelProps) {
+  const { colorScheme } = useMantineColorScheme();
+
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
@@ -14,7 +16,13 @@ export function PreviewInfoPanel({ progressInfos, playlistName }: PreviewInfoPan
   };
 
   return (
-    <Box w={300} p="md" style={{ borderLeft: "1px solid #e9ecef" }}>
+    <Box
+      w={300}
+      p="md"
+      style={{
+        borderLeft: `1px solid ${colorScheme === "dark" ? "var(--mantine-color-dark-4)" : "var(--mantine-color-gray-3)"}`,
+      }}
+    >
       <Stack gap="lg">
         {/* プレイリスト情報 */}
         <Box>
@@ -34,9 +42,9 @@ export function PreviewInfoPanel({ progressInfos, playlistName }: PreviewInfoPan
               key={info.regionId}
               p="sm"
               style={{
-                backgroundColor: "#f8f9fa",
+                backgroundColor: colorScheme === "dark" ? "var(--mantine-color-dark-6)" : "var(--mantine-color-gray-0)",
                 borderRadius: "6px",
-                border: "1px solid #e9ecef",
+                border: `1px solid ${colorScheme === "dark" ? "var(--mantine-color-dark-4)" : "var(--mantine-color-gray-3)"}`,
               }}
             >
               <Group justify="space-between" mb="xs">
@@ -80,10 +88,10 @@ export function PreviewInfoPanel({ progressInfos, playlistName }: PreviewInfoPan
         {/* 統計情報 */}
         <Box
           style={{
-            backgroundColor: "#e3f2fd",
+            backgroundColor: colorScheme === "dark" ? "var(--mantine-color-dark-6)" : "var(--mantine-color-blue-0)",
             padding: "12px",
             borderRadius: "6px",
-            border: "1px solid #bbdefb",
+            border: `1px solid ${colorScheme === "dark" ? "var(--mantine-color-dark-4)" : "var(--mantine-color-blue-2)"}`,
           }}
         >
           <Text size="sm" fw={500} mb="xs">

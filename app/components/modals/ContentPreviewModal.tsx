@@ -1,6 +1,27 @@
-import { ActionIcon, Box, Button, Divider, Group, Modal, Stack, Text, Textarea, TextInput } from "@mantine/core";
+import {
+  ActionIcon,
+  Alert,
+  Box,
+  Button,
+  Divider,
+  Group,
+  List,
+  Modal,
+  Stack,
+  Text,
+  Textarea,
+  TextInput,
+} from "@mantine/core";
 import { modals } from "@mantine/modals";
-import { IconChevronLeft, IconChevronRight, IconEdit, IconFile, IconLink, IconTrash } from "@tabler/icons-react";
+import {
+  IconChevronLeft,
+  IconChevronRight,
+  IconEdit,
+  IconExclamationCircle,
+  IconFile,
+  IconLink,
+  IconTrash,
+} from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useContent } from "~/hooks/useContent";
 import type { ContentIndex, ContentItem } from "~/types/content";
@@ -36,7 +57,7 @@ export const ContentPreviewModal = ({
     description: "",
     textContent: "",
   });
-  const { getContentById, updateContent, deleteContent } = useContent();
+  const { getContentById, updateContent, deleteContent, deleteContentForced, checkContentUsageStatus } = useContent();
 
   useEffect(() => {
     if (!opened || !contentId) {
@@ -357,24 +378,81 @@ export const ContentPreviewModal = ({
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!content) return;
 
-    modals.openConfirmModal({
-      title: "コンテンツを削除",
-      children: <Text size="sm">このコンテンツを削除しますか？この操作は元に戻せません。</Text>,
-      labels: { confirm: "削除", cancel: "キャンセル" },
-      confirmProps: { color: "red" },
-      onConfirm: async () => {
-        try {
-          await deleteContent(content.id);
-          onContentDeleted?.();
-          onClose();
-        } catch (error) {
-          console.error("Failed to delete content:", error);
-        }
-      },
-    });
+    try {
+      // 使用状況をチェック
+      const usageInfo = await checkContentUsageStatus(content.id);
+
+      if (usageInfo.isUsed) {
+        // 使用中の場合は強制削除の確認を表示
+        modals.openConfirmModal({
+          title: "コンテンツを削除",
+          children: (
+            <Box>
+              <Text size="sm" mb="md">
+                「{content.name}」を削除しますか？この操作は元に戻せません。
+              </Text>
+              <Text size="sm" mb="sm">
+                このコンテンツは以下のプレイリストで使用されています：
+              </Text>
+              <List size="sm" mb="md">
+                {usageInfo.playlists.map((playlist) => (
+                  <List.Item key={playlist.id}>
+                    <Text size="sm" style={{ fontWeight: 500 }}>
+                      {playlist.name} (デバイス: {playlist.device})
+                    </Text>
+                  </List.Item>
+                ))}
+              </List>
+              <Alert icon={<IconExclamationCircle size={16} />} color="orange" mb="md">
+                削除すると、これらのプレイリストからも自動的に削除されます。
+              </Alert>
+            </Box>
+          ),
+          labels: { confirm: "削除", cancel: "キャンセル" },
+          confirmProps: { color: "red" },
+          onConfirm: async () => {
+            try {
+              await deleteContentForced(content.id);
+              onContentDeleted?.();
+              onClose();
+            } catch (error) {
+              console.error("Failed to delete content:", error);
+            }
+          },
+        });
+      } else {
+        // 使用されていない場合は通常の削除確認
+        modals.openConfirmModal({
+          title: "コンテンツを削除",
+          children: (
+            <Box>
+              <Text size="sm" mb="md">
+                「{content.name}」を削除しますか？この操作は元に戻せません。
+              </Text>
+              <Alert icon={<IconExclamationCircle size={16} />} color="gray">
+                このコンテンツはどのプレイリストでも使用されていません。
+              </Alert>
+            </Box>
+          ),
+          labels: { confirm: "削除", cancel: "キャンセル" },
+          confirmProps: { color: "red" },
+          onConfirm: async () => {
+            try {
+              await deleteContent(content.id);
+              onContentDeleted?.();
+              onClose();
+            } catch (error) {
+              console.error("Failed to delete content:", error);
+            }
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Failed to check content usage:", error);
+    }
   };
 
   const renderNavigationButtons = () => {

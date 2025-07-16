@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Badge, Box, Button, Group, LoadingOverlay, Table, Text } from "@mantine/core";
+import { ActionIcon, Alert, Badge, Box, Button, Group, List, LoadingOverlay, Table, Text } from "@mantine/core";
 import type { FileWithPath } from "@mantine/dropzone";
 import { modals } from "@mantine/modals";
 import {
@@ -51,6 +51,7 @@ export default function ContentsPage() {
   const {
     getContentsIndex,
     deleteContentSafely,
+    deleteContentForced,
     checkContentUsageStatus,
     createFileOrTextContent,
     createUrlContent,
@@ -108,28 +109,47 @@ export default function ContentsPage() {
       const usageInfo = await checkContentUsageStatus(id);
 
       if (usageInfo.isUsed) {
-        // 使用中の場合は削除できない旨を表示
+        // 使用中の場合は強制削除の確認を表示
         modals.openConfirmModal({
-          title: "削除できません",
+          title: "コンテンツを削除",
           children: (
             <Box>
               <Text size="sm" mb="md">
-                このコンテンツは以下のプレイリストで使用されているため削除できません：
+                「{contentName}」を削除しますか？この操作は元に戻せません。
               </Text>
-              <Box mb="md">
+              <Text size="sm" mb="sm">
+                このコンテンツは以下のプレイリストで使用されています：
+              </Text>
+              <List size="sm" mb="md">
                 {usageInfo.playlists.map((playlist) => (
-                  <Badge key={playlist.id} variant="light" color="blue" size="sm" mr="xs" mb="xs">
-                    {playlist.name}
-                  </Badge>
+                  <List.Item key={playlist.id}>
+                    <Text size="sm" style={{ fontWeight: 500 }}>
+                      {playlist.name} (デバイス: {playlist.device})
+                    </Text>
+                  </List.Item>
                 ))}
-              </Box>
-              <Text size="sm" c="dimmed">
-                削除するには、まずプレイリストからコンテンツを削除してください。
-              </Text>
+              </List>
+              <Alert icon={<IconExclamationCircle size={16} />} color="orange" mb="md">
+                削除すると、これらのプレイリストからも自動的に削除されます。
+              </Alert>
             </Box>
           ),
-          labels: { confirm: "OK", cancel: "" },
-          cancelProps: { display: "none" },
+          labels: { confirm: "削除", cancel: "キャンセル" },
+          confirmProps: { color: "red" },
+          onConfirm: async () => {
+            try {
+              await deleteContentForced(id);
+              contentDispatch({ type: "REMOVE_CONTENT", id });
+              // 削除後に未使用状態を更新
+              const contentsData = await getContentsIndex();
+              await refreshUnusedStatus(contentsData);
+            } catch (error) {
+              contentDispatch({
+                type: "SET_ERROR",
+                error: error instanceof Error ? error.message : "削除に失敗しました",
+              });
+            }
+          },
         });
         return;
       }

@@ -1,4 +1,4 @@
-import { Box, Button, LoadingOverlay, Modal, Stack, Text } from "@mantine/core";
+import { Box, Button, Flex, LoadingOverlay, Modal, Stack, Text, useMantineColorScheme } from "@mantine/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLayout } from "~/hooks/useLayout";
 import { usePlaylist } from "~/hooks/usePlaylist";
@@ -15,6 +15,7 @@ interface PlaylistPreviewModalProps {
 }
 
 export function PlaylistPreviewModal({ opened, onClose, playlistId }: PlaylistPreviewModalProps) {
+  const { colorScheme } = useMantineColorScheme();
   const { getPlaylistById } = usePlaylist();
   const { getLayoutById } = useLayout();
   const [playlist, setPlaylist] = useState<PlaylistItem | null>(null);
@@ -129,20 +130,20 @@ export function PlaylistPreviewModal({ opened, onClose, playlistId }: PlaylistPr
         return (
           <Box
             key={region.id}
+            pos="absolute"
+            left={scaledRegion.x}
+            top={scaledRegion.y}
+            w={scaledRegion.width}
+            h={scaledRegion.height}
+            display="flex"
             style={{
-              position: "absolute",
-              left: scaledRegion.x,
-              top: scaledRegion.y,
-              width: scaledRegion.width,
-              height: scaledRegion.height,
               zIndex: region.zIndex,
-              backgroundColor: "#f8f9fa",
-              border: "2px dashed #dee2e6",
-              display: "flex",
+              backgroundColor: colorScheme === "dark" ? "var(--mantine-color-dark-6)" : "var(--mantine-color-gray-0)",
+              border: `2px dashed ${colorScheme === "dark" ? "var(--mantine-color-dark-4)" : "var(--mantine-color-gray-4)"}`,
               alignItems: "center",
               justifyContent: "center",
               fontSize: "14px",
-              color: "#868e96",
+              color: colorScheme === "dark" ? "var(--mantine-color-dark-2)" : "var(--mantine-color-gray-6)",
             }}
           >
             リージョン {index + 1}
@@ -156,7 +157,7 @@ export function PlaylistPreviewModal({ opened, onClose, playlistId }: PlaylistPr
         <RegionPlayer key={region.id} region={scaledRegion} assignment={assignment} onProgress={handleProgressUpdate} />
       );
     });
-  }, [layout, playlist, canvasDimensions.scale, handleProgressUpdate]);
+  }, [layout, playlist, canvasDimensions.scale, handleProgressUpdate, colorScheme]);
 
   // モーダルクローズ時のクリーンアップ
   const handleClose = () => {
@@ -182,34 +183,35 @@ export function PlaylistPreviewModal({ opened, onClose, playlistId }: PlaylistPr
     >
       <LoadingOverlay visible={loading} />
 
-      <Box style={{ height: "100%", display: "flex" }}>
+      <Flex h="100%">
         {/* プレビューエリア */}
-        <Box style={{ flex: 1, padding: "20px", overflow: "auto" }}>
+        <Box flex={1} p="xl" style={{ overflow: "auto" }}>
           {error ? (
-            <Stack align="center" justify="center" style={{ height: "100%" }}>
+            <Stack align="center" justify="center" h="100%">
               <Text c="red">{error}</Text>
               <Button onClick={handleClose}>閉じる</Button>
             </Stack>
           ) : playlist && layout ? (
-            <Box style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+            <Flex justify="center" align="center" h="100%">
               {/* プレビューキャンバス */}
               <Box
+                pos="relative"
+                w={canvasDimensions.width}
+                h={canvasDimensions.height}
                 style={{
-                  position: "relative",
-                  width: canvasDimensions.width,
-                  height: canvasDimensions.height,
-                  border: "2px solid #dee2e6",
-                  borderRadius: "8px",
-                  backgroundColor: "#ffffff",
+                  border: `2px solid ${colorScheme === "dark" ? "var(--mantine-color-dark-4)" : "var(--mantine-color-gray-4)"}`,
+                  backgroundColor:
+                    colorScheme === "dark" ? "var(--mantine-color-dark-7)" : "var(--mantine-color-white)",
                   overflow: "hidden",
+                  borderRadius: "8px",
                 }}
               >
                 {/* 各リージョンのプレイヤー（メモ化） */}
                 {regionPlayers}
               </Box>
-            </Box>
+            </Flex>
           ) : (
-            <Stack align="center" justify="center" style={{ height: "100%" }}>
+            <Stack align="center" justify="center" h="100%">
               <Text>プレイリストを読み込み中...</Text>
             </Stack>
           )}
@@ -217,7 +219,7 @@ export function PlaylistPreviewModal({ opened, onClose, playlistId }: PlaylistPr
 
         {/* 情報パネル */}
         {playlist && <PreviewInfoPanel progressInfos={progressInfos} playlistName={playlist.name} />}
-      </Box>
+      </Flex>
     </Modal>
   );
 }

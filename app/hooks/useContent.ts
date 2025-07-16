@@ -56,7 +56,7 @@ const readTextFromFile = async (file: File): Promise<string> => {
 export const useContent = () => {
   const opfs = OPFSManager.getInstance();
   const lock = OPFSLock.getInstance();
-  const { getPlaylistsIndex, getPlaylistById } = usePlaylist();
+  const { getPlaylistsIndex, getPlaylistById, updatePlaylist } = usePlaylist();
 
   /**
    * コンテンツ一覧を取得
@@ -467,6 +467,45 @@ export const useContent = () => {
   );
 
   /**
+   * プレイリストで使用中でも強制的にコンテンツを削除
+   * 使用中のプレイリストからも自動的に削除される
+   */
+  const deleteContentForced = useCallback(
+    async (id: string): Promise<void> => {
+      // プレイリストからコンテンツを削除
+      const usageInfo = await checkContentUsageStatus(id);
+
+      if (usageInfo.isUsed) {
+        // 使用中のプレイリストからコンテンツを削除
+        for (const playlistInfo of usageInfo.playlists) {
+          try {
+            const playlist = await getPlaylistById(playlistInfo.id);
+            if (playlist) {
+              // コンテンツ割り当てからIDを削除
+              const updatedContentAssignments = playlist.contentAssignments.map((assignment) => ({
+                ...assignment,
+                contentIds: assignment.contentIds.filter((contentId) => contentId !== id),
+              }));
+
+              // プレイリストを更新
+              await updatePlaylist(playlistInfo.id, {
+                ...playlist,
+                contentAssignments: updatedContentAssignments,
+              });
+            }
+          } catch (error) {
+            console.warn(`Failed to remove content from playlist ${playlistInfo.id}:`, error);
+          }
+        }
+      }
+
+      // コンテンツを削除
+      await deleteContent(id);
+    },
+    [checkContentUsageStatus, deleteContent, getPlaylistById, updatePlaylist],
+  );
+
+  /**
    * ファイルコンテンツのバイナリデータを取得
    */
   const getFileContent = useCallback(
@@ -628,6 +667,7 @@ export const useContent = () => {
     updateContent,
     deleteContent,
     deleteContentSafely,
+    deleteContentForced,
     checkContentUsageStatus,
     getFileContent,
     getThumbnailUrl,
