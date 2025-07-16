@@ -11,6 +11,7 @@ import {
   Text,
   Textarea,
   TextInput,
+  useMantineColorScheme,
 } from "@mantine/core";
 import { Dropzone, type FileWithPath } from "@mantine/dropzone";
 import { IconCloudUpload, IconDeviceFloppy, IconFile, IconLink, IconPencil, IconX } from "@tabler/icons-react";
@@ -40,6 +41,7 @@ const getAllAcceptedMimeTypes = () => {
 
 export const ContentAddModal = memo(
   ({ opened, onClose, onFileSubmit, onUrlSubmit, onTextSubmit }: ContentAddModalProps) => {
+    const { colorScheme } = useMantineColorScheme();
     const [mode, setMode] = useState<ContentMode>("file");
     const [loading, setLoading] = useState(false);
 
@@ -235,22 +237,26 @@ export const ContentAddModal = memo(
                 multiple
                 styles={{
                   root: {
-                    border: "2px dashed #dee2e6",
-                    borderRadius: "8px",
-                    backgroundColor: "#f8f9fa",
+                    border: `2px dashed ${colorScheme === "dark" ? "var(--mantine-color-dark-4)" : "var(--mantine-color-gray-4)"}`,
+                    borderRadius: "var(--mantine-radius-md)",
+                    backgroundColor:
+                      colorScheme === "dark" ? "var(--mantine-color-dark-6)" : "var(--mantine-color-gray-0)",
                     transition: "all 0.2s ease",
                     cursor: "pointer",
                     "&:hover": {
-                      borderColor: "#228be6",
-                      backgroundColor: "#f0f7ff",
+                      borderColor: "var(--mantine-color-blue-6)",
+                      backgroundColor:
+                        colorScheme === "dark" ? "var(--mantine-color-dark-5)" : "var(--mantine-color-blue-0)",
                     },
                     "&[data-accept]": {
-                      borderColor: "#51cf66",
-                      backgroundColor: "#ebfbee",
+                      borderColor: "var(--mantine-color-green-6)",
+                      backgroundColor:
+                        colorScheme === "dark" ? "var(--mantine-color-dark-5)" : "var(--mantine-color-green-0)",
                     },
                     "&[data-reject]": {
-                      borderColor: "#ff6b6b",
-                      backgroundColor: "#fff0f0",
+                      borderColor: "var(--mantine-color-red-6)",
+                      backgroundColor:
+                        colorScheme === "dark" ? "var(--mantine-color-dark-5)" : "var(--mantine-color-red-0)",
                     },
                   },
                 }}
@@ -483,8 +489,8 @@ export const ContentAddModal = memo(
                   p="md"
                   style={{
                     backgroundColor,
-                    border: "1px solid #e5e5e5",
-                    borderRadius: "4px",
+                    border: `1px solid ${colorScheme === "dark" ? "var(--mantine-color-dark-4)" : "var(--mantine-color-gray-3)"}`,
+                    borderRadius: "var(--mantine-radius-sm)",
                     minHeight: "100px",
                     writingMode: writingMode === "vertical" ? "vertical-rl" : "horizontal-tb",
                     textAlign,
