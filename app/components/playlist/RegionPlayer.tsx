@@ -21,6 +21,7 @@ export interface RegionProgressInfo {
   totalProgress: number; // 0-100
   remainingTime: number; // 秒
   totalDuration: number; // 秒
+  totalContents: number; // リージョン内の総コンテンツ数
 }
 
 export const RegionPlayer = memo(function RegionPlayer({ region, assignment, onProgress }: RegionPlayerProps) {
@@ -146,14 +147,20 @@ export const RegionPlayer = memo(function RegionPlayer({ region, assignment, onP
     const currentContent = contents[currentContentIndex];
     if (!currentContent) return;
 
+    // 現在のコンテンツの経過時間を計算
+    const currentDuration = getCurrentDuration();
+    const currentElapsed = (currentContentProgress / 100) * currentDuration;
+    const totalElapsed = stableElapsedTime + currentElapsed;
+
     const progressInfo: RegionProgressInfo = {
       regionId: region.id,
       currentContentIndex,
       currentContentName: currentContent.name,
       currentContentProgress: currentContentProgress,
-      totalProgress: stableTotalDuration > 0 ? (stableElapsedTime / stableTotalDuration) * 100 : 0,
-      remainingTime: stableTotalDuration - stableElapsedTime,
+      totalProgress: stableTotalDuration > 0 ? (totalElapsed / stableTotalDuration) * 100 : 0,
+      remainingTime: stableTotalDuration - totalElapsed,
       totalDuration: stableTotalDuration,
+      totalContents: contents.length,
     };
 
     onProgress?.(progressInfo);
@@ -166,6 +173,7 @@ export const RegionPlayer = memo(function RegionPlayer({ region, assignment, onP
     stableTotalDuration,
     stableElapsedTime,
     currentContentProgress,
+    getCurrentDuration,
   ]);
 
   if (!isLoaded) {

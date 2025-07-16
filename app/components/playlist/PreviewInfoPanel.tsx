@@ -7,16 +7,6 @@ interface PreviewInfoPanelProps {
 }
 
 export function PreviewInfoPanel({ progressInfos, playlistName }: PreviewInfoPanelProps) {
-  // 全体の進行状況を計算
-  const overallProgress =
-    progressInfos.length > 0
-      ? progressInfos.reduce((sum, info) => sum + info.totalProgress, 0) / progressInfos.length
-      : 0;
-
-  // 全体の残り時間を計算（最も時間がかかるリージョンの残り時間）
-  const overallRemainingTime =
-    progressInfos.length > 0 ? Math.max(...progressInfos.map((info) => info.remainingTime)) : 0;
-
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
@@ -26,20 +16,11 @@ export function PreviewInfoPanel({ progressInfos, playlistName }: PreviewInfoPan
   return (
     <Box w={300} p="md" style={{ borderLeft: "1px solid #e9ecef" }}>
       <Stack gap="lg">
-        {/* プレイリスト全体の情報 */}
+        {/* プレイリスト情報 */}
         <Box>
           <Text size="lg" fw={600} mb="xs">
             {playlistName}
           </Text>
-          <Group justify="space-between" mb="xs">
-            <Text size="sm" c="dimmed">
-              全体の進行状況
-            </Text>
-            <Text size="sm" c="dimmed">
-              残り {formatTime(overallRemainingTime)}
-            </Text>
-          </Group>
-          <Progress value={overallProgress} size="lg" />
         </Box>
 
         {/* リージョン別の詳細情報 */}
@@ -63,7 +44,7 @@ export function PreviewInfoPanel({ progressInfos, playlistName }: PreviewInfoPan
                   リージョン {index + 1}
                 </Text>
                 <Text size="xs" c="dimmed">
-                  {info.currentContentIndex + 1} / {info.regionId ? "複数" : "1"}
+                  {info.currentContentIndex + 1} / {info.totalContents}
                 </Text>
               </Group>
 
@@ -118,13 +99,7 @@ export function PreviewInfoPanel({ progressInfos, playlistName }: PreviewInfoPan
             <Text size="xs" c="dimmed">
               総コンテンツ数
             </Text>
-            <Text size="xs">{progressInfos.reduce((sum, info) => sum + (info.currentContentIndex + 1), 0)}</Text>
-          </Group>
-          <Group justify="space-between">
-            <Text size="xs" c="dimmed">
-              全体の進行率
-            </Text>
-            <Text size="xs">{Math.round(overallProgress)}%</Text>
+            <Text size="xs">{progressInfos.reduce((sum, info) => sum + info.totalContents, 0)}</Text>
           </Group>
         </Box>
       </Stack>
