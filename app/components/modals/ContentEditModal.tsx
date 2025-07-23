@@ -8,6 +8,7 @@ import {
   NumberInput,
   Select,
   Stack,
+  TagsInput,
   Text,
   Textarea,
   TextInput,
@@ -44,7 +45,7 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
 
   // 基本情報
   const [name, setName] = useState("");
-  const [tags, setTags] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
 
   // テキスト関連の状態（type === "text"の場合のみ使用）
   const [textContent, setTextContent] = useState("");
@@ -77,7 +78,7 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
     if (!content) return;
 
     setName(content.name);
-    setTags(content.tags.join(", "));
+    setTags(content.tags);
 
     // 実際のコンテンツ詳細データを取得して初期化
     const loadContentDetails = async () => {
@@ -166,10 +167,7 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
 
     setLoading(true);
     try {
-      const tagArray = tags
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter((tag) => tag.length > 0);
+      const tagArray = tags;
 
       const submitData: Parameters<typeof onSubmit>[0] = {
         id: content.id,
@@ -234,11 +232,12 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
           aria-label="コンテンツ名入力"
         />
 
-        <TextInput
+        <TagsInput
           label="タグ"
-          placeholder="タグをカンマ区切りで入力してください（例: タグ1, タグ2, タグ3）"
+          placeholder="タグを入力してEnterキーで追加"
           value={tags}
-          onChange={(event) => setTags(event.currentTarget.value)}
+          onChange={setTags}
+          clearable
           aria-label="タグ入力"
         />
 

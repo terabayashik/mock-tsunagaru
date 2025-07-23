@@ -1,6 +1,7 @@
 import { Button, Group, SegmentedControl, Text, TextInput } from "@mantine/core";
 import {
   IconBrandYoutube,
+  IconCloud,
   IconFile,
   IconFileText,
   IconLink,
@@ -33,6 +34,8 @@ export const ContentFilters = memo(() => {
         return <IconBrandYoutube size={14} />;
       case "url":
         return <IconLink size={14} />;
+      case "weather":
+        return <IconCloud size={14} />;
       case "unused":
         return <IconTrash size={14} />;
       default:
@@ -54,6 +57,8 @@ export const ContentFilters = memo(() => {
         return "YouTube";
       case "url":
         return "URL";
+      case "weather":
+        return "気象情報";
       case "unused":
         return "未使用";
       default:
@@ -80,6 +85,7 @@ export const ContentFilters = memo(() => {
     getFilterOption("text"),
     getFilterOption("youtube"),
     getFilterOption("url"),
+    getFilterOption("weather"),
     getFilterOption("unused"),
   ];
 
@@ -118,6 +124,9 @@ export const ContentFilters = memo(() => {
         aria-label="コンテンツタイプフィルター"
         miw="520px"
         fullWidth={false}
+        styles={{
+          label: { padding: "2px 0px" },
+        }}
       />
     </Group>
   );
