@@ -14,11 +14,20 @@ import {
   useMantineColorScheme,
 } from "@mantine/core";
 import { Dropzone, type FileWithPath } from "@mantine/dropzone";
-import { IconCloudUpload, IconDeviceFloppy, IconFile, IconLink, IconPencil, IconX } from "@tabler/icons-react";
+import {
+  IconCloud,
+  IconCloudUpload,
+  IconDeviceFloppy,
+  IconFile,
+  IconLink,
+  IconPencil,
+  IconX,
+} from "@tabler/icons-react";
 import { memo, useState } from "react";
-import { ACCEPTED_MIME_TYPES, FONT_FAMILIES, type TextContent } from "~/types/content";
+import { LocationSelector } from "~/components/weather/LocationSelector";
+import { ACCEPTED_MIME_TYPES, FONT_FAMILIES, type TextContent, type WeatherContent } from "~/types/content";
 
-type ContentMode = "file" | "url" | "text";
+type ContentMode = "file" | "url" | "text" | "weather";
 
 interface ContentAddModalProps {
   opened: boolean;
@@ -26,6 +35,7 @@ interface ContentAddModalProps {
   onFileSubmit: (files: FileWithPath[], names?: string[]) => Promise<void>;
   onUrlSubmit: (data: { url: string; name?: string; title?: string; description?: string }) => Promise<void>;
   onTextSubmit: (data: { name: string; textInfo: TextContent }) => Promise<void>;
+  onWeatherSubmit?: (data: { name: string; weatherInfo: WeatherContent }) => Promise<void>;
 }
 
 // 定数
@@ -40,7 +50,7 @@ const getAllAcceptedMimeTypes = () => {
 };
 
 export const ContentAddModal = memo(
-  ({ opened, onClose, onFileSubmit, onUrlSubmit, onTextSubmit }: ContentAddModalProps) => {
+  ({ opened, onClose, onFileSubmit, onUrlSubmit, onTextSubmit, onWeatherSubmit }: ContentAddModalProps) => {
     const { colorScheme } = useMantineColorScheme();
     const [mode, setMode] = useState<ContentMode>("file");
     const [loading, setLoading] = useState(false);
@@ -67,6 +77,11 @@ export const ContentAddModal = memo(
     const [scrollType, setScrollType] = useState<"none" | "horizontal" | "vertical">("none");
     const [scrollSpeed, setScrollSpeed] = useState(3);
 
+    // 気象情報関連の状態
+    const [weatherName, setWeatherName] = useState("");
+    const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+    const [weatherType, setWeatherType] = useState<"current" | "weekly">("weekly");
+
     const handleClose = () => {
       if (loading) return;
 
@@ -88,6 +103,9 @@ export const ContentAddModal = memo(
       setFontSize(DEFAULT_FONT_SIZE);
       setScrollType("none");
       setScrollSpeed(3);
+      setWeatherName("");
+      setSelectedLocations([]);
+      setWeatherType("weekly");
 
       onClose();
     };
@@ -170,6 +188,25 @@ export const ContentAddModal = memo(
       }
     };
 
+    const handleWeatherSubmit = async () => {
+      if (!onWeatherSubmit || !weatherName.trim() || selectedLocations.length === 0) return;
+
+      setLoading(true);
+      try {
+        const weatherInfo: WeatherContent = {
+          locations: selectedLocations,
+          weatherType,
+          apiUrl: "https://jma-proxy.deno.dev",
+        };
+        await onWeatherSubmit({ name: weatherName.trim(), weatherInfo });
+        handleClose();
+      } catch (error) {
+        console.error("Weather content creation failed:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     const formatFileSize = (bytes: number): string => {
       if (bytes === 0) return "0 B";
       const k = 1024;
@@ -181,12 +218,15 @@ export const ContentAddModal = memo(
     const isFileMode = mode === "file";
     const isUrlMode = mode === "url";
     const isTextMode = mode === "text";
+    const isWeatherMode = mode === "weather";
 
     const canSubmit = isFileMode
       ? selectedFiles.length > 0
       : isUrlMode
         ? url.trim().length > 0
-        : textName.trim().length > 0 && textContent.trim().length > 0;
+        : isTextMode
+          ? textName.trim().length > 0 && textContent.trim().length > 0
+          : weatherName.trim().length > 0 && selectedLocations.length > 0;
 
     return (
       <Modal opened={opened} onClose={handleClose} title="コンテンツを追加" centered size="lg">
@@ -194,7 +234,7 @@ export const ContentAddModal = memo(
           {/* モード切り替え */}
           <SegmentedControl
             value={mode}
-            onChange={(value) => setMode(value as "file" | "url" | "text")}
+            onChange={(value) => setMode(value as ContentMode)}
             data={[
               {
                 label: (
@@ -223,6 +263,19 @@ export const ContentAddModal = memo(
                 ),
                 value: "text",
               },
+              ...(onWeatherSubmit
+                ? [
+                    {
+                      label: (
+                        <Group gap="xs" justify="center">
+                          <IconCloud size={16} />
+                          <Text size="sm">気象情報</Text>
+                        </Group>
+                      ),
+                      value: "weather",
+                    },
+                  ]
+                : []),
             ]}
             fullWidth
           />
@@ -522,6 +575,37 @@ export const ContentAddModal = memo(
             </Stack>
           )}
 
+          {/* 気象情報モード */}
+          {isWeatherMode && (
+            <Stack gap="md">
+              <TextInput
+                label="コンテンツ名"
+                placeholder="例: 東京の週間天気予報"
+                value={weatherName}
+                onChange={(e) => setWeatherName(e.target.value)}
+                required
+              />
+
+              <Select
+                label="表示タイプ"
+                placeholder="表示する天気情報のタイプを選択"
+                value={weatherType}
+                onChange={(value) => setWeatherType(value as "current" | "weekly")}
+                data={[
+                  { value: "current", label: "現在の天気" },
+                  { value: "weekly", label: "週間天気予報" },
+                ]}
+                required
+              />
+
+              <LocationSelector
+                selectedLocations={selectedLocations}
+                onLocationsChange={setSelectedLocations}
+                maxLocations={5}
+              />
+            </Stack>
+          )}
+
           {/* アクションボタン */}
           <Group justify="flex-end">
             <Button variant="subtle" onClick={handleClose} disabled={loading}>
@@ -533,15 +617,25 @@ export const ContentAddModal = memo(
                   <IconDeviceFloppy size={16} />
                 ) : isUrlMode ? (
                   <IconLink size={16} />
-                ) : (
+                ) : isTextMode ? (
                   <IconPencil size={16} />
+                ) : (
+                  <IconCloud size={16} />
                 )
               }
-              onClick={isFileMode ? handleFileSubmit : isUrlMode ? handleUrlSubmit : handleTextSubmit}
+              onClick={
+                isFileMode
+                  ? handleFileSubmit
+                  : isUrlMode
+                    ? handleUrlSubmit
+                    : isTextMode
+                      ? handleTextSubmit
+                      : handleWeatherSubmit
+              }
               loading={loading}
               disabled={!canSubmit}
             >
-              {isFileMode ? "アップロード" : isUrlMode ? "URLを追加" : "テキストを追加"}
+              {isFileMode ? "アップロード" : isUrlMode ? "URLを追加" : isTextMode ? "テキストを追加" : "気象情報を追加"}
             </Button>
           </Group>
         </Stack>

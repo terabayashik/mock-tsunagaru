@@ -203,6 +203,27 @@ export const ContentPreviewModal = ({
       }
     }
 
+    // 気象情報プレビュー
+    if (content.type === "weather" && content.weatherInfo) {
+      const { locations, weatherType, apiUrl } = content.weatherInfo;
+      const locationsParam = locations.length === 1 ? `location=${locations[0]}` : `locations=${locations.join(",")}`;
+      const weatherUrl = `${apiUrl}/api/image/${weatherType}?${locationsParam}`;
+
+      return (
+        <Box display="flex" style={{ alignItems: "center", justifyContent: "center" }}>
+          <img
+            src={weatherUrl}
+            alt={content.name}
+            style={{ maxWidth: "100%", maxHeight: "600px", objectFit: "contain" }}
+            onError={(e) => {
+              e.currentTarget.src =
+                "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMDg5MWIyIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIxNCI+5rCX6LGh5oOF5aCxPC90ZXh0Pjwvc3ZnPg==";
+            }}
+          />
+        </Box>
+      );
+    }
+
     // テキストプレビュー
     if (content.type === "text" && content.textInfo) {
       const {

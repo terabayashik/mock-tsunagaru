@@ -1,5 +1,13 @@
 import { Badge } from "@mantine/core";
-import { IconBrandYoutube, IconFile, IconFileText, IconLink, IconPhoto, IconVideo } from "@tabler/icons-react";
+import {
+  IconBrandYoutube,
+  IconCloud,
+  IconFile,
+  IconFileText,
+  IconLink,
+  IconPhoto,
+  IconVideo,
+} from "@tabler/icons-react";
 import type { ContentType } from "~/types/content";
 
 export const getContentTypeIcon = (type: ContentType) => {
@@ -14,6 +22,8 @@ export const getContentTypeIcon = (type: ContentType) => {
       return <IconBrandYoutube size={16} />;
     case "url":
       return <IconLink size={16} />;
+    case "weather":
+      return <IconCloud size={16} />;
     default:
       return <IconFile size={16} />;
   }
@@ -26,6 +36,7 @@ export const getContentTypeBadge = (type: ContentType) => {
     text: "orange",
     youtube: "red",
     url: "purple",
+    weather: "teal",
   };
 
   const labels: Record<ContentType, string> = {
@@ -34,6 +45,7 @@ export const getContentTypeBadge = (type: ContentType) => {
     text: "テキスト",
     youtube: "YouTube",
     url: "URL",
+    weather: "気象情報",
   };
 
   return (

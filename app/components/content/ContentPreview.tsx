@@ -1,6 +1,7 @@
 import { ActionIcon, Box, Flex, Group, Image, Paper, Text, Tooltip } from "@mantine/core";
 import {
   IconBrandYoutube,
+  IconCloud,
   IconEdit,
   IconFile,
   IconFileText,
@@ -285,6 +286,48 @@ export const ContentPreview = memo(
       }
     }, [content.id, getContentById]);
 
+    const generateWeatherPreview = useCallback(async () => {
+      try {
+        const contentDetail = await getContentById(content.id);
+        if (!contentDetail?.weatherInfo) {
+          throw new Error("気象情報が見つかりません");
+        }
+
+        const { locations, weatherType, apiUrl } = contentDetail.weatherInfo;
+
+        // 実際のAPI URLを構築
+        const locationsParam = locations.length === 1 ? `location=${locations[0]}` : `locations=${locations.join(",")}`;
+        const weatherUrl = `${apiUrl}/api/image/${weatherType}?${locationsParam}`;
+
+        // 実際の気象情報画像URLをプレビューとして使用
+        setPreviewState({
+          loading: false,
+          previewUrl: weatherUrl,
+        });
+      } catch (_error) {
+        // フォールバック用のSVGプレビュー
+        const svgContent = `
+          <svg width="320" height="180" xmlns="http://www.w3.org/2000/svg">
+            <rect width="100%" height="100%" fill="#0891b2"/>
+            <text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="white" font-size="14">
+              気象情報
+            </text>
+          </svg>
+        `;
+
+        const encodedSvg = btoa(
+          encodeURIComponent(svgContent).replace(/%([0-9A-F]{2})/g, (_match, p1) => {
+            return String.fromCharCode(Number.parseInt(p1, 16));
+          }),
+        );
+
+        setPreviewState({
+          loading: false,
+          previewUrl: `data:image/svg+xml;base64,${encodedSvg}`,
+        });
+      }
+    }, [content.id, getContentById]);
+
     const generatePreview = useCallback(async () => {
       setPreviewState({ loading: true });
 
@@ -303,6 +346,9 @@ export const ContentPreview = memo(
           case "url":
             await generateUrlPreview();
             break;
+          case "weather":
+            await generateWeatherPreview();
+            break;
           default:
             setPreviewState({ loading: false, error: "Unknown content type" });
         }
@@ -313,7 +359,14 @@ export const ContentPreview = memo(
           error: error instanceof Error ? error.message : "プレビュー生成に失敗しました",
         });
       }
-    }, [content.type, generateFilePreview, generateYouTubePreview, generateUrlPreview, generateTextPreview]);
+    }, [
+      content.type,
+      generateFilePreview,
+      generateYouTubePreview,
+      generateUrlPreview,
+      generateTextPreview,
+      generateWeatherPreview,
+    ]);
 
     useEffect(() => {
       generatePreview();
@@ -332,6 +385,8 @@ export const ContentPreview = memo(
           return <IconBrandYoutube {...iconProps} />;
         case "url":
           return <IconLink {...iconProps} />;
+        case "weather":
+          return <IconCloud {...iconProps} />;
         default:
           return <IconFile {...iconProps} />;
       }
@@ -349,6 +404,8 @@ export const ContentPreview = memo(
           return "red";
         case "url":
           return "purple";
+        case "weather":
+          return "teal";
         default:
           return "gray";
       }

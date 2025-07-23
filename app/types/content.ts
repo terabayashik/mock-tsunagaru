@@ -7,6 +7,7 @@ export const ContentTypeSchema = z.enum([
   "text", // テキストファイル（スタイル情報を含む）
   "youtube", // YouTubeのURL
   "url", // その他のURL
+  "weather", // 気象情報
 ]);
 
 // ファイルコンテンツの詳細情報
@@ -46,15 +47,23 @@ export const TextContentSchema = z.object({
   scrollSpeed: z.number().min(1).max(10).default(3), // スクロール速度（1-10）
 });
 
+// 気象情報コンテンツの詳細情報
+export const WeatherContentSchema = z.object({
+  locations: z.array(z.string()).min(1).max(5), // 地点コード（最大5つ）
+  weatherType: z.enum(["current", "weekly"]).default("weekly"), // 現在の天気 or 週間予報
+  apiUrl: z.string().url().default("https://jma-proxy.deno.dev"), // APIのベースURL
+});
+
 // コンテンツアイテムのスキーマ
 export const ContentItemSchema = z.object({
   id: z.string().min(1, "IDは必須です"),
   name: z.string().min(1, "名前は必須です"),
   type: ContentTypeSchema,
-  // ファイルの場合はfileInfo、URLの場合はurlInfo、テキストの場合はtextInfo
+  // ファイルの場合はfileInfo、URLの場合はurlInfo、テキストの場合はtextInfo、気象情報の場合はweatherInfo
   fileInfo: FileContentSchema.optional(),
   urlInfo: UrlContentSchema.optional(),
   textInfo: TextContentSchema.optional(),
+  weatherInfo: WeatherContentSchema.optional(),
   tags: z.array(z.string()).default([]), // タグ
   createdAt: z.string().datetime("無効な作成日時です"),
   updatedAt: z.string().datetime("無効な更新日時です").optional(),
@@ -79,6 +88,7 @@ export type ContentType = z.infer<typeof ContentTypeSchema>;
 export type FileContent = z.infer<typeof FileContentSchema>;
 export type UrlContent = z.infer<typeof UrlContentSchema>;
 export type TextContent = z.infer<typeof TextContentSchema>;
+export type WeatherContent = z.infer<typeof WeatherContentSchema>;
 export type ContentItem = z.infer<typeof ContentItemSchema>;
 export type ContentIndex = z.infer<typeof ContentIndexSchema>;
 

@@ -15,8 +15,9 @@ import {
 import { IconDeviceFloppy } from "@tabler/icons-react";
 import { memo, useEffect, useState } from "react";
 import { ContentUsageDisplay } from "~/components/content/ContentUsageDisplay";
+import { LocationSelector } from "~/components/weather/LocationSelector";
 import { useContent } from "~/hooks/useContent";
-import { type ContentIndex, FONT_FAMILIES, type TextContent } from "~/types/content";
+import { type ContentIndex, FONT_FAMILIES, type TextContent, type WeatherContent } from "~/types/content";
 
 interface ContentEditModalProps {
   opened: boolean;
@@ -28,6 +29,7 @@ interface ContentEditModalProps {
     tags: string[];
     textInfo?: TextContent;
     urlInfo?: { title?: string; description?: string };
+    weatherInfo?: WeatherContent;
   }) => Promise<void>;
 }
 
@@ -58,6 +60,10 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
   // URL情報（type === "url" or "youtube"の場合のみ使用）
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+
+  // 気象情報関連の状態（type === "weather"の場合のみ使用）
+  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+  const [weatherType, setWeatherType] = useState<"current" | "weekly">("weekly");
 
   // モーダルが閉じられたときにローディング状態をリセット
   useEffect(() => {
@@ -117,6 +123,12 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
         } else if (content.type === "url" || content.type === "youtube") {
           setTitle("");
           setDescription("");
+        } else if (content.type === "weather" && contentDetail?.weatherInfo) {
+          setSelectedLocations(contentDetail.weatherInfo.locations);
+          setWeatherType(contentDetail.weatherInfo.weatherType);
+        } else if (content.type === "weather") {
+          setSelectedLocations([]);
+          setWeatherType("weekly");
         }
       } catch (error) {
         console.error("Failed to load content details:", error);
@@ -134,6 +146,9 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
         } else if (content.type === "url" || content.type === "youtube") {
           setTitle("");
           setDescription("");
+        } else if (content.type === "weather") {
+          setSelectedLocations([]);
+          setWeatherType("weekly");
         }
       }
     };
@@ -180,6 +195,12 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
           title: title.trim() || undefined,
           description: description.trim() || undefined,
         };
+      } else if (content.type === "weather") {
+        submitData.weatherInfo = {
+          locations: selectedLocations,
+          weatherType,
+          apiUrl: "https://jma-proxy.deno.dev",
+        };
       }
 
       await onSubmit(submitData);
@@ -192,11 +213,12 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
     }
   };
 
-  const canSubmit = name.trim().length > 0;
+  const canSubmit = name.trim().length > 0 && (content.type !== "weather" || selectedLocations.length > 0);
 
   const isText = content.type === "text";
   const isUrl = content.type === "url" || content.type === "youtube";
-  const isFileType = content.type === "video" || content.type === "image" || content.type === "text";
+  const isWeather = content.type === "weather";
+  const isFileType = content.type === "video" || content.type === "image";
 
   return (
     <Modal opened={opened} onClose={handleClose} title="コンテンツを編集" centered size="lg">
@@ -263,6 +285,29 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
               placeholder="説明文（省略可）"
               value={description}
               onChange={(event) => setDescription(event.currentTarget.value)}
+            />
+          </Stack>
+        )}
+
+        {/* 気象情報の場合 */}
+        {isWeather && (
+          <Stack gap="md">
+            <Select
+              label="表示タイプ"
+              placeholder="表示する天気情報のタイプを選択"
+              value={weatherType}
+              onChange={(value) => setWeatherType(value as "current" | "weekly")}
+              data={[
+                { value: "current", label: "現在の天気" },
+                { value: "weekly", label: "週間天気予報" },
+              ]}
+              required
+            />
+
+            <LocationSelector
+              selectedLocations={selectedLocations}
+              onLocationsChange={setSelectedLocations}
+              maxLocations={5}
             />
           </Stack>
         )}

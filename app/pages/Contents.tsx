@@ -1,5 +1,4 @@
 import { ActionIcon, Alert, Badge, Box, Button, Group, List, LoadingOverlay, Table, Text } from "@mantine/core";
-import type { FileWithPath } from "@mantine/dropzone";
 import { modals } from "@mantine/modals";
 import {
   IconEdit,
@@ -12,10 +11,10 @@ import {
 } from "@tabler/icons-react";
 import { useAtom } from "jotai";
 import { useCallback, useEffect } from "react";
+import { ContentAddHandler } from "~/components/content/ContentAddHandler";
 import { ContentFilters } from "~/components/content/ContentFilters";
 import { ContentGridView } from "~/components/content/ContentGridView";
 import { ContentHoverCard } from "~/components/content/ContentHoverCard";
-import { ContentAddModal } from "~/components/modals/ContentAddModal";
 import { ContentEditModal } from "~/components/modals/ContentEditModal";
 import { ContentPreviewModal } from "~/components/modals/ContentPreviewModal";
 import { useContent } from "~/hooks/useContent";
@@ -31,7 +30,7 @@ import {
   filteredContentsAtom,
 } from "~/states/content";
 import { contentPreviewModalAtom, modalActionsAtom } from "~/states/modal";
-import type { ContentType, TextContent } from "~/types/content";
+import type { ContentType, TextContent, WeatherContent } from "~/types/content";
 import { formatFileSize, getContentTypeBadge } from "~/utils/contentTypeUtils";
 import { logger } from "~/utils/logger";
 
@@ -53,9 +52,6 @@ export default function ContentsPage() {
     deleteContentSafely,
     deleteContentForced,
     checkContentUsageStatus,
-    createFileOrTextContent,
-    createUrlContent,
-    createTextContent,
     updateContent,
     getContentById,
   } = useContent();
@@ -197,97 +193,25 @@ export default function ContentsPage() {
   };
 
   const handleContentClick = (contentId: string, contentType: ContentType) => {
-    // 動画、画像、YouTube、テキストでプレビューモーダルを開く
-    if (contentType === "video" || contentType === "image" || contentType === "youtube" || contentType === "text") {
+    // 動画、画像、YouTube、テキスト、気象情報でプレビューモーダルを開く
+    if (
+      contentType === "video" ||
+      contentType === "image" ||
+      contentType === "youtube" ||
+      contentType === "text" ||
+      contentType === "weather"
+    ) {
       modalDispatch({ type: "OPEN_CONTENT_PREVIEW", contentId });
     }
   };
 
-  const handleFileUploadSubmit = async (files: FileWithPath[], names?: string[]) => {
-    try {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const name = names?.[i];
-        const newContent = await createFileOrTextContent(file, name);
-
-        // インデックス用のデータに変換
-        const contentIndex = {
-          id: newContent.id,
-          name: newContent.name,
-          type: newContent.type,
-          size: newContent.fileInfo?.size,
-          tags: newContent.tags,
-          createdAt: newContent.createdAt,
-          updatedAt: newContent.updatedAt,
-        };
-
-        contentDispatch({ type: "ADD_CONTENT", content: contentIndex });
-      }
-      // 追加後に未使用状態を更新
-      const contentsData = await getContentsIndex();
-      await refreshUnusedStatus(contentsData);
-    } catch (error) {
-      contentDispatch({
-        type: "SET_ERROR",
-        error: error instanceof Error ? error.message : "ファイルのアップロードに失敗しました",
-      });
-      throw error;
-    }
-  };
-
-  const handleUrlContentSubmit = async (data: { url: string; name?: string; title?: string; description?: string }) => {
-    try {
-      const newContent = await createUrlContent(data.url, data.name, data.title, data.description);
-
-      // インデックス用のデータに変換
-      const contentIndex = {
-        id: newContent.id,
-        name: newContent.name,
-        type: newContent.type,
-        url: newContent.urlInfo?.url,
-        tags: newContent.tags,
-        createdAt: newContent.createdAt,
-        updatedAt: newContent.updatedAt,
-      };
-
-      contentDispatch({ type: "ADD_CONTENT", content: contentIndex });
-      // 追加後に未使用状態を更新
-      const contentsData = await getContentsIndex();
-      await refreshUnusedStatus(contentsData);
-    } catch (error) {
-      contentDispatch({
-        type: "SET_ERROR",
-        error: error instanceof Error ? error.message : "URLコンテンツの作成に失敗しました",
-      });
-      throw error;
-    }
-  };
-
-  const handleTextContentSubmit = async (data: { name: string; textInfo: TextContent }) => {
-    try {
-      const newContent = await createTextContent(data.name, data.textInfo);
-
-      // インデックス形式に変換
-      const contentIndex = {
-        id: newContent.id,
-        name: newContent.name,
-        type: newContent.type,
-        tags: newContent.tags,
-        createdAt: newContent.createdAt,
-        updatedAt: newContent.updatedAt,
-      };
-
-      contentDispatch({ type: "ADD_CONTENT", content: contentIndex });
-      // 追加後に未使用状態を更新
-      const contentsData = await getContentsIndex();
-      await refreshUnusedStatus(contentsData);
-    } catch (error) {
-      contentDispatch({
-        type: "SET_ERROR",
-        error: error instanceof Error ? error.message : "テキストコンテンツの作成に失敗しました",
-      });
-      throw error;
-    }
+  // コンテンツ追加完了後のハンドラー
+  const handleContentAdded = async () => {
+    // コンテンツ一覧を再読み込み
+    const contentsData = await getContentsIndex();
+    contentDispatch({ type: "SET_CONTENTS", contents: contentsData });
+    // 未使用状態も更新
+    await refreshUnusedStatus(contentsData);
   };
 
   const handleContentAddModalClose = () => {
@@ -300,6 +224,7 @@ export default function ContentsPage() {
     tags: string[];
     textInfo?: TextContent;
     urlInfo?: { title?: string; description?: string };
+    weatherInfo?: WeatherContent;
   }) => {
     try {
       // 更新データを構築
@@ -322,6 +247,9 @@ export default function ContentsPage() {
             ...data.urlInfo,
           };
         }
+      }
+      if (data.weatherInfo) {
+        updateData.weatherInfo = data.weatherInfo;
       }
 
       const updatedContent = await updateContent(data.id, updateData);
@@ -423,7 +351,8 @@ export default function ContentsPage() {
                   content.type === "video" ||
                   content.type === "image" ||
                   content.type === "youtube" ||
-                  content.type === "text";
+                  content.type === "text" ||
+                  content.type === "weather";
                 return (
                   <Table.Tr
                     key={content.id}
@@ -526,12 +455,10 @@ export default function ContentsPage() {
         />
       )}
 
-      <ContentAddModal
+      <ContentAddHandler
         opened={contentAddModalOpened}
         onClose={handleContentAddModalClose}
-        onFileSubmit={handleFileUploadSubmit}
-        onUrlSubmit={handleUrlContentSubmit}
-        onTextSubmit={handleTextContentSubmit}
+        onContentAdded={handleContentAdded}
       />
 
       <ContentPreviewModal

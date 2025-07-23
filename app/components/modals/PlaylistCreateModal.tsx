@@ -1,5 +1,4 @@
 import { Box, Button, Divider, Group, Modal, Paper, Progress, Stack, Text, TextInput } from "@mantine/core";
-import type { FileWithPath } from "@mantine/dropzone";
 import { modals } from "@mantine/modals";
 import { IconArrowLeft, IconArrowRight, IconDeviceFloppy, IconLayoutGrid, IconPlus, IconX } from "@tabler/icons-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -9,13 +8,13 @@ import { InteractiveLayoutPreview } from "~/components/layout/InteractiveLayoutP
 import { LayoutSelectionGrid } from "~/components/layout/LayoutSelectionGrid";
 import { useContent } from "~/hooks/useContent";
 import { useLayout } from "~/hooks/useLayout";
-import type { ContentIndex, TextContent } from "~/types/content";
+import type { ContentIndex } from "~/types/content";
 import { extractYouTubeVideoId } from "~/types/content";
 import type { LayoutIndex, LayoutItem, Orientation, Region } from "~/types/layout";
 import type { ContentAssignment, ContentDuration } from "~/types/playlist";
 import { logger } from "~/utils/logger";
 import { getYouTubeVideoDurationCached } from "~/utils/youtubePlayer";
-import { ContentAddModal } from "./ContentAddModal";
+import { ContentAddHandler } from "../content/ContentAddHandler";
 import { ContentDurationModal } from "./ContentDurationModal";
 import { LayoutFormModal } from "./LayoutFormModal";
 
@@ -85,8 +84,7 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
   } | null>(null);
 
   const { getLayoutsIndex, getLayoutById, createLayout } = useLayout();
-  const { getContentsIndex, getContentById, createFileOrTextContent, createUrlContent, createTextContent } =
-    useContent();
+  const { getContentsIndex, getContentById } = useContent();
 
   const steps: StepInfo[] = [
     { key: "basic", title: "基本情報", description: "プレイリスト名とデバイスを設定" },
@@ -476,21 +474,8 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
     setShowLayoutForm(false);
   };
 
-  // コンテンツ追加ハンドラー
-  const handleFileContentSubmit = async (files: FileWithPath[], names?: string[]) => {
-    for (let i = 0; i < files.length; i++) {
-      await createFileOrTextContent(files[i], names?.[i]);
-    }
-    await loadContents(); // コンテンツリストを再読み込み
-  };
-
-  const handleUrlContentSubmit = async (data: { url: string; name?: string; title?: string; description?: string }) => {
-    await createUrlContent(data.url, data.name, data.title, data.description);
-    await loadContents(); // コンテンツリストを再読み込み
-  };
-
-  const handleTextContentSubmit = async (data: { name: string; textInfo: TextContent }) => {
-    await createTextContent(data.name, data.textInfo);
+  // コンテンツ追加完了後のハンドラー
+  const handleContentAdded = async () => {
     await loadContents(); // コンテンツリストを再読み込み
   };
 
@@ -892,12 +877,10 @@ export const PlaylistCreateModal = ({ opened, onClose, onSubmit }: PlaylistCreat
       />
 
       {/* コンテンツ追加モーダル */}
-      <ContentAddModal
+      <ContentAddHandler
         opened={showContentAddModal}
         onClose={() => setShowContentAddModal(false)}
-        onFileSubmit={handleFileContentSubmit}
-        onUrlSubmit={handleUrlContentSubmit}
-        onTextSubmit={handleTextContentSubmit}
+        onContentAdded={handleContentAdded}
       />
 
       {/* 再生時間設定モーダル */}

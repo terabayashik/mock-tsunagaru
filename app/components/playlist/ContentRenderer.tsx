@@ -162,6 +162,25 @@ export const ContentRenderer = memo(function ContentRenderer({
           />
         );
 
+      case "weather": {
+        if (!content.weatherInfo) return null;
+        const { locations, weatherType, apiUrl } = content.weatherInfo;
+        const locationsParam = locations.length === 1 ? `location=${locations[0]}` : `locations=${locations.join(",")}`;
+        const weatherUrl = `${apiUrl}/api/image/${weatherType}?${locationsParam}`;
+
+        return (
+          <img
+            src={weatherUrl}
+            alt={content.name}
+            style={commonStyle}
+            onError={(e) => {
+              logger.error("ContentRenderer", `Failed to load weather image: ${weatherUrl}`);
+              e.currentTarget.src = ""; // Clear src to prevent infinite error loop
+            }}
+          />
+        );
+      }
+
       default:
         return <Text>サポートされていないコンテンツタイプです</Text>;
     }
