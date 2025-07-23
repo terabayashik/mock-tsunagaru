@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import type { TextContent } from "~/types/content";
+import type { TextContent, WeatherContent } from "~/types/content";
 import { logger } from "~/utils/logger";
 import { useContent } from "./useContent";
 
@@ -7,7 +7,7 @@ import { useContent } from "./useContent";
  * テストデータを生成するためのhook
  */
 export const useTestData = () => {
-  const { createTextContent, createUrlContent, createFileContent } = useContent();
+  const { createTextContent, createUrlContent, createFileContent, createWeatherContent } = useContent();
 
   /**
    * テスト用の画像データを作成
@@ -39,7 +39,7 @@ export const useTestData = () => {
     failed: string[];
   }> => {
     const results = {
-      total: 16, // 画像4件 + テキスト4件 + YouTube4件 + URL4件
+      total: 18, // 画像4件 + テキスト4件 + YouTube4件 + URL4件 + 気象情報2件
       success: 0,
       failed: [] as string[],
     };
@@ -194,12 +194,42 @@ export const useTestData = () => {
         }
       }
 
+      // 5. 気象情報データを作成
+      const weatherData = [
+        {
+          name: "東日本の天気予報",
+          locations: ["130000", "140000", "150000", "110000", "120000"], // 東京、横浜、新潟、埼玉、千葉
+          weatherType: "weekly" as const,
+        },
+        {
+          name: "西日本の天気予報",
+          locations: ["270000", "280000", "340000", "400000", "430000"], // 大阪、神戸、広島、福岡、熊本
+          weatherType: "weekly" as const,
+        },
+      ];
+
+      for (const weather of weatherData) {
+        try {
+          const weatherInfo: WeatherContent = {
+            locations: weather.locations,
+            weatherType: weather.weatherType,
+            apiUrl: "https://jma-proxy.deno.dev",
+          };
+
+          await createWeatherContent(weather.name, weatherInfo);
+          results.success++;
+        } catch (error) {
+          logger.error("TestData", `Failed to create test weather: ${weather.name}`, error);
+          results.failed.push(`気象情報: ${weather.name}`);
+        }
+      }
+
       return results;
     } catch (error) {
       logger.error("TestData", "Failed to create test data", error);
       throw new Error(`テストデータの作成に失敗しました: ${error}`);
     }
-  }, [createTestImageData, createTextContent, createUrlContent, createFileContent]);
+  }, [createTestImageData, createTextContent, createUrlContent, createFileContent, createWeatherContent]);
 
   return {
     createTestData,

@@ -165,6 +165,7 @@ export const ContentRenderer = memo(function ContentRenderer({
       case "weather": {
         if (!content.weatherInfo) return null;
         const { locations, weatherType, apiUrl } = content.weatherInfo;
+        // 単一地点と複数地点でパラメータ名が異なる
         const locationsParam = locations.length === 1 ? `location=${locations[0]}` : `locations=${locations.join(",")}`;
         const weatherUrl = `${apiUrl}/api/image/${weatherType}?${locationsParam}`;
 

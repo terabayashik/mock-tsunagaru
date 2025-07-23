@@ -218,9 +218,10 @@ const Settings = () => {
             <List.Item>テキストコンテンツ: 4件</List.Item>
             <List.Item>YouTube動画: 4件</List.Item>
             <List.Item>URLリンク: 4件</List.Item>
+            <List.Item>気象情報: 2件（東日本・西日本）</List.Item>
           </List>
           <Text size="sm" c="dimmed">
-            合計16件のテストコンテンツが作成されます。
+            合計18件のテストコンテンツが作成されます。
           </Text>
         </Stack>
       ),
