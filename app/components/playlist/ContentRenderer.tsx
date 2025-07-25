@@ -99,6 +99,22 @@ export const ContentRenderer = memo(function ContentRenderer({
         } catch (error) {
           logger.error("ContentRenderer", `Failed to load file: ${content.fileInfo.storagePath}`, error);
         }
+      } else if (content.type === "csv" && content.csvInfo?.renderedImagePath) {
+        // CSVの場合はレンダリング済み画像を読み込み
+        try {
+          const opfs = OPFSManager.getInstance();
+          const fileData = await opfs.readFile(content.csvInfo.renderedImagePath);
+          const mimeType = content.csvInfo.format === "png" ? "image/png" : "image/jpeg";
+          const blob = new Blob([fileData], { type: mimeType });
+          const url = URL.createObjectURL(blob);
+          setImageUrl(url);
+        } catch (error) {
+          logger.error(
+            "ContentRenderer",
+            `Failed to load CSV rendered image: ${content.csvInfo.renderedImagePath}`,
+            error,
+          );
+        }
       }
     };
 
@@ -106,7 +122,7 @@ export const ContentRenderer = memo(function ContentRenderer({
     setVideoUrl(null);
     setImageUrl(null);
     loadFileUrl();
-  }, [content.type, content.fileInfo]);
+  }, [content.type, content.fileInfo, content.csvInfo]);
 
   // URLのクリーンアップを別のuseEffectで管理
   useEffect(() => {
@@ -181,6 +197,10 @@ export const ContentRenderer = memo(function ContentRenderer({
           />
         );
       }
+
+      case "csv":
+        // CSVコンテンツはimageUrlで表示
+        return <img src={imageUrl || undefined} alt={content.name} style={commonStyle} />;
 
       default:
         return <Text>サポートされていないコンテンツタイプです</Text>;

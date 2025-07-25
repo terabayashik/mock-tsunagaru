@@ -1,6 +1,6 @@
 import type { FileWithPath } from "@mantine/dropzone";
 import { useContent } from "~/hooks/useContent";
-import type { TextContent, WeatherContent } from "~/types/content";
+import type { CsvContent, TextContent, WeatherContent } from "~/types/content";
 import { ContentAddModal } from "../modals/ContentAddModal";
 
 interface ContentAddHandlerProps {
@@ -16,7 +16,8 @@ interface ContentAddHandlerProps {
  * コンテンツ管理ページとプレイリスト編集ページの両方で使用できるようにします。
  */
 export const ContentAddHandler = ({ opened, onClose, onContentAdded }: ContentAddHandlerProps) => {
-  const { createFileOrTextContent, createUrlContent, createTextContent, createWeatherContent } = useContent();
+  const { createFileOrTextContent, createUrlContent, createTextContent, createWeatherContent, createCsvContent } =
+    useContent();
 
   const handleFileSubmit = async (files: FileWithPath[], names?: string[]) => {
     for (let i = 0; i < files.length; i++) {
@@ -52,6 +53,14 @@ export const ContentAddHandler = ({ opened, onClose, onContentAdded }: ContentAd
     onClose();
   };
 
+  const handleCsvSubmit = async (data: { name: string; csvData: Partial<CsvContent>; backgroundFile?: File }) => {
+    await createCsvContent(data.name, data.csvData, data.backgroundFile);
+    if (onContentAdded) {
+      await onContentAdded();
+    }
+    onClose();
+  };
+
   return (
     <ContentAddModal
       opened={opened}
@@ -60,6 +69,7 @@ export const ContentAddHandler = ({ opened, onClose, onContentAdded }: ContentAd
       onUrlSubmit={handleUrlSubmit}
       onTextSubmit={handleTextSubmit}
       onWeatherSubmit={handleWeatherSubmit}
+      onCsvSubmit={handleCsvSubmit}
     />
   );
 };

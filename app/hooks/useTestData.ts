@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import type { TextContent, WeatherContent } from "~/types/content";
+import type { CsvContent, TextContent, WeatherContent } from "~/types/content";
 import { logger } from "~/utils/logger";
 import { useContent } from "./useContent";
 
@@ -7,7 +7,8 @@ import { useContent } from "./useContent";
  * テストデータを生成するためのhook
  */
 export const useTestData = () => {
-  const { createTextContent, createUrlContent, createFileContent, createWeatherContent } = useContent();
+  const { createTextContent, createUrlContent, createFileContent, createWeatherContent, createCsvContent } =
+    useContent();
 
   /**
    * テスト用の画像データを作成
@@ -39,7 +40,7 @@ export const useTestData = () => {
     failed: string[];
   }> => {
     const results = {
-      total: 18, // 画像4件 + テキスト4件 + YouTube4件 + URL4件 + 気象情報2件
+      total: 20, // 画像4件 + テキスト4件 + YouTube4件 + URL4件 + 気象情報2件 + CSV2件
       success: 0,
       failed: [] as string[],
     };
@@ -224,12 +225,74 @@ export const useTestData = () => {
         }
       }
 
+      // 6. CSVデータを作成
+      const csvData = [
+        {
+          name: "月間売上データ",
+          csvContent: `商品名,1月,2月,3月,4月,5月,6月
+商品A,120,150,180,200,220,250
+商品B,80,90,100,110,120,130
+商品C,200,210,220,230,240,250
+商品D,50,60,70,80,90,100
+合計,450,510,570,620,670,730`,
+          selectedRows: [0, 1, 2, 3, 4, 5],
+          selectedColumns: [0, 1, 2, 3, 4, 5, 6],
+        },
+        {
+          name: "年間成績表",
+          csvContent: `科目,前期中間,前期期末,後期中間,後期期末,平均
+国語,85,88,90,92,88.75
+数学,92,94,96,98,95
+英語,78,82,85,88,83.25
+理科,88,90,92,94,91
+社会,82,85,88,90,86.25`,
+          selectedRows: [0, 1, 2, 3, 4, 5],
+          selectedColumns: [0, 1, 2, 3, 4, 5],
+        },
+      ];
+
+      for (const csv of csvData) {
+        try {
+          const csvInfo: Partial<CsvContent> = {
+            originalCsvData: csv.csvContent,
+            selectedRows: csv.selectedRows,
+            selectedColumns: csv.selectedColumns,
+            layout: {
+              table: { width: 1200, height: 800, x: 360, y: 140 },
+              columns: { widths: "auto", alignment: [] },
+              rows: { headerHeight: 50, rowHeight: 40 },
+              padding: { cell: 10, table: 20 },
+            },
+            style: {
+              font: { family: "Noto Sans CJK JP", size: 14, color: "#000000" },
+              header: { backgroundColor: "#f0f0f0", fontWeight: "bold", color: "#000000" },
+              table: { borderWidth: 1, borderColor: "#cccccc", backgroundColor: "rgba(255, 255, 255, 0.9)" },
+              cell: { borderWidth: 1, borderColor: "#e0e0e0" },
+            },
+            format: "png",
+          };
+
+          await createCsvContent(csv.name, csvInfo);
+          results.success++;
+        } catch (error) {
+          logger.error("TestData", `Failed to create test CSV: ${csv.name}`, error);
+          results.failed.push(`CSV: ${csv.name}`);
+        }
+      }
+
       return results;
     } catch (error) {
       logger.error("TestData", "Failed to create test data", error);
       throw new Error(`テストデータの作成に失敗しました: ${error}`);
     }
-  }, [createTestImageData, createTextContent, createUrlContent, createFileContent, createWeatherContent]);
+  }, [
+    createTestImageData,
+    createTextContent,
+    createUrlContent,
+    createFileContent,
+    createWeatherContent,
+    createCsvContent,
+  ]);
 
   return {
     createTestData,

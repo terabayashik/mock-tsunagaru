@@ -193,13 +193,14 @@ export default function ContentsPage() {
   };
 
   const handleContentClick = (contentId: string, contentType: ContentType) => {
-    // 動画、画像、YouTube、テキスト、気象情報でプレビューモーダルを開く
+    // 動画、画像、YouTube、テキスト、気象情報、CSVでプレビューモーダルを開く
     if (
       contentType === "video" ||
       contentType === "image" ||
       contentType === "youtube" ||
       contentType === "text" ||
-      contentType === "weather"
+      contentType === "weather" ||
+      contentType === "csv"
     ) {
       modalDispatch({ type: "OPEN_CONTENT_PREVIEW", contentId });
     }

@@ -4,6 +4,7 @@ import {
   IconCloud,
   IconEdit,
   IconFile,
+  IconFileSpreadsheet,
   IconFileText,
   IconLink,
   IconPhoto,
@@ -328,6 +329,49 @@ export const ContentPreview = memo(
       }
     }, [content.id, getContentById]);
 
+    const generateCsvPreview = useCallback(async () => {
+      try {
+        const contentDetail = await getContentById(content.id);
+        if (!contentDetail?.csvInfo) {
+          throw new Error("CSV情報が見つかりません");
+        }
+
+        // 生成された画像を取得
+        const thumbnailUrl = await getThumbnailUrl(content.id);
+
+        if (thumbnailUrl) {
+          setPreviewState({
+            loading: false,
+            previewUrl: thumbnailUrl,
+          });
+        } else {
+          // サムネイルが見つからない場合はフォールバック
+          throw new Error("生成された画像が見つかりません");
+        }
+      } catch (_error) {
+        // フォールバック用のSVGプレビュー
+        const svgContent = `
+          <svg width="320" height="180" xmlns="http://www.w3.org/2000/svg">
+            <rect width="100%" height="100%" fill="#10b981"/>
+            <text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="white" font-size="14">
+              CSVデータ
+            </text>
+          </svg>
+        `;
+
+        const encodedSvg = btoa(
+          encodeURIComponent(svgContent).replace(/%([0-9A-F]{2})/g, (_match, p1) => {
+            return String.fromCharCode(Number.parseInt(p1, 16));
+          }),
+        );
+
+        setPreviewState({
+          loading: false,
+          previewUrl: `data:image/svg+xml;base64,${encodedSvg}`,
+        });
+      }
+    }, [content.id, getContentById, getThumbnailUrl]);
+
     const generatePreview = useCallback(async () => {
       setPreviewState({ loading: true });
 
@@ -349,6 +393,9 @@ export const ContentPreview = memo(
           case "weather":
             await generateWeatherPreview();
             break;
+          case "csv":
+            await generateCsvPreview();
+            break;
           default:
             setPreviewState({ loading: false, error: "Unknown content type" });
         }
@@ -366,6 +413,7 @@ export const ContentPreview = memo(
       generateUrlPreview,
       generateTextPreview,
       generateWeatherPreview,
+      generateCsvPreview,
     ]);
 
     useEffect(() => {
@@ -387,6 +435,8 @@ export const ContentPreview = memo(
           return <IconLink {...iconProps} />;
         case "weather":
           return <IconCloud {...iconProps} />;
+        case "csv":
+          return <IconFileSpreadsheet {...iconProps} />;
         default:
           return <IconFile {...iconProps} />;
       }
@@ -406,6 +456,8 @@ export const ContentPreview = memo(
           return "purple";
         case "weather":
           return "teal";
+        case "csv":
+          return "green";
         default:
           return "gray";
       }

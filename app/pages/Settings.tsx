@@ -219,9 +219,10 @@ const Settings = () => {
             <List.Item>YouTube動画: 4件</List.Item>
             <List.Item>URLリンク: 4件</List.Item>
             <List.Item>気象情報: 2件（東日本・西日本）</List.Item>
+            <List.Item>CSVデータ: 2件（売上データ・成績表）</List.Item>
           </List>
           <Text size="sm" c="dimmed">
-            合計18件のテストコンテンツが作成されます。
+            合計20件のテストコンテンツが作成されます。
           </Text>
         </Stack>
       ),
@@ -459,7 +460,7 @@ const Settings = () => {
               <Alert color="blue" icon={<IconPlus size={16} />}>
                 <Text size="sm">
                   デモンストレーション用のテストコンテンツを一括作成できます。
-                  画像、テキスト、YouTube動画、URLリンクの各種コンテンツが作成されます。
+                  画像、テキスト、YouTube動画、URLリンク、気象情報、CSVデータの各種コンテンツが作成されます。
                 </Text>
               </Alert>
 

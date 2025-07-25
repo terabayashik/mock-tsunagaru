@@ -8,6 +8,7 @@ export const ContentTypeSchema = z.enum([
   "youtube", // YouTubeのURL
   "url", // その他のURL
   "weather", // 気象情報
+  "csv", // CSVデータから生成する画像
 ]);
 
 // ファイルコンテンツの詳細情報
@@ -54,16 +55,78 @@ export const WeatherContentSchema = z.object({
   apiUrl: z.string().url().default("https://jma-proxy.deno.dev"), // APIのベースURL
 });
 
+// CSVレイアウト設定
+export const CsvLayoutConfigSchema = z.object({
+  table: z.object({
+    width: z.number().min(1),
+    height: z.number().min(1),
+    x: z.number().min(0),
+    y: z.number().min(0),
+  }),
+  columns: z.object({
+    widths: z.union([z.array(z.number()), z.literal("auto")]),
+    alignment: z.array(z.enum(["left", "center", "right"])),
+  }),
+  rows: z.object({
+    headerHeight: z.number().min(1),
+    rowHeight: z.number().min(1),
+  }),
+  padding: z.object({
+    cell: z.number().min(0),
+    table: z.number().min(0),
+  }),
+});
+
+// CSVスタイル設定
+export const CsvStyleConfigSchema = z.object({
+  font: z.object({
+    family: z.string(),
+    size: z.number().min(1),
+    color: z.string(),
+  }),
+  header: z.object({
+    backgroundColor: z.string(),
+    fontWeight: z.enum(["normal", "bold"]).optional(),
+    fontSize: z.number().optional(),
+    color: z.string().optional(),
+  }),
+  table: z.object({
+    borderWidth: z.number().min(0),
+    borderColor: z.string(),
+    backgroundColor: z.string(),
+  }),
+  cell: z.object({
+    borderWidth: z.number().min(0),
+    borderColor: z.string(),
+    backgroundColor: z.string().optional(),
+    alternateRowColor: z.string().optional(),
+  }),
+});
+
+// CSVコンテンツの詳細情報
+export const CsvContentSchema = z.object({
+  originalCsvData: z.string(), // 元のCSVデータ
+  selectedRows: z.array(z.number()), // 選択された行のインデックス（0ベース）
+  selectedColumns: z.array(z.number()), // 選択された列のインデックス（0ベース）
+  layout: CsvLayoutConfigSchema.optional(), // レイアウト設定
+  style: CsvStyleConfigSchema.optional(), // スタイル設定
+  backgroundPath: z.string().optional(), // 背景画像のOPFSパス
+  format: z.enum(["png", "jpeg"]).default("png"), // 出力形式
+  renderedImagePath: z.string(), // 生成された画像のOPFSパス
+  apiUrl: z.string().url().default("https://csv-renderer.onrender.com"), // APIのベースURL
+});
+
 // コンテンツアイテムのスキーマ
 export const ContentItemSchema = z.object({
   id: z.string().min(1, "IDは必須です"),
   name: z.string().min(1, "名前は必須です"),
   type: ContentTypeSchema,
-  // ファイルの場合はfileInfo、URLの場合はurlInfo、テキストの場合はtextInfo、気象情報の場合はweatherInfo
+  // ファイルの場合はfileInfo、URLの場合はurlInfo、テキストの場合はtextInfo、気象情報の場合はweatherInfo、CSVの場合はcsvInfo
   fileInfo: FileContentSchema.optional(),
   urlInfo: UrlContentSchema.optional(),
   textInfo: TextContentSchema.optional(),
   weatherInfo: WeatherContentSchema.optional(),
+  csvInfo: CsvContentSchema.optional(),
   tags: z.array(z.string()).default([]), // タグ
   createdAt: z.string().datetime("無効な作成日時です"),
   updatedAt: z.string().datetime("無効な更新日時です").optional(),
@@ -89,6 +152,9 @@ export type FileContent = z.infer<typeof FileContentSchema>;
 export type UrlContent = z.infer<typeof UrlContentSchema>;
 export type TextContent = z.infer<typeof TextContentSchema>;
 export type WeatherContent = z.infer<typeof WeatherContentSchema>;
+export type CsvLayoutConfig = z.infer<typeof CsvLayoutConfigSchema>;
+export type CsvStyleConfig = z.infer<typeof CsvStyleConfigSchema>;
+export type CsvContent = z.infer<typeof CsvContentSchema>;
 export type ContentItem = z.infer<typeof ContentItemSchema>;
 export type ContentIndex = z.infer<typeof ContentIndexSchema>;
 

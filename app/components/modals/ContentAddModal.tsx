@@ -21,13 +21,21 @@ import {
   IconFile,
   IconLink,
   IconPencil,
+  IconTableOptions,
   IconX,
 } from "@tabler/icons-react";
 import { memo, useState } from "react";
+import { CsvContentForm } from "~/components/csv/CsvContentForm";
 import { LocationSelector } from "~/components/weather/LocationSelector";
-import { ACCEPTED_MIME_TYPES, FONT_FAMILIES, type TextContent, type WeatherContent } from "~/types/content";
+import {
+  ACCEPTED_MIME_TYPES,
+  type CsvContent,
+  FONT_FAMILIES,
+  type TextContent,
+  type WeatherContent,
+} from "~/types/content";
 
-type ContentMode = "file" | "url" | "text" | "weather";
+type ContentMode = "file" | "url" | "text" | "weather" | "csv";
 
 interface ContentAddModalProps {
   opened: boolean;
@@ -36,6 +44,7 @@ interface ContentAddModalProps {
   onUrlSubmit: (data: { url: string; name?: string; title?: string; description?: string }) => Promise<void>;
   onTextSubmit: (data: { name: string; textInfo: TextContent }) => Promise<void>;
   onWeatherSubmit?: (data: { name: string; weatherInfo: WeatherContent }) => Promise<void>;
+  onCsvSubmit?: (data: { name: string; csvData: Partial<CsvContent>; backgroundFile?: File }) => Promise<void>;
 }
 
 // 定数
@@ -50,7 +59,15 @@ const getAllAcceptedMimeTypes = () => {
 };
 
 export const ContentAddModal = memo(
-  ({ opened, onClose, onFileSubmit, onUrlSubmit, onTextSubmit, onWeatherSubmit }: ContentAddModalProps) => {
+  ({
+    opened,
+    onClose,
+    onFileSubmit,
+    onUrlSubmit,
+    onTextSubmit,
+    onWeatherSubmit,
+    onCsvSubmit,
+  }: ContentAddModalProps) => {
     const { colorScheme } = useMantineColorScheme();
     const [mode, setMode] = useState<ContentMode>("file");
     const [loading, setLoading] = useState(false);
@@ -82,6 +99,11 @@ export const ContentAddModal = memo(
     const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
     const [weatherType, setWeatherType] = useState<"current" | "weekly">("weekly");
 
+    // CSV関連の状態
+    const [csvName, setCsvName] = useState("");
+    const [csvData, setCsvData] = useState<Partial<CsvContent>>({});
+    const [csvBackgroundFile, setCsvBackgroundFile] = useState<File | undefined>();
+
     const handleClose = () => {
       if (loading) return;
 
@@ -106,6 +128,9 @@ export const ContentAddModal = memo(
       setWeatherName("");
       setSelectedLocations([]);
       setWeatherType("weekly");
+      setCsvName("");
+      setCsvData({});
+      setCsvBackgroundFile(undefined);
 
       onClose();
     };
@@ -207,6 +232,24 @@ export const ContentAddModal = memo(
       }
     };
 
+    const handleCsvSubmit = async () => {
+      if (!onCsvSubmit || !csvName.trim() || !csvData.originalCsvData) return;
+
+      setLoading(true);
+      try {
+        await onCsvSubmit({
+          name: csvName.trim(),
+          csvData,
+          backgroundFile: csvBackgroundFile,
+        });
+        handleClose();
+      } catch (error) {
+        console.error("CSV content creation failed:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     const formatFileSize = (bytes: number): string => {
       if (bytes === 0) return "0 B";
       const k = 1024;
@@ -219,6 +262,7 @@ export const ContentAddModal = memo(
     const isUrlMode = mode === "url";
     const isTextMode = mode === "text";
     const isWeatherMode = mode === "weather";
+    const isCsvMode = mode === "csv";
 
     const canSubmit = isFileMode
       ? selectedFiles.length > 0
@@ -226,7 +270,9 @@ export const ContentAddModal = memo(
         ? url.trim().length > 0
         : isTextMode
           ? textName.trim().length > 0 && textContent.trim().length > 0
-          : weatherName.trim().length > 0 && selectedLocations.length > 0;
+          : isWeatherMode
+            ? weatherName.trim().length > 0 && selectedLocations.length > 0
+            : csvName.trim().length > 0 && csvData.originalCsvData;
 
     return (
       <Modal opened={opened} onClose={handleClose} title="コンテンツを追加" centered size="lg">
@@ -273,6 +319,19 @@ export const ContentAddModal = memo(
                         </Group>
                       ),
                       value: "weather",
+                    },
+                  ]
+                : []),
+              ...(onCsvSubmit
+                ? [
+                    {
+                      label: (
+                        <Group gap="xs" justify="center">
+                          <IconTableOptions size={16} />
+                          <Text size="sm">CSV</Text>
+                        </Group>
+                      ),
+                      value: "csv",
                     },
                   ]
                 : []),
@@ -606,6 +665,28 @@ export const ContentAddModal = memo(
             </Stack>
           )}
 
+          {/* CSVモード */}
+          {isCsvMode && (
+            <Stack gap="md">
+              <TextInput
+                label="コンテンツ名"
+                placeholder="例: 月間売上データ"
+                value={csvName}
+                onChange={(e) => setCsvName(e.target.value)}
+                required
+              />
+
+              <CsvContentForm
+                initialData={csvData}
+                onDataChange={setCsvData}
+                onBackgroundFileChange={setCsvBackgroundFile}
+                onPreviewRequest={() => {
+                  // TODO: プレビュー機能の実装
+                }}
+              />
+            </Stack>
+          )}
+
           {/* アクションボタン */}
           <Group justify="flex-end">
             <Button variant="subtle" onClick={handleClose} disabled={loading}>
@@ -619,8 +700,10 @@ export const ContentAddModal = memo(
                   <IconLink size={16} />
                 ) : isTextMode ? (
                   <IconPencil size={16} />
-                ) : (
+                ) : isWeatherMode ? (
                   <IconCloud size={16} />
+                ) : (
+                  <IconTableOptions size={16} />
                 )
               }
               onClick={
@@ -630,12 +713,22 @@ export const ContentAddModal = memo(
                     ? handleUrlSubmit
                     : isTextMode
                       ? handleTextSubmit
-                      : handleWeatherSubmit
+                      : isWeatherMode
+                        ? handleWeatherSubmit
+                        : handleCsvSubmit
               }
               loading={loading}
               disabled={!canSubmit}
             >
-              {isFileMode ? "アップロード" : isUrlMode ? "URLを追加" : isTextMode ? "テキストを追加" : "気象情報を追加"}
+              {isFileMode
+                ? "アップロード"
+                : isUrlMode
+                  ? "URLを追加"
+                  : isTextMode
+                    ? "テキストを追加"
+                    : isWeatherMode
+                      ? "気象情報を追加"
+                      : "CSVコンテンツを追加"}
             </Button>
           </Group>
         </Stack>

@@ -1,5 +1,6 @@
 import { useCallback } from "react";
-import type { ContentIndex, ContentItem, ContentType, TextContent, WeatherContent } from "~/types/content";
+import { csvRendererService } from "~/services/csvRenderer";
+import type { ContentIndex, ContentItem, ContentType, CsvContent, TextContent, WeatherContent } from "~/types/content";
 import { ContentItemSchema, ContentsIndexSchema, getContentTypeFromMimeType, isYouTubeUrl } from "~/types/content";
 import { type ContentUsageInfo, checkContentUsage } from "~/utils/contentUsage";
 import { logger } from "~/utils/logger";
@@ -386,6 +387,99 @@ export const useContent = () => {
   );
 
   /**
+   * CSVコンテンツを作成
+   */
+  const createCsvContent = useCallback(
+    async (name: string, csvData: Partial<CsvContent>, backgroundFile?: File): Promise<ContentItem> => {
+      const id = crypto.randomUUID();
+      const now = new Date().toISOString();
+
+      try {
+        // CSV画像を生成
+        const renderedImagePath = await csvRendererService.generateAndSaveCsvImage(csvData, backgroundFile);
+
+        // 背景画像のパスを取得
+        let backgroundPath: string | undefined;
+        if (backgroundFile) {
+          const backgroundFileName = `contents/csv-${id}/background-${backgroundFile.name}`;
+          await opfs.writeFile(backgroundFileName, await backgroundFile.arrayBuffer());
+          backgroundPath = backgroundFileName;
+        }
+
+        // 必須フィールドの存在確認
+        if (!csvData.originalCsvData || !csvData.selectedRows || !csvData.selectedColumns) {
+          throw new Error("必須のCSVデータが不足しています");
+        }
+
+        const csvInfo: CsvContent = {
+          originalCsvData: csvData.originalCsvData,
+          selectedRows: csvData.selectedRows,
+          selectedColumns: csvData.selectedColumns,
+          layout: csvData.layout,
+          style: csvData.style,
+          backgroundPath,
+          format: csvData.format || "png",
+          renderedImagePath,
+          apiUrl: csvData.apiUrl || "https://csv-renderer.onrender.com",
+        };
+
+        const newContent: ContentItem = {
+          id,
+          name,
+          type: "csv",
+          csvInfo,
+          tags: [],
+          createdAt: now,
+          updatedAt: now,
+        };
+
+        // Zodでバリデーション
+        const validated = ContentItemSchema.parse(newContent);
+
+        return await lock.withLock("contents-create", async () => {
+          try {
+            // メタデータを保存
+            await opfs.writeJSON(`contents/content-${id}.json`, validated);
+
+            // インデックスを更新
+            const currentIndex = await getContentsIndex();
+            const newIndex: ContentIndex = {
+              id: validated.id,
+              name: validated.name,
+              type: validated.type,
+              tags: validated.tags,
+              createdAt: validated.createdAt,
+              updatedAt: validated.updatedAt,
+            };
+
+            const updatedIndex = [...currentIndex, newIndex];
+            await opfs.writeJSON("contents/index.json", updatedIndex);
+
+            return validated;
+          } catch (error) {
+            // エラーが発生した場合はクリーンアップ
+            try {
+              await opfs.deleteFile(`contents/content-${id}.json`);
+              if (renderedImagePath) {
+                await opfs.deleteFile(renderedImagePath);
+              }
+              if (backgroundPath) {
+                await opfs.deleteFile(backgroundPath);
+              }
+            } catch {
+              // クリーンアップエラーは無視
+            }
+            throw error;
+          }
+        });
+      } catch (error) {
+        throw new Error(`CSVコンテンツの作成に失敗しました: ${error}`);
+      }
+    },
+    [getContentsIndex, lock.withLock, opfs.writeJSON, opfs.writeFile, opfs.deleteFile],
+  );
+
+  /**
    * コンテンツを更新
    */
   const updateContent = useCallback(
@@ -582,6 +676,17 @@ export const useContent = () => {
     async (contentId: string): Promise<string | null> => {
       try {
         const content = await getContentById(contentId);
+        
+        // CSVコンテンツの場合
+        if (content?.type === "csv" && content.csvInfo?.renderedImagePath) {
+          const imageData = await opfs.readFile(content.csvInfo.renderedImagePath);
+          const blob = new Blob([imageData], { 
+            type: content.csvInfo.format === "png" ? "image/png" : "image/jpeg" 
+          });
+          return URL.createObjectURL(blob);
+        }
+        
+        // 通常のファイルコンテンツの場合
         if (!content?.fileInfo?.thumbnailPath) {
           return null;
         }
@@ -720,6 +825,7 @@ export const useContent = () => {
     createUrlContent,
     createTextContent,
     createWeatherContent,
+    createCsvContent,
     updateContent,
     deleteContent,
     deleteContentSafely,

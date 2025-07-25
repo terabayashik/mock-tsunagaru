@@ -99,6 +99,20 @@ export const ContentPreviewModal = ({
               console.error("Failed to read file from OPFS:", fileError);
             }
           }
+        } else if (contentData?.type === "csv" && contentData.csvInfo?.renderedImagePath) {
+          // CSVの場合はレンダリング済み画像を表示
+          try {
+            const opfs = OPFSManager.getInstance();
+            const fileData = await opfs.readFile(contentData.csvInfo.renderedImagePath);
+            if (fileData) {
+              const mimeType = contentData.csvInfo.format === "png" ? "image/png" : "image/jpeg";
+              const blob = new Blob([fileData], { type: mimeType });
+              const url = URL.createObjectURL(blob);
+              setPreviewUrl(url);
+            }
+          } catch (fileError) {
+            console.error("Failed to read CSV rendered image from OPFS:", fileError);
+          }
         }
       } catch (error) {
         console.error("Failed to load content:", error);
@@ -144,8 +158,8 @@ export const ContentPreviewModal = ({
       );
     }
 
-    // 画像プレビュー
-    if (content.type === "image" && previewUrl) {
+    // 画像プレビュー（CSVの場合も含む）
+    if ((content.type === "image" || content.type === "csv") && previewUrl) {
       return (
         <Box ta="center" style={{ maxHeight: "70vh", overflow: "hidden" }}>
           <img
