@@ -256,9 +256,10 @@ export default function ContentsPage() {
         updateData.weatherInfo = data.weatherInfo;
       }
       if (data.csvInfo) {
-        updateData.csvInfo = data.csvInfo;
-        updateData.csvBackgroundFile = data.csvBackgroundFile;
-        updateData.csvFile = data.csvFile;
+        // csvInfoはPartial<CsvContent>なので、updateContent内で適切に処理される
+        updateData.csvInfo = data.csvInfo as CsvContent;
+        updateData.csvBackgroundFile = data.csvBackgroundFile || undefined;
+        updateData.csvFile = data.csvFile || undefined;
       }
 
       const updatedContent = await updateContent(data.id, updateData);

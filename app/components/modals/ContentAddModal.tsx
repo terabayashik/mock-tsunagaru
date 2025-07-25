@@ -45,7 +45,12 @@ interface ContentAddModalProps {
   onUrlSubmit: (data: { url: string; name?: string; title?: string; description?: string }) => Promise<void>;
   onTextSubmit: (data: { name: string; textInfo: TextContent }) => Promise<void>;
   onWeatherSubmit?: (data: { name: string; weatherInfo: WeatherContent }) => Promise<void>;
-  onCsvSubmit?: (data: { name: string; csvData: Partial<CsvContent>; backgroundFile?: File; csvFile?: File }) => Promise<void>;
+  onCsvSubmit?: (data: {
+    name: string;
+    csvData: Partial<CsvContent>;
+    backgroundFile?: File;
+    csvFile?: File;
+  }) => Promise<void>;
 }
 
 // 定数
@@ -697,7 +702,7 @@ export const ContentAddModal = memo(
                       backgroundFile: csvBackgroundFile || undefined,
                       format: csvData.format || "png",
                     });
-                    
+
                     // プレビューを新しいタブで開く
                     window.open(previewUrl, "_blank");
                   } catch (error) {

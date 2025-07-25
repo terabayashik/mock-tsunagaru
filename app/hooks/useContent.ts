@@ -497,10 +497,13 @@ export const useContent = () => {
    * コンテンツを更新
    */
   const updateContent = useCallback(
-    async (id: string, updateData: Partial<Omit<ContentItem, "id" | "createdAt">> & {
-      csvBackgroundFile?: File;
-      csvFile?: File;
-    }): Promise<ContentItem> => {
+    async (
+      id: string,
+      updateData: Partial<Omit<ContentItem, "id" | "createdAt">> & {
+        csvBackgroundFile?: File;
+        csvFile?: File;
+      },
+    ): Promise<ContentItem> => {
       return await lock.withLock(`content-${id}`, async () => {
         try {
           // 既存データを取得（デッドロックを避けるため、getContentByIdを使わずに直接読み込む）
@@ -513,8 +516,13 @@ export const useContent = () => {
           const existingContent = ContentItemSchema.parse(existingData);
 
           // CSVコンテンツの場合、画像の再生成が必要かチェック
-          let csvUpdateData = updateData.csvInfo;
-          if (existingContent.type === "csv" && updateData.csvInfo && (updateData.csvInfo as any).regenerateImage) {
+          let csvUpdateData: Partial<CsvContent> | undefined = updateData.csvInfo;
+          if (
+            existingContent.type === "csv" &&
+            updateData.csvInfo &&
+            "regenerateImage" in updateData.csvInfo &&
+            updateData.csvInfo.regenerateImage
+          ) {
             // 新しいCSVファイルがある場合は保存
             if (updateData.csvFile) {
               const csvFileName = updateData.csvFile.name;
@@ -526,7 +534,7 @@ export const useContent = () => {
                 originalCsvFileName: csvFileName,
               };
             }
-            
+
             // 新しい背景画像がある場合は保存
             if (updateData.csvBackgroundFile) {
               const bgFileName = updateData.csvBackgroundFile.name;
@@ -538,21 +546,25 @@ export const useContent = () => {
                 backgroundFileName: bgFileName,
               };
             }
-            
+
             // 画像を再生成
             const newImagePath = await csvRendererService.regenerateCsvImage(
               { ...existingContent.csvInfo, ...csvUpdateData } as CsvContent,
-              updateData.csvBackgroundFile
+              updateData.csvBackgroundFile,
             );
             // 再生成フラグを削除し、新しい画像パスを設定
             csvUpdateData = {
               ...csvUpdateData,
               renderedImagePath: newImagePath,
             };
-            delete (csvUpdateData as any).regenerateImage;
+            if (csvUpdateData && "regenerateImage" in csvUpdateData) {
+              // biome-ignore lint/correctness/noUnusedVariables: regenerateImage is excluded intentionally
+              const { regenerateImage, ...rest } = csvUpdateData;
+              csvUpdateData = rest;
+            }
           }
 
-          const updatedContent: ContentItem = {
+          let updatedContent: ContentItem = {
             ...existingContent,
             ...updateData,
             ...(csvUpdateData ? { csvInfo: { ...existingContent.csvInfo, ...csvUpdateData } as CsvContent } : {}),
@@ -560,7 +572,11 @@ export const useContent = () => {
           };
 
           // csvBackgroundFileは保存しない
-          delete (updatedContent as any).csvBackgroundFile;
+          if ("csvBackgroundFile" in updatedContent) {
+            // biome-ignore lint/correctness/noUnusedVariables: csvBackgroundFile is excluded intentionally
+            const { csvBackgroundFile, ...rest } = updatedContent;
+            updatedContent = rest;
+          }
 
           // Zodでバリデーション
           const validated = ContentItemSchema.parse(updatedContent);
@@ -593,7 +609,7 @@ export const useContent = () => {
         }
       });
     },
-    [getContentsIndex, lock.withLock, opfs.readJSON, opfs.writeJSON, opfs.writeFile, csvRendererService.regenerateCsvImage],
+    [getContentsIndex, lock.withLock, opfs.readJSON, opfs.writeJSON, opfs.writeFile],
   );
 
   /**
@@ -737,16 +753,16 @@ export const useContent = () => {
     async (contentId: string): Promise<string | null> => {
       try {
         const content = await getContentById(contentId);
-        
+
         // CSVコンテンツの場合
         if (content?.type === "csv" && content.csvInfo?.renderedImagePath) {
           const imageData = await opfs.readFile(content.csvInfo.renderedImagePath);
-          const blob = new Blob([imageData], { 
-            type: content.csvInfo.format === "png" ? "image/png" : "image/jpeg" 
+          const blob = new Blob([imageData], {
+            type: content.csvInfo.format === "png" ? "image/png" : "image/jpeg",
           });
           return URL.createObjectURL(blob);
         }
-        
+
         // 通常のファイルコンテンツの場合
         if (!content?.fileInfo?.thumbnailPath) {
           return null;

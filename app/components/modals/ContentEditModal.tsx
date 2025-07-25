@@ -20,8 +20,14 @@ import { CsvContentForm } from "~/components/csv/CsvContentForm";
 import { LocationSelector } from "~/components/weather/LocationSelector";
 import { useContent } from "~/hooks/useContent";
 import { csvRendererService } from "~/services/csvRenderer";
+import {
+  type ContentIndex,
+  type CsvContent,
+  FONT_FAMILIES,
+  type TextContent,
+  type WeatherContent,
+} from "~/types/content";
 import { OPFSManager } from "~/utils/storage/opfs";
-import { type ContentIndex, type CsvContent, FONT_FAMILIES, type TextContent, type WeatherContent } from "~/types/content";
 
 interface ContentEditModalProps {
   opened: boolean;
@@ -144,19 +150,19 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
           setWeatherType("weekly");
         } else if (content.type === "csv" && contentDetail?.csvInfo) {
           setCsvData(contentDetail.csvInfo);
-          
+
           // オリジナルCSVファイルを読み込む
           if (contentDetail.csvInfo.originalCsvFilePath && contentDetail.csvInfo.originalCsvFileName) {
             try {
               const csvFileData = await opfs.readFile(contentDetail.csvInfo.originalCsvFilePath);
               const csvBlob = new Blob([csvFileData], { type: "text/csv" });
               const csvFile = new File([csvBlob], contentDetail.csvInfo.originalCsvFileName, { type: "text/csv" });
-              setCsvData(prev => ({ ...prev, originalCsvFile: csvFile }));
+              setCsvData((prev) => ({ ...prev, originalCsvFile: csvFile }));
             } catch (error) {
               console.error("Failed to load CSV file:", error);
             }
           }
-          
+
           // 背景画像ファイルを読み込む
           if (contentDetail.csvInfo.backgroundPath && contentDetail.csvInfo.backgroundFileName) {
             try {
@@ -197,7 +203,7 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
     };
 
     loadContentDetails();
-  }, [content, getContentById]);
+  }, [content, getContentById, opfs.readFile]);
 
   const handleClose = () => {
     if (loading) return;
@@ -260,7 +266,8 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
     }
   };
 
-  const canSubmit = name.trim().length > 0 && 
+  const canSubmit =
+    name.trim().length > 0 &&
     (content.type !== "weather" || selectedLocations.length > 0) &&
     (content.type !== "csv" || (csvData.originalCsvData && csvData.selectedRows && csvData.selectedColumns));
 
@@ -370,8 +377,8 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
             <CsvContentForm
               initialData={csvData}
               onDataChange={setCsvData}
-              onBackgroundFileChange={setCsvBackgroundFile}
-              onCsvFileChange={setCsvFile}
+              onBackgroundFileChange={(file) => setCsvBackgroundFile(file || null)}
+              onCsvFileChange={(file) => setCsvFile(file || null)}
               onPreviewRequest={async () => {
                 try {
                   // プレビュー生成（編集されたデータがあればそれを使用）
@@ -384,7 +391,7 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
                     backgroundFile: csvBackgroundFile || undefined,
                     format: csvData.format || "png",
                   });
-                  
+
                   // プレビューを新しいタブで開く
                   window.open(previewUrl, "_blank");
                 } catch (error) {
