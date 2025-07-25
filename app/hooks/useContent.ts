@@ -1,7 +1,13 @@
 import { useCallback } from "react";
 import { csvRendererService } from "~/services/csvRenderer";
 import type { ContentIndex, ContentItem, ContentType, CsvContent, TextContent, WeatherContent } from "~/types/content";
-import { ContentItemSchema, ContentsIndexSchema, getContentTypeFromMimeType, isYouTubeUrl } from "~/types/content";
+import {
+  ContentItemSchema,
+  ContentsIndexSchema,
+  CsvContentSchema,
+  getContentTypeFromMimeType,
+  isYouTubeUrl,
+} from "~/types/content";
 import { type ContentUsageInfo, checkContentUsage } from "~/utils/contentUsage";
 import { logger } from "~/utils/logger";
 import { thumbnailGenerator } from "~/utils/media/thumbnailGenerator";
@@ -548,8 +554,11 @@ export const useContent = () => {
             }
 
             // 画像を再生成
+            // 既存のcsvInfoと更新データをマージしてバリデーション
+            const mergedCsvContent = { ...existingContent.csvInfo, ...csvUpdateData };
+            const validatedCsvContent = CsvContentSchema.parse(mergedCsvContent);
             const newImagePath = await csvRendererService.regenerateCsvImage(
-              { ...existingContent.csvInfo, ...csvUpdateData } as CsvContent,
+              validatedCsvContent,
               updateData.csvBackgroundFile,
             );
             // 再生成フラグを削除し、新しい画像パスを設定
@@ -567,9 +576,18 @@ export const useContent = () => {
           let updatedContent: ContentItem = {
             ...existingContent,
             ...updateData,
-            ...(csvUpdateData ? { csvInfo: { ...existingContent.csvInfo, ...csvUpdateData } as CsvContent } : {}),
             updatedAt: new Date().toISOString(),
           };
+
+          // CSVコンテンツの場合、csvInfoを適切にマージしてバリデーション
+          if (csvUpdateData && existingContent.csvInfo) {
+            const mergedCsvInfo = { ...existingContent.csvInfo, ...csvUpdateData };
+            try {
+              updatedContent.csvInfo = CsvContentSchema.parse(mergedCsvInfo);
+            } catch (error) {
+              throw new Error(`CSVコンテンツのバリデーションに失敗しました: ${error}`);
+            }
+          }
 
           // csvBackgroundFileは保存しない
           if ("csvBackgroundFile" in updatedContent) {

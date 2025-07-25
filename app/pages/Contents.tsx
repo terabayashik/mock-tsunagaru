@@ -30,7 +30,13 @@ import {
   filteredContentsAtom,
 } from "~/states/content";
 import { contentPreviewModalAtom, modalActionsAtom } from "~/states/modal";
-import type { ContentType, CsvContent, TextContent, WeatherContent } from "~/types/content";
+import {
+  type ContentType,
+  type CsvContent,
+  CsvContentSchema,
+  type TextContent,
+  type WeatherContent,
+} from "~/types/content";
 import { formatFileSize, getContentTypeBadge } from "~/utils/contentTypeUtils";
 import { logger } from "~/utils/logger";
 
@@ -256,8 +262,24 @@ export default function ContentsPage() {
         updateData.weatherInfo = data.weatherInfo;
       }
       if (data.csvInfo) {
-        // csvInfoはPartial<CsvContent>なので、updateContent内で適切に処理される
-        updateData.csvInfo = data.csvInfo as CsvContent;
+        // 既存のCSV情報を取得して、更新データとマージ
+        const existingContent = await getContentById(data.id);
+        if (existingContent?.csvInfo) {
+          // 既存のcsvInfoと新しいデータをマージして完全なCsvContentを作成
+          const mergedCsvInfo = {
+            ...existingContent.csvInfo,
+            ...data.csvInfo,
+          };
+
+          // Zodでバリデーション
+          try {
+            updateData.csvInfo = CsvContentSchema.parse(mergedCsvInfo);
+          } catch (error) {
+            console.error("CSV content validation failed:", error);
+            throw new Error("CSVコンテンツの更新データが不正です");
+          }
+        }
+
         updateData.csvBackgroundFile = data.csvBackgroundFile || undefined;
         updateData.csvFile = data.csvFile || undefined;
       }
