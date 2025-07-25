@@ -96,7 +96,7 @@ export const ContentFilters = memo(() => {
   ];
 
   return (
-    <Group gap="md" mb="md">
+    <Group gap="md">
       <TextInput
         placeholder="コンテンツを検索..."
         aria-label="コンテンツを検索"
