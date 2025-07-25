@@ -3,6 +3,7 @@ import {
   IconBrandYoutube,
   IconCloud,
   IconFile,
+  IconFileSpreadsheet,
   IconFileText,
   IconLink,
   IconPhoto,
@@ -36,6 +37,8 @@ export const ContentFilters = memo(() => {
         return <IconLink size={14} />;
       case "weather":
         return <IconCloud size={14} />;
+      case "csv":
+        return <IconFileSpreadsheet size={14} />;
       case "unused":
         return <IconTrash size={14} />;
       default:
@@ -59,6 +62,8 @@ export const ContentFilters = memo(() => {
         return "URL";
       case "weather":
         return "気象情報";
+      case "csv":
+        return "CSV";
       case "unused":
         return "未使用";
       default:
@@ -86,6 +91,7 @@ export const ContentFilters = memo(() => {
     getFilterOption("youtube"),
     getFilterOption("url"),
     getFilterOption("weather"),
+    getFilterOption("csv"),
     getFilterOption("unused"),
   ];
 
