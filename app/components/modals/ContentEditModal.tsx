@@ -16,9 +16,12 @@ import {
 import { IconDeviceFloppy } from "@tabler/icons-react";
 import { memo, useEffect, useState } from "react";
 import { ContentUsageDisplay } from "~/components/content/ContentUsageDisplay";
+import { CsvContentForm } from "~/components/csv/CsvContentForm";
 import { LocationSelector } from "~/components/weather/LocationSelector";
 import { useContent } from "~/hooks/useContent";
-import { type ContentIndex, FONT_FAMILIES, type TextContent, type WeatherContent } from "~/types/content";
+import { csvRendererService } from "~/services/csvRenderer";
+import { OPFSManager } from "~/utils/storage/opfs";
+import { type ContentIndex, type CsvContent, FONT_FAMILIES, type TextContent, type WeatherContent } from "~/types/content";
 
 interface ContentEditModalProps {
   opened: boolean;
@@ -31,6 +34,9 @@ interface ContentEditModalProps {
     textInfo?: TextContent;
     urlInfo?: { title?: string; description?: string };
     weatherInfo?: WeatherContent;
+    csvInfo?: Partial<CsvContent> & { regenerateImage?: boolean };
+    csvBackgroundFile?: File | null;
+    csvFile?: File | null;
   }) => Promise<void>;
 }
 
@@ -41,6 +47,7 @@ const MAX_FONT_SIZE = 200;
 
 export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: ContentEditModalProps) => {
   const { getContentById } = useContent();
+  const opfs = OPFSManager.getInstance();
   const [loading, setLoading] = useState(false);
 
   // 基本情報
@@ -65,6 +72,11 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
   // 気象情報関連の状態（type === "weather"の場合のみ使用）
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [weatherType, setWeatherType] = useState<"current" | "weekly">("weekly");
+
+  // CSV関連の状態（type === "csv"の場合のみ使用）
+  const [csvData, setCsvData] = useState<Partial<CsvContent>>({});
+  const [csvBackgroundFile, setCsvBackgroundFile] = useState<File | null>(null);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
 
   // モーダルが閉じられたときにローディング状態をリセット
   useEffect(() => {
@@ -130,6 +142,34 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
         } else if (content.type === "weather") {
           setSelectedLocations([]);
           setWeatherType("weekly");
+        } else if (content.type === "csv" && contentDetail?.csvInfo) {
+          setCsvData(contentDetail.csvInfo);
+          
+          // オリジナルCSVファイルを読み込む
+          if (contentDetail.csvInfo.originalCsvFilePath && contentDetail.csvInfo.originalCsvFileName) {
+            try {
+              const csvFileData = await opfs.readFile(contentDetail.csvInfo.originalCsvFilePath);
+              const csvBlob = new Blob([csvFileData], { type: "text/csv" });
+              const csvFile = new File([csvBlob], contentDetail.csvInfo.originalCsvFileName, { type: "text/csv" });
+              setCsvData(prev => ({ ...prev, originalCsvFile: csvFile }));
+            } catch (error) {
+              console.error("Failed to load CSV file:", error);
+            }
+          }
+          
+          // 背景画像ファイルを読み込む
+          if (contentDetail.csvInfo.backgroundPath && contentDetail.csvInfo.backgroundFileName) {
+            try {
+              const bgFileData = await opfs.readFile(contentDetail.csvInfo.backgroundPath);
+              const bgBlob = new Blob([bgFileData], { type: "image/*" });
+              const bgFile = new File([bgBlob], contentDetail.csvInfo.backgroundFileName, { type: "image/*" });
+              setCsvBackgroundFile(bgFile);
+            } catch (error) {
+              console.error("Failed to load background file:", error);
+            }
+          }
+        } else if (content.type === "csv") {
+          setCsvData({});
         }
       } catch (error) {
         console.error("Failed to load content details:", error);
@@ -150,6 +190,8 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
         } else if (content.type === "weather") {
           setSelectedLocations([]);
           setWeatherType("weekly");
+        } else if (content.type === "csv") {
+          setCsvData({});
         }
       }
     };
@@ -199,6 +241,13 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
           weatherType,
           apiUrl: "https://jma-proxy.deno.dev",
         };
+      } else if (content.type === "csv") {
+        submitData.csvInfo = {
+          ...csvData,
+          regenerateImage: true, // 編集時は画像を再生成
+        };
+        submitData.csvBackgroundFile = csvBackgroundFile;
+        submitData.csvFile = csvFile;
       }
 
       await onSubmit(submitData);
@@ -211,15 +260,18 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
     }
   };
 
-  const canSubmit = name.trim().length > 0 && (content.type !== "weather" || selectedLocations.length > 0);
+  const canSubmit = name.trim().length > 0 && 
+    (content.type !== "weather" || selectedLocations.length > 0) &&
+    (content.type !== "csv" || (csvData.originalCsvData && csvData.selectedRows && csvData.selectedColumns));
 
   const isText = content.type === "text";
   const isUrl = content.type === "url" || content.type === "youtube";
   const isWeather = content.type === "weather";
+  const isCsv = content.type === "csv";
   const isFileType = content.type === "video" || content.type === "image";
 
   return (
-    <Modal opened={opened} onClose={handleClose} title="コンテンツを編集" centered size="lg">
+    <Modal opened={opened} onClose={handleClose} title="コンテンツを編集" centered size={isCsv ? "xl" : "lg"}>
       <Stack gap="md">
         {/* 基本情報 */}
         <TextInput
@@ -307,6 +359,38 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
               selectedLocations={selectedLocations}
               onLocationsChange={setSelectedLocations}
               maxLocations={5}
+            />
+          </Stack>
+        )}
+
+        {/* CSVの場合 */}
+        {isCsv && (
+          <Stack gap="md">
+            <Divider label="CSV設定" />
+            <CsvContentForm
+              initialData={csvData}
+              onDataChange={setCsvData}
+              onBackgroundFileChange={setCsvBackgroundFile}
+              onCsvFileChange={setCsvFile}
+              onPreviewRequest={async () => {
+                try {
+                  // プレビュー生成（編集されたデータがあればそれを使用）
+                  const previewUrl = await csvRendererService.generatePreview({
+                    csvData: csvData.editedCsvData || csvData.originalCsvData || "",
+                    selectedRows: csvData.selectedRows || [],
+                    selectedColumns: csvData.selectedColumns || [],
+                    layout: csvData.layout,
+                    style: csvData.style,
+                    backgroundFile: csvBackgroundFile || undefined,
+                    format: csvData.format || "png",
+                  });
+                  
+                  // プレビューを新しいタブで開く
+                  window.open(previewUrl, "_blank");
+                } catch (error) {
+                  console.error("Preview generation failed:", error);
+                }
+              }}
             />
           </Stack>
         )}

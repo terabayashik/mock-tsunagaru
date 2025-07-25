@@ -253,6 +253,10 @@ export const useTestData = () => {
 
       for (const csv of csvData) {
         try {
+          // CSVファイルオブジェクトを作成
+          const csvBlob = new Blob([csv.csvContent], { type: "text/csv" });
+          const csvFile = new File([csvBlob], `${csv.name}.csv`, { type: "text/csv" });
+
           const csvInfo: Partial<CsvContent> = {
             originalCsvData: csv.csvContent,
             selectedRows: csv.selectedRows,
@@ -272,7 +276,8 @@ export const useTestData = () => {
             format: "png",
           };
 
-          await createCsvContent(csv.name, csvInfo);
+          // CSVファイルを引数として渡す
+          await createCsvContent(csv.name, csvInfo, undefined, csvFile);
           results.success++;
         } catch (error) {
           logger.error("TestData", `Failed to create test CSV: ${csv.name}`, error);

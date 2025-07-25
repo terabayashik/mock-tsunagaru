@@ -30,7 +30,7 @@ import {
   filteredContentsAtom,
 } from "~/states/content";
 import { contentPreviewModalAtom, modalActionsAtom } from "~/states/modal";
-import type { ContentType, TextContent, WeatherContent } from "~/types/content";
+import type { ContentType, CsvContent, TextContent, WeatherContent } from "~/types/content";
 import { formatFileSize, getContentTypeBadge } from "~/utils/contentTypeUtils";
 import { logger } from "~/utils/logger";
 
@@ -226,6 +226,9 @@ export default function ContentsPage() {
     textInfo?: TextContent;
     urlInfo?: { title?: string; description?: string };
     weatherInfo?: WeatherContent;
+    csvInfo?: Partial<CsvContent> & { regenerateImage?: boolean };
+    csvBackgroundFile?: File | null;
+    csvFile?: File | null;
   }) => {
     try {
       // 更新データを構築
@@ -251,6 +254,11 @@ export default function ContentsPage() {
       }
       if (data.weatherInfo) {
         updateData.weatherInfo = data.weatherInfo;
+      }
+      if (data.csvInfo) {
+        updateData.csvInfo = data.csvInfo;
+        updateData.csvBackgroundFile = data.csvBackgroundFile;
+        updateData.csvFile = data.csvFile;
       }
 
       const updatedContent = await updateContent(data.id, updateData);

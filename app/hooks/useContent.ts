@@ -390,7 +390,7 @@ export const useContent = () => {
    * CSVコンテンツを作成
    */
   const createCsvContent = useCallback(
-    async (name: string, csvData: Partial<CsvContent>, backgroundFile?: File): Promise<ContentItem> => {
+    async (name: string, csvData: Partial<CsvContent>, backgroundFile?: File, csvFile?: File): Promise<ContentItem> => {
       const id = crypto.randomUUID();
       const now = new Date().toISOString();
 
@@ -398,12 +398,23 @@ export const useContent = () => {
         // CSV画像を生成
         const renderedImagePath = await csvRendererService.generateAndSaveCsvImage(csvData, backgroundFile);
 
+        // オリジナルCSVファイルを保存
+        let originalCsvFilePath: string | undefined;
+        let originalCsvFileName: string | undefined;
+        if (csvFile) {
+          originalCsvFileName = csvFile.name;
+          originalCsvFilePath = `contents/csv-${id}/original-${csvFile.name}`;
+          await opfs.writeFile(originalCsvFilePath, await csvFile.arrayBuffer());
+        }
+
         // 背景画像のパスを取得
         let backgroundPath: string | undefined;
+        let backgroundFileName: string | undefined;
         if (backgroundFile) {
-          const backgroundFileName = `contents/csv-${id}/background-${backgroundFile.name}`;
-          await opfs.writeFile(backgroundFileName, await backgroundFile.arrayBuffer());
-          backgroundPath = backgroundFileName;
+          backgroundFileName = backgroundFile.name;
+          const backgroundFilePath = `contents/csv-${id}/background-${backgroundFile.name}`;
+          await opfs.writeFile(backgroundFilePath, await backgroundFile.arrayBuffer());
+          backgroundPath = backgroundFilePath;
         }
 
         // 必須フィールドの存在確認
@@ -413,11 +424,14 @@ export const useContent = () => {
 
         const csvInfo: CsvContent = {
           originalCsvData: csvData.originalCsvData,
+          originalCsvFilePath,
+          originalCsvFileName,
           selectedRows: csvData.selectedRows,
           selectedColumns: csvData.selectedColumns,
           layout: csvData.layout,
           style: csvData.style,
           backgroundPath,
+          backgroundFileName,
           format: csvData.format || "png",
           renderedImagePath,
           apiUrl: csvData.apiUrl || "https://csv-renderer.onrender.com",
@@ -483,7 +497,10 @@ export const useContent = () => {
    * コンテンツを更新
    */
   const updateContent = useCallback(
-    async (id: string, updateData: Partial<Omit<ContentItem, "id" | "createdAt">>): Promise<ContentItem> => {
+    async (id: string, updateData: Partial<Omit<ContentItem, "id" | "createdAt">> & {
+      csvBackgroundFile?: File;
+      csvFile?: File;
+    }): Promise<ContentItem> => {
       return await lock.withLock(`content-${id}`, async () => {
         try {
           // 既存データを取得（デッドロックを避けるため、getContentByIdを使わずに直接読み込む）
@@ -495,11 +512,55 @@ export const useContent = () => {
           // Zodでバリデーション
           const existingContent = ContentItemSchema.parse(existingData);
 
+          // CSVコンテンツの場合、画像の再生成が必要かチェック
+          let csvUpdateData = updateData.csvInfo;
+          if (existingContent.type === "csv" && updateData.csvInfo && (updateData.csvInfo as any).regenerateImage) {
+            // 新しいCSVファイルがある場合は保存
+            if (updateData.csvFile) {
+              const csvFileName = updateData.csvFile.name;
+              const csvFilePath = `contents/csv-${id}/original-${csvFileName}`;
+              await opfs.writeFile(csvFilePath, await updateData.csvFile.arrayBuffer());
+              csvUpdateData = {
+                ...updateData.csvInfo,
+                originalCsvFilePath: csvFilePath,
+                originalCsvFileName: csvFileName,
+              };
+            }
+            
+            // 新しい背景画像がある場合は保存
+            if (updateData.csvBackgroundFile) {
+              const bgFileName = updateData.csvBackgroundFile.name;
+              const bgFilePath = `contents/csv-${id}/background-${bgFileName}`;
+              await opfs.writeFile(bgFilePath, await updateData.csvBackgroundFile.arrayBuffer());
+              csvUpdateData = {
+                ...csvUpdateData,
+                backgroundPath: bgFilePath,
+                backgroundFileName: bgFileName,
+              };
+            }
+            
+            // 画像を再生成
+            const newImagePath = await csvRendererService.regenerateCsvImage(
+              { ...existingContent.csvInfo, ...csvUpdateData } as CsvContent,
+              updateData.csvBackgroundFile
+            );
+            // 再生成フラグを削除し、新しい画像パスを設定
+            csvUpdateData = {
+              ...csvUpdateData,
+              renderedImagePath: newImagePath,
+            };
+            delete (csvUpdateData as any).regenerateImage;
+          }
+
           const updatedContent: ContentItem = {
             ...existingContent,
             ...updateData,
+            ...(csvUpdateData ? { csvInfo: { ...existingContent.csvInfo, ...csvUpdateData } as CsvContent } : {}),
             updatedAt: new Date().toISOString(),
           };
+
+          // csvBackgroundFileは保存しない
+          delete (updatedContent as any).csvBackgroundFile;
 
           // Zodでバリデーション
           const validated = ContentItemSchema.parse(updatedContent);
@@ -532,7 +593,7 @@ export const useContent = () => {
         }
       });
     },
-    [getContentsIndex, lock.withLock, opfs.readJSON, opfs.writeJSON],
+    [getContentsIndex, lock.withLock, opfs.readJSON, opfs.writeJSON, opfs.writeFile, csvRendererService.regenerateCsvImage],
   );
 
   /**

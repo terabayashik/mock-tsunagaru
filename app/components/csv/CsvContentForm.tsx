@@ -1,5 +1,5 @@
-import { Box, Button, Checkbox, FileInput, Group, Paper, ScrollArea, Stack, Table, Text, Title } from "@mantine/core";
-import { IconFile, IconTableOptions, IconUpload } from "@tabler/icons-react";
+import { Box, Button, Checkbox, FileInput, Group, Paper, ScrollArea, Stack, Table, Text, TextInput, Title } from "@mantine/core";
+import { IconFile, IconRefresh, IconTableOptions, IconUpload } from "@tabler/icons-react";
 import { memo, useCallback, useEffect, useState } from "react";
 import type { CsvContent, CsvLayoutConfig, CsvStyleConfig } from "~/types/content";
 import { type ParsedCsv, parseCsvFile } from "~/utils/csvParser";
@@ -11,17 +11,20 @@ interface CsvContentFormProps {
   onDataChange: (data: Partial<CsvContent>) => void;
   onPreviewRequest?: () => void;
   onBackgroundFileChange?: (file: File | undefined) => void;
+  onCsvFileChange?: (file: File | undefined) => void;
 }
 
 export const CsvContentForm = memo(
-  ({ initialData, onDataChange, onPreviewRequest, onBackgroundFileChange }: CsvContentFormProps) => {
+  ({ initialData, onDataChange, onPreviewRequest, onBackgroundFileChange, onCsvFileChange }: CsvContentFormProps) => {
     const [csvFile, setCsvFile] = useState<File | null>(null);
     const [parsedCsv, setParsedCsv] = useState<ParsedCsv | null>(null);
+    const [editedCsv, setEditedCsv] = useState<ParsedCsv | null>(null);
     const [selectedRows, setSelectedRows] = useState<number[]>(initialData?.selectedRows || []);
     const [selectedColumns, setSelectedColumns] = useState<number[]>(initialData?.selectedColumns || []);
     const [layout, setLayout] = useState<CsvLayoutConfig | undefined>(initialData?.layout);
     const [style, setStyle] = useState<CsvStyleConfig | undefined>(initialData?.style);
     const [backgroundFile, setBackgroundFile] = useState<File | null>(null);
+    const [isEditing, setIsEditing] = useState(false);
 
     // CSVファイルの解析
     const handleCsvUpload = useCallback(
@@ -29,15 +32,19 @@ export const CsvContentForm = memo(
         if (!file) {
           setCsvFile(null);
           setParsedCsv(null);
+          setEditedCsv(null);
           setSelectedRows([]);
           setSelectedColumns([]);
+          onCsvFileChange?.(undefined);
           return;
         }
 
         try {
           setCsvFile(file);
+          onCsvFileChange?.(file);
           const parsed = await parseCsvFile(file);
           setParsedCsv(parsed);
+          setEditedCsv(parsed); // 編集用データも初期化
 
           // デフォルトで全ての行と列を選択
           const allRows = Array.from({ length: parsed.totalRows }, (_, i) => i);
@@ -55,7 +62,7 @@ export const CsvContentForm = memo(
           console.error("Failed to parse CSV:", error);
         }
       },
-      [onDataChange],
+      [onDataChange, onCsvFileChange],
     );
 
     // 行の選択/解除
@@ -100,17 +107,88 @@ export const CsvContentForm = memo(
       }
     }, [parsedCsv, selectedColumns]);
 
+    // セルの編集
+    const handleCellEdit = useCallback((rowIndex: number, colIndex: number, value: string) => {
+      if (!editedCsv) return;
+      
+      const newCsv = {
+        ...editedCsv,
+        headers: [...editedCsv.headers],
+        rows: editedCsv.rows.map((row, rIdx) => 
+          rIdx === rowIndex ? row.map((cell, cIdx) => cIdx === colIndex ? value : cell) : [...row]
+        ),
+      };
+      
+      setEditedCsv(newCsv);
+    }, [editedCsv]);
+
+    // ヘッダーの編集
+    const handleHeaderEdit = useCallback((colIndex: number, value: string) => {
+      if (!editedCsv) return;
+      
+      const newCsv = {
+        ...editedCsv,
+        headers: editedCsv.headers.map((header, idx) => idx === colIndex ? value : header),
+        rows: editedCsv.rows.map(row => [...row]),
+      };
+      
+      setEditedCsv(newCsv);
+    }, [editedCsv]);
+
+    // 初期値に戻す
+    const resetToOriginal = useCallback(() => {
+      if (!parsedCsv) return;
+      setEditedCsv(parsedCsv);
+      setIsEditing(false);
+    }, [parsedCsv]);
+
+    // 編雈データがCSV文字列に変換
+    const convertEditedCsvToString = useCallback(() => {
+      if (!editedCsv) return "";
+      
+      const headerRow = editedCsv.headers.join(",");
+      const dataRows = editedCsv.rows.map(row => row.join(",")).join("\n");
+      
+      return `${headerRow}\n${dataRows}`;
+    }, [editedCsv]);
+
     // データ変更を親コンポーネントに通知
     useEffect(() => {
       if (parsedCsv) {
+        const csvData = isEditing && editedCsv ? convertEditedCsvToString() : undefined;
         onDataChange({
           selectedRows,
           selectedColumns,
           layout,
           style,
+          ...(csvData ? { editedCsvData: csvData } : {}),
         });
       }
-    }, [selectedRows, selectedColumns, layout, style, parsedCsv, onDataChange]);
+    }, [selectedRows, selectedColumns, layout, style, parsedCsv, editedCsv, isEditing, onDataChange, convertEditedCsvToString]);
+
+    // 初期データからCSVファイルを設定
+    useEffect(() => {
+      if (initialData && "originalCsvFile" in initialData && initialData.originalCsvFile instanceof File) {
+        handleCsvUpload(initialData.originalCsvFile);
+      } else if (initialData?.originalCsvData && !csvFile) {
+        // 初期データがあるがファイルがない場合（編集時など）
+        setSelectedRows(initialData.selectedRows || []);
+        setSelectedColumns(initialData.selectedColumns || []);
+        
+        // 編集データがある場合はそれをパース
+        if (initialData.editedCsvData) {
+          try {
+            const lines = initialData.editedCsvData.split('\n');
+            const headers = lines[0].split(',');
+            const rows = lines.slice(1).map(line => line.split(','));
+            setEditedCsv({ headers, rows, totalRows: rows.length, totalColumns: headers.length });
+            setIsEditing(true);
+          } catch (error) {
+            console.error("Failed to parse edited CSV data:", error);
+          }
+        }
+      }
+    }, [initialData, handleCsvUpload]);
 
     return (
       <Stack gap="lg">
@@ -154,6 +232,23 @@ export const CsvContentForm = memo(
                   </Text>
                   <Button
                     size="xs"
+                    variant={isEditing ? "filled" : "light"}
+                    onClick={() => setIsEditing(!isEditing)}
+                  >
+                    {isEditing ? "編集を終了" : "セルを編集"}
+                  </Button>
+                  {isEditing && editedCsv !== parsedCsv && (
+                    <Button
+                      size="xs"
+                      variant="subtle"
+                      leftSection={<IconRefresh size={14} />}
+                      onClick={resetToOriginal}
+                    >
+                      初期値に戻す
+                    </Button>
+                  )}
+                  <Button
+                    size="xs"
                     variant="light"
                     leftSection={<IconTableOptions size={14} />}
                     onClick={onPreviewRequest}
@@ -174,23 +269,32 @@ export const CsvContentForm = memo(
                           onChange={toggleAllRows}
                         />
                       </Table.Th>
-                      {parsedCsv.headers.map((header, colIndex) => (
+                      {(editedCsv || parsedCsv).headers.map((header, colIndex) => (
                         <Table.Th key={`col-${colIndex}-${header}`}>
                           <Group gap="xs" wrap="nowrap">
                             <Checkbox
                               checked={selectedColumns.includes(colIndex)}
                               onChange={() => toggleColumn(colIndex)}
                             />
-                            <Text size="sm" truncate>
-                              {header || `列${colIndex + 1}`}
-                            </Text>
+                            {isEditing ? (
+                              <TextInput
+                                size="xs"
+                                value={editedCsv?.headers[colIndex] || header}
+                                onChange={(e) => handleHeaderEdit(colIndex, e.currentTarget.value)}
+                                styles={{ input: { padding: "4px 8px", minHeight: "unset" } }}
+                              />
+                            ) : (
+                              <Text size="sm" truncate>
+                                {editedCsv?.headers[colIndex] || header || `列${colIndex + 1}`}
+                              </Text>
+                            )}
                           </Group>
                         </Table.Th>
                       ))}
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody>
-                    {parsedCsv.rows.map((row, rowIndex) => (
+                    {(editedCsv || parsedCsv).rows.map((row, rowIndex) => (
                       <Table.Tr
                         key={`row-${rowIndex}-${row.join("-").substring(0, 20)}`}
                         bg={selectedRows.includes(rowIndex) ? "blue.0" : undefined}
@@ -200,7 +304,7 @@ export const CsvContentForm = memo(
                         </Table.Td>
                         {row.map((cell, colIndex) => (
                           <Table.Td
-                            key={`cell-${rowIndex}-${colIndex}-${cell.substring(0, 10)}`}
+                            key={`cell-${rowIndex}-${colIndex}`}
                             bg={
                               selectedColumns.includes(colIndex)
                                 ? selectedRows.includes(rowIndex)
@@ -209,9 +313,18 @@ export const CsvContentForm = memo(
                                 : undefined
                             }
                           >
-                            <Text size="sm" truncate>
-                              {cell}
-                            </Text>
+                            {isEditing ? (
+                              <TextInput
+                                size="xs"
+                                value={editedCsv?.rows[rowIndex]?.[colIndex] || cell}
+                                onChange={(e) => handleCellEdit(rowIndex, colIndex, e.currentTarget.value)}
+                                styles={{ input: { padding: "4px 8px", minHeight: "unset" } }}
+                              />
+                            ) : (
+                              <Text size="sm" truncate>
+                                {editedCsv?.rows[rowIndex]?.[colIndex] || cell}
+                              </Text>
+                            )}
                           </Table.Td>
                         ))}
                       </Table.Tr>

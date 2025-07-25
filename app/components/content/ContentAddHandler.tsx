@@ -53,8 +53,8 @@ export const ContentAddHandler = ({ opened, onClose, onContentAdded }: ContentAd
     onClose();
   };
 
-  const handleCsvSubmit = async (data: { name: string; csvData: Partial<CsvContent>; backgroundFile?: File }) => {
-    await createCsvContent(data.name, data.csvData, data.backgroundFile);
+  const handleCsvSubmit = async (data: { name: string; csvData: Partial<CsvContent>; backgroundFile?: File; csvFile?: File }) => {
+    await createCsvContent(data.name, data.csvData, data.backgroundFile, data.csvFile);
     if (onContentAdded) {
       await onContentAdded();
     }

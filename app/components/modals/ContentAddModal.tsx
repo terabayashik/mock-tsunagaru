@@ -27,6 +27,7 @@ import {
 import { memo, useState } from "react";
 import { CsvContentForm } from "~/components/csv/CsvContentForm";
 import { LocationSelector } from "~/components/weather/LocationSelector";
+import { csvRendererService } from "~/services/csvRenderer";
 import {
   ACCEPTED_MIME_TYPES,
   type CsvContent,
@@ -44,7 +45,7 @@ interface ContentAddModalProps {
   onUrlSubmit: (data: { url: string; name?: string; title?: string; description?: string }) => Promise<void>;
   onTextSubmit: (data: { name: string; textInfo: TextContent }) => Promise<void>;
   onWeatherSubmit?: (data: { name: string; weatherInfo: WeatherContent }) => Promise<void>;
-  onCsvSubmit?: (data: { name: string; csvData: Partial<CsvContent>; backgroundFile?: File }) => Promise<void>;
+  onCsvSubmit?: (data: { name: string; csvData: Partial<CsvContent>; backgroundFile?: File; csvFile?: File }) => Promise<void>;
 }
 
 // 定数
@@ -103,6 +104,7 @@ export const ContentAddModal = memo(
     const [csvName, setCsvName] = useState("");
     const [csvData, setCsvData] = useState<Partial<CsvContent>>({});
     const [csvBackgroundFile, setCsvBackgroundFile] = useState<File | undefined>();
+    const [csvFile, setCsvFile] = useState<File | undefined>();
 
     const handleClose = () => {
       if (loading) return;
@@ -131,6 +133,7 @@ export const ContentAddModal = memo(
       setCsvName("");
       setCsvData({});
       setCsvBackgroundFile(undefined);
+      setCsvFile(undefined);
 
       onClose();
     };
@@ -241,6 +244,7 @@ export const ContentAddModal = memo(
           name: csvName.trim(),
           csvData,
           backgroundFile: csvBackgroundFile,
+          csvFile,
         });
         handleClose();
       } catch (error) {
@@ -275,7 +279,7 @@ export const ContentAddModal = memo(
             : csvName.trim().length > 0 && csvData.originalCsvData;
 
     return (
-      <Modal opened={opened} onClose={handleClose} title="コンテンツを追加" centered size="lg">
+      <Modal opened={opened} onClose={handleClose} title="コンテンツを追加" centered size={isCsvMode ? "xl" : "lg"}>
         <Stack gap="md">
           {/* モード切り替え */}
           <SegmentedControl
@@ -680,8 +684,25 @@ export const ContentAddModal = memo(
                 initialData={csvData}
                 onDataChange={setCsvData}
                 onBackgroundFileChange={setCsvBackgroundFile}
-                onPreviewRequest={() => {
-                  // TODO: プレビュー機能の実装
+                onCsvFileChange={setCsvFile}
+                onPreviewRequest={async () => {
+                  try {
+                    // プレビュー生成（編集されたデータがあればそれを使用）
+                    const previewUrl = await csvRendererService.generatePreview({
+                      csvData: csvData.editedCsvData || csvData.originalCsvData || "",
+                      selectedRows: csvData.selectedRows || [],
+                      selectedColumns: csvData.selectedColumns || [],
+                      layout: csvData.layout,
+                      style: csvData.style,
+                      backgroundFile: csvBackgroundFile || undefined,
+                      format: csvData.format || "png",
+                    });
+                    
+                    // プレビューを新しいタブで開く
+                    window.open(previewUrl, "_blank");
+                  } catch (error) {
+                    console.error("Preview generation failed:", error);
+                  }
                 }}
               />
             </Stack>

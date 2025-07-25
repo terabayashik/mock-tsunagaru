@@ -106,11 +106,15 @@ export const CsvStyleConfigSchema = z.object({
 // CSVコンテンツの詳細情報
 export const CsvContentSchema = z.object({
   originalCsvData: z.string(), // 元のCSVデータ
+  editedCsvData: z.string().optional(), // 編集されたCSVデータ
+  originalCsvFilePath: z.string().optional(), // 元のCSVファイルのOPFSパス
+  originalCsvFileName: z.string().optional(), // 元のCSVファイル名
   selectedRows: z.array(z.number()), // 選択された行のインデックス（0ベース）
   selectedColumns: z.array(z.number()), // 選択された列のインデックス（0ベース）
   layout: CsvLayoutConfigSchema.optional(), // レイアウト設定
   style: CsvStyleConfigSchema.optional(), // スタイル設定
   backgroundPath: z.string().optional(), // 背景画像のOPFSパス
+  backgroundFileName: z.string().optional(), // 背景画像のファイル名
   format: z.enum(["png", "jpeg"]).default("png"), // 出力形式
   renderedImagePath: z.string(), // 生成された画像のOPFSパス
   apiUrl: z.string().url().default("https://csv-renderer.onrender.com"), // APIのベースURL

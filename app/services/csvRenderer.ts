@@ -105,9 +105,9 @@ class CsvRendererService {
         await fileService.saveFile(backgroundFile);
       }
 
-      // 画像をレンダリング
+      // 画像をレンダリング（編集されたデータがある場合はそれを使用）
       const result = await this.renderCsvToImage({
-        csvData: csvContent.originalCsvData,
+        csvData: csvContent.editedCsvData || csvContent.originalCsvData,
         selectedRows: csvContent.selectedRows,
         selectedColumns: csvContent.selectedColumns,
         layout: csvContent.layout,
