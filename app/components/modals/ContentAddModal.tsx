@@ -110,6 +110,7 @@ export const ContentAddModal = memo(
     const [csvData, setCsvData] = useState<Partial<CsvContent>>({});
     const [csvBackgroundFile, setCsvBackgroundFile] = useState<File | undefined>();
     const [csvFile, setCsvFile] = useState<File | undefined>();
+    const [csvPreviewUrl, setCsvPreviewUrl] = useState<string | null>(null);
 
     const handleClose = () => {
       if (loading) return;
@@ -139,6 +140,11 @@ export const ContentAddModal = memo(
       setCsvData({});
       setCsvBackgroundFile(undefined);
       setCsvFile(undefined);
+      // プレビューURLをクリーンアップ
+      if (csvPreviewUrl) {
+        URL.revokeObjectURL(csvPreviewUrl);
+        setCsvPreviewUrl(null);
+      }
 
       onClose();
     };
@@ -690,8 +696,19 @@ export const ContentAddModal = memo(
                 onDataChange={setCsvData}
                 onBackgroundFileChange={setCsvBackgroundFile}
                 onCsvFileChange={setCsvFile}
+                previewUrl={csvPreviewUrl}
                 onPreviewRequest={async () => {
                   try {
+                    // デバッグ: どのデータが使用されているか確認
+                    console.log("Preview data:", {
+                      hasEditedData: !!csvData.editedCsvData,
+                      hasOriginalData: !!csvData.originalCsvData,
+                      editedDataLength: csvData.editedCsvData?.length,
+                      originalDataLength: csvData.originalCsvData?.length,
+                      selectedRows: csvData.selectedRows,
+                      selectedColumns: csvData.selectedColumns,
+                    });
+
                     // プレビュー生成（編集されたデータがあればそれを使用）
                     const previewUrl = await csvRendererService.generatePreview({
                       csvData: csvData.editedCsvData || csvData.originalCsvData || "",
@@ -703,8 +720,12 @@ export const ContentAddModal = memo(
                       format: csvData.format || "png",
                     });
 
-                    // プレビューを新しいタブで開く
-                    window.open(previewUrl, "_blank");
+                    // 古いプレビューURLをクリーンアップ
+                    if (csvPreviewUrl) {
+                      URL.revokeObjectURL(csvPreviewUrl);
+                    }
+                    // 新しいプレビューURLを設定
+                    setCsvPreviewUrl(previewUrl);
                   } catch (error) {
                     console.error("Preview generation failed:", error);
                   }

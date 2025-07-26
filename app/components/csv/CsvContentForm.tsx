@@ -1,9 +1,9 @@
 import {
-  Box,
   Button,
   Checkbox,
   FileInput,
   Group,
+  Image,
   Paper,
   ScrollArea,
   Stack,
@@ -12,23 +12,51 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { IconFile, IconRefresh, IconTableOptions, IconUpload } from "@tabler/icons-react";
+import { IconFile, IconRefresh, IconTableOptions } from "@tabler/icons-react";
 import { memo, useCallback, useEffect, useState } from "react";
 import type { CsvContent, CsvLayoutConfig, CsvStyleConfig } from "~/types/content";
 import { type ParsedCsv, parseCsvFile } from "~/utils/csvParser";
+import { BackgroundImageSelector } from "./BackgroundImageSelector";
 import { CsvLayoutForm } from "./CsvLayoutForm";
 import { CsvStyleForm } from "./CsvStyleForm";
+
+// セル編集用のメモ化されたコンポーネント
+interface EditableCellProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+const EditableCell = memo(({ value, onChange }: EditableCellProps) => {
+  return (
+    <TextInput
+      size="xs"
+      value={value}
+      onChange={(e) => onChange(e.currentTarget.value)}
+      styles={{ input: { padding: "4px 8px", minHeight: "unset" } }}
+    />
+  );
+});
+
+EditableCell.displayName = "EditableCell";
 
 interface CsvContentFormProps {
   initialData?: Partial<CsvContent>;
   onDataChange: (data: Partial<CsvContent>) => void;
-  onPreviewRequest?: () => void;
+  onPreviewRequest?: () => Promise<void>;
   onBackgroundFileChange?: (file: File | undefined) => void;
   onCsvFileChange?: (file: File | undefined) => void;
+  previewUrl?: string | null;
 }
 
 export const CsvContentForm = memo(
-  ({ initialData, onDataChange, onPreviewRequest, onBackgroundFileChange, onCsvFileChange }: CsvContentFormProps) => {
+  ({
+    initialData,
+    onDataChange,
+    onPreviewRequest,
+    onBackgroundFileChange,
+    onCsvFileChange,
+    previewUrl,
+  }: CsvContentFormProps) => {
     const [csvFile, setCsvFile] = useState<File | null>(null);
     const [parsedCsv, setParsedCsv] = useState<ParsedCsv | null>(null);
     const [editedCsv, setEditedCsv] = useState<ParsedCsv | null>(null);
@@ -38,6 +66,7 @@ export const CsvContentForm = memo(
     const [style, setStyle] = useState<CsvStyleConfig | undefined>(initialData?.style);
     const [backgroundFile, setBackgroundFile] = useState<File | null>(null);
     const [isEditing, setIsEditing] = useState(false);
+    const [isLoadingPreview, setIsLoadingPreview] = useState(false);
 
     // CSVファイルの解析
     const handleCsvUpload = useCallback(
@@ -121,38 +150,36 @@ export const CsvContentForm = memo(
     }, [parsedCsv, selectedColumns]);
 
     // セルの編集
-    const handleCellEdit = useCallback(
-      (rowIndex: number, colIndex: number, value: string) => {
-        if (!editedCsv) return;
+    const handleCellEdit = useCallback((rowIndex: number, colIndex: number, value: string) => {
+      setEditedCsv((prev) => {
+        if (!prev) return prev;
 
-        const newCsv = {
-          ...editedCsv,
-          headers: [...editedCsv.headers],
-          rows: editedCsv.rows.map((row, rIdx) =>
-            rIdx === rowIndex ? row.map((cell, cIdx) => (cIdx === colIndex ? value : cell)) : [...row],
-          ),
+        // 既存の配列を直接変更せずに、新しい配列を作成
+        const newRows = prev.rows.map((row, rIdx) => {
+          if (rIdx === rowIndex) {
+            return row.map((cell, cIdx) => (cIdx === colIndex ? value : cell));
+          }
+          return row;
+        });
+
+        return {
+          ...prev,
+          rows: newRows,
         };
-
-        setEditedCsv(newCsv);
-      },
-      [editedCsv],
-    );
+      });
+    }, []);
 
     // ヘッダーの編集
-    const handleHeaderEdit = useCallback(
-      (colIndex: number, value: string) => {
-        if (!editedCsv) return;
+    const handleHeaderEdit = useCallback((colIndex: number, value: string) => {
+      setEditedCsv((prev) => {
+        if (!prev) return prev;
 
-        const newCsv = {
-          ...editedCsv,
-          headers: editedCsv.headers.map((header, idx) => (idx === colIndex ? value : header)),
-          rows: editedCsv.rows.map((row) => [...row]),
+        return {
+          ...prev,
+          headers: prev.headers.map((header, idx) => (idx === colIndex ? value : header)),
         };
-
-        setEditedCsv(newCsv);
-      },
-      [editedCsv],
-    );
+      });
+    }, []);
 
     // 初期値に戻す
     const resetToOriginal = useCallback(() => {
@@ -171,16 +198,44 @@ export const CsvContentForm = memo(
       return `${headerRow}\n${dataRows}`;
     }, [editedCsv]);
 
-    // データ変更を親コンポーネントに通知
-    useEffect(() => {
-      if (parsedCsv) {
-        const csvData = isEditing && editedCsv ? convertEditedCsvToString() : undefined;
+    // 編集完了時のハンドラー
+    const handleEditingComplete = useCallback(() => {
+      setIsEditing(false);
+      if (editedCsv) {
+        const csvData = convertEditedCsvToString();
         onDataChange({
+          originalCsvData: csvFile ? undefined : initialData?.originalCsvData,
           selectedRows,
           selectedColumns,
           layout,
           style,
-          ...(csvData ? { editedCsvData: csvData } : {}),
+          editedCsvData: csvData,
+        });
+      }
+    }, [
+      editedCsv,
+      convertEditedCsvToString,
+      csvFile,
+      initialData?.originalCsvData,
+      selectedRows,
+      selectedColumns,
+      layout,
+      style,
+      onDataChange,
+    ]);
+
+    // データ変更を親コンポーネントに通知（編集中のCSVデータは除外）
+    // biome-ignore lint/correctness/useExhaustiveDependencies: isEditingとeditedCsvは編集中の再レンダリングを防ぐため意図的に除外
+    useEffect(() => {
+      if (parsedCsv && !isEditing) {
+        onDataChange({
+          originalCsvData: csvFile ? undefined : initialData?.originalCsvData,
+          selectedRows,
+          selectedColumns,
+          layout,
+          style,
+          // 編集データがある場合は含める（編集が完了している場合のみ）
+          ...(editedCsv && !isEditing ? { editedCsvData: convertEditedCsvToString() } : {}),
         });
       }
     }, [
@@ -189,35 +244,67 @@ export const CsvContentForm = memo(
       layout,
       style,
       parsedCsv,
-      editedCsv,
-      isEditing,
+      csvFile,
+      initialData?.originalCsvData,
       onDataChange,
-      convertEditedCsvToString,
+      // isEditingとeditedCsvは意図的に依存配列から除外
     ]);
+
+    // 初期データの設定用のフラグ
+    const [isInitialized, setIsInitialized] = useState(false);
 
     // 初期データからCSVファイルを設定
     useEffect(() => {
-      if (initialData && "originalCsvFile" in initialData && initialData.originalCsvFile instanceof File) {
+      // 既に初期化済みの場合はスキップ
+      if (isInitialized || !initialData) return;
+
+      if ("originalCsvFile" in initialData && initialData.originalCsvFile instanceof File) {
         handleCsvUpload(initialData.originalCsvFile);
-      } else if (initialData?.originalCsvData && !csvFile) {
+        setIsInitialized(true);
+      } else if (initialData.originalCsvData) {
         // 初期データがあるがファイルがない場合（編集時など）
         setSelectedRows(initialData.selectedRows || []);
         setSelectedColumns(initialData.selectedColumns || []);
 
-        // 編集データがある場合はそれをパース
-        if (initialData.editedCsvData) {
-          try {
-            const lines = initialData.editedCsvData.split("\n");
-            const headers = lines[0].split(",");
-            const rows = lines.slice(1).map((line) => line.split(","));
-            setEditedCsv({ headers, rows, totalRows: rows.length, totalColumns: headers.length });
-            setIsEditing(true);
-          } catch (error) {
-            console.error("Failed to parse edited CSV data:", error);
+        // まず元のCSVデータをパース
+        try {
+          const originalLines = initialData.originalCsvData.split("\n");
+          const originalHeaders = originalLines[0].split(",");
+          const originalRows = originalLines.slice(1).map((line) => line.split(","));
+          const originalParsed = {
+            headers: originalHeaders,
+            rows: originalRows,
+            totalRows: originalRows.length,
+            totalColumns: originalHeaders.length,
+          };
+          setParsedCsv(originalParsed);
+
+          // 編集データがある場合はそれを使用、なければ元のデータを使用
+          if (initialData.editedCsvData) {
+            try {
+              const editedLines = initialData.editedCsvData.split("\n");
+              const editedHeaders = editedLines[0].split(",");
+              const editedRows = editedLines.slice(1).map((line) => line.split(","));
+              setEditedCsv({
+                headers: editedHeaders,
+                rows: editedRows,
+                totalRows: editedRows.length,
+                totalColumns: editedHeaders.length,
+              });
+              setIsEditing(true);
+            } catch (error) {
+              console.error("Failed to parse edited CSV data:", error);
+              setEditedCsv(originalParsed);
+            }
+          } else {
+            setEditedCsv(originalParsed);
           }
+        } catch (error) {
+          console.error("Failed to parse original CSV data:", error);
         }
+        setIsInitialized(true);
       }
-    }, [initialData, handleCsvUpload, csvFile]);
+    }, [isInitialized, initialData, handleCsvUpload]);
 
     return (
       <Stack gap="lg">
@@ -259,7 +346,17 @@ export const CsvContentForm = memo(
                   <Text size="sm" c="dimmed">
                     {selectedRows.length}/{parsedCsv.totalRows} 行, {selectedColumns.length}/{parsedCsv.totalColumns} 列
                   </Text>
-                  <Button size="xs" variant={isEditing ? "filled" : "light"} onClick={() => setIsEditing(!isEditing)}>
+                  <Button
+                    size="xs"
+                    variant={isEditing ? "filled" : "light"}
+                    onClick={() => {
+                      if (isEditing) {
+                        handleEditingComplete();
+                      } else {
+                        setIsEditing(true);
+                      }
+                    }}
+                  >
                     {isEditing ? "編集を終了" : "セルを編集"}
                   </Button>
                   {isEditing && editedCsv !== parsedCsv && (
@@ -276,7 +373,18 @@ export const CsvContentForm = memo(
                     size="xs"
                     variant="light"
                     leftSection={<IconTableOptions size={14} />}
-                    onClick={onPreviewRequest}
+                    onClick={async () => {
+                      if (onPreviewRequest) {
+                        setIsLoadingPreview(true);
+                        try {
+                          await onPreviewRequest();
+                        } finally {
+                          setIsLoadingPreview(false);
+                        }
+                      }
+                    }}
+                    loading={isLoadingPreview}
+                    disabled={isLoadingPreview}
                   >
                     プレビュー
                   </Button>
@@ -302,11 +410,9 @@ export const CsvContentForm = memo(
                               onChange={() => toggleColumn(colIndex)}
                             />
                             {isEditing ? (
-                              <TextInput
-                                size="xs"
+                              <EditableCell
                                 value={editedCsv?.headers[colIndex] || header}
-                                onChange={(e) => handleHeaderEdit(colIndex, e.currentTarget.value)}
-                                styles={{ input: { padding: "4px 8px", minHeight: "unset" } }}
+                                onChange={(value) => handleHeaderEdit(colIndex, value)}
                               />
                             ) : (
                               <Text size="sm" truncate>
@@ -340,11 +446,9 @@ export const CsvContentForm = memo(
                             }
                           >
                             {isEditing ? (
-                              <TextInput
-                                size="xs"
+                              <EditableCell
                                 value={editedCsv?.rows[rowIndex]?.[colIndex] || cell}
-                                onChange={(e) => handleCellEdit(rowIndex, colIndex, e.currentTarget.value)}
-                                styles={{ input: { padding: "4px 8px", minHeight: "unset" } }}
+                                onChange={(value) => handleCellEdit(rowIndex, colIndex, value)}
                               />
                             ) : (
                               <Text size="sm" truncate>
@@ -378,43 +482,22 @@ export const CsvContentForm = memo(
 
         {/* 背景画像アップロード */}
         <Paper p="md" withBorder>
-          <Stack gap="sm">
-            <Title order={4}>背景画像（オプション）</Title>
-            <FileInput
-              accept="image/jpeg,image/jpg,image/png"
-              placeholder="背景画像を選択"
-              value={backgroundFile}
-              onChange={(file) => {
-                setBackgroundFile(file);
-                onBackgroundFileChange?.(file || undefined);
-              }}
-              leftSection={<IconUpload size={16} />}
-              rightSection={
-                backgroundFile && (
-                  <Button
-                    size="xs"
-                    variant="subtle"
-                    onClick={() => {
-                      setBackgroundFile(null);
-                      onBackgroundFileChange?.(undefined);
-                    }}
-                  >
-                    クリア
-                  </Button>
-                )
-              }
-            />
-            {backgroundFile && (
-              <Box>
-                <img
-                  src={URL.createObjectURL(backgroundFile)}
-                  alt="背景プレビュー"
-                  style={{ maxWidth: 200, maxHeight: 150, objectFit: "contain" }}
-                />
-              </Box>
-            )}
-          </Stack>
+          <BackgroundImageSelector
+            value={backgroundFile}
+            onChange={setBackgroundFile}
+            onFileChange={onBackgroundFileChange}
+          />
         </Paper>
+
+        {/* プレビュー表示エリア */}
+        {previewUrl && (
+          <Paper p="md" withBorder>
+            <Stack gap="sm">
+              <Title order={4}>プレビュー</Title>
+              <Image src={previewUrl} alt="CSV Preview" fit="contain" radius="md" style={{ maxHeight: 400 }} />
+            </Stack>
+          </Paper>
+        )}
       </Stack>
     );
   },

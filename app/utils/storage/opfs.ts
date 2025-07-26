@@ -260,6 +260,41 @@ export class OPFSManager {
   }
 
   /**
+   * ディレクトリの内容を一覧取得
+   */
+  async listDirectory(dirPath: string): Promise<string[]> {
+    try {
+      logger.debug("OPFS", `Listing directory: ${dirPath}`);
+      const root = await this.getRoot();
+
+      // Handle nested paths
+      const pathParts = dirPath.split("/").filter((p) => p.length > 0);
+      let currentHandle: FileSystemDirectoryHandle = root;
+
+      // Navigate to the target directory
+      for (const part of pathParts) {
+        currentHandle = await currentHandle.getDirectoryHandle(part);
+      }
+
+      // List entries
+      const entries: string[] = [];
+      for await (const [name] of currentHandle.entries()) {
+        entries.push(name);
+      }
+
+      logger.debug("OPFS", `Found ${entries.length} entries in ${dirPath}`);
+      return entries;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "NotFoundError") {
+        logger.debug("OPFS", `Directory not found: ${dirPath}`);
+        return [];
+      }
+      logger.error("OPFS", `Failed to list directory ${dirPath}:`, error);
+      throw new OPFSError(`Failed to list directory ${dirPath}`, error);
+    }
+  }
+
+  /**
    * OPFS全体をクリア（すべてのファイルとディレクトリを削除）
    */
   async clearAll(): Promise<void> {

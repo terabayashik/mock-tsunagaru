@@ -83,13 +83,19 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
   const [csvData, setCsvData] = useState<Partial<CsvContent>>({});
   const [csvBackgroundFile, setCsvBackgroundFile] = useState<File | null>(null);
   const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [csvPreviewUrl, setCsvPreviewUrl] = useState<string | null>(null);
 
   // モーダルが閉じられたときにローディング状態をリセット
   useEffect(() => {
     if (!opened) {
       setLoading(false);
+      // プレビューURLをクリーンアップ
+      if (csvPreviewUrl) {
+        URL.revokeObjectURL(csvPreviewUrl);
+        setCsvPreviewUrl(null);
+      }
     }
-  }, [opened]);
+  }, [opened, csvPreviewUrl]);
 
   // contentが変更されたときに状態を初期化
   useEffect(() => {
@@ -203,7 +209,7 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
     };
 
     loadContentDetails();
-  }, [content, getContentById, opfs.readFile]);
+  }, [content, getContentById, opfs]);
 
   const handleClose = () => {
     if (loading) return;
@@ -379,11 +385,26 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
               onDataChange={setCsvData}
               onBackgroundFileChange={(file) => setCsvBackgroundFile(file || null)}
               onCsvFileChange={(file) => setCsvFile(file || null)}
+              previewUrl={csvPreviewUrl}
               onPreviewRequest={async () => {
                 try {
+                  // デバッグ: どのデータが使用されているか確認
+                  console.log("Edit Preview data:", {
+                    hasEditedData: !!csvData.editedCsvData,
+                    hasOriginalData: !!csvData.originalCsvData,
+                    editedDataLength: csvData.editedCsvData?.length,
+                    originalDataLength: csvData.originalCsvData?.length,
+                    selectedRows: csvData.selectedRows,
+                    selectedColumns: csvData.selectedColumns,
+                  });
+
+                  // 編集モードでは、初期データのoriginalCsvDataも使用する必要がある
+                  const csvContent = await getContentById(content.id);
+                  const originalData = csvContent?.csvInfo?.originalCsvData || "";
+
                   // プレビュー生成（編集されたデータがあればそれを使用）
                   const previewUrl = await csvRendererService.generatePreview({
-                    csvData: csvData.editedCsvData || csvData.originalCsvData || "",
+                    csvData: csvData.editedCsvData || csvData.originalCsvData || originalData,
                     selectedRows: csvData.selectedRows || [],
                     selectedColumns: csvData.selectedColumns || [],
                     layout: csvData.layout,
@@ -392,8 +413,12 @@ export const ContentEditModal = memo(({ opened, onClose, content, onSubmit }: Co
                     format: csvData.format || "png",
                   });
 
-                  // プレビューを新しいタブで開く
-                  window.open(previewUrl, "_blank");
+                  // 古いプレビューURLをクリーンアップ
+                  if (csvPreviewUrl) {
+                    URL.revokeObjectURL(csvPreviewUrl);
+                  }
+                  // 新しいプレビューURLを設定
+                  setCsvPreviewUrl(previewUrl);
                 } catch (error) {
                   console.error("Preview generation failed:", error);
                 }
