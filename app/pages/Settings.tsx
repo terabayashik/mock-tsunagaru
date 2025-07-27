@@ -222,7 +222,7 @@ const Settings = () => {
             <List.Item>CSVデータ: 2件（売上データ・成績表）</List.Item>
           </List>
           <Text size="sm" c="dimmed">
-            合計20件のテストコンテンツが作成されます。
+            合計27件のテストデータが作成されます。
           </Text>
         </Stack>
       ),
