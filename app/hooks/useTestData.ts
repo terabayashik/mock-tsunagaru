@@ -1,14 +1,29 @@
 import { useCallback } from "react";
 import type { CsvContent, TextContent, WeatherContent } from "~/types/content";
+import type { LayoutItem } from "~/types/layout";
+import type { PlaylistItem } from "~/types/playlist";
+import type { Weekday } from "~/types/schedule";
 import { logger } from "~/utils/logger";
 import { useContent } from "./useContent";
+import { useLayout } from "./useLayout";
+import { usePlaylist } from "./usePlaylist";
+import { useSchedule } from "./useSchedule";
 
 /**
  * テストデータを生成するためのhook
  */
 export const useTestData = () => {
-  const { createTextContent, createUrlContent, createFileContent, createWeatherContent, createCsvContent } =
-    useContent();
+  const {
+    createTextContent,
+    createUrlContent,
+    createFileContent,
+    createWeatherContent,
+    createCsvContent,
+    getContentsIndex,
+  } = useContent();
+  const { createLayout } = useLayout();
+  const { createPlaylist } = usePlaylist();
+  const { createSchedule } = useSchedule();
 
   /**
    * テスト用の画像データを作成
@@ -40,7 +55,7 @@ export const useTestData = () => {
     failed: string[];
   }> => {
     const results = {
-      total: 20, // 画像4件 + テキスト4件 + YouTube4件 + URL4件 + 気象情報2件 + CSV2件
+      total: 27, // 画像4件 + テキスト4件 + YouTube4件 + URL4件 + 気象情報2件 + CSV2件 + レイアウト3件 + プレイリスト3件 + スケジュール1件
       success: 0,
       failed: [] as string[],
     };
@@ -285,6 +300,130 @@ export const useTestData = () => {
         }
       }
 
+      // 7. レイアウトデータを作成
+      const layoutData = [
+        {
+          name: "シンプルレイアウト",
+          orientation: "landscape" as const,
+          regions: [{ id: "region1", x: 10, y: 10, width: 1900, height: 1060, zIndex: 1 }],
+        },
+        {
+          name: "2分割レイアウト",
+          orientation: "landscape" as const,
+          regions: [
+            { id: "region1", x: 10, y: 10, width: 945, height: 1060, zIndex: 1 },
+            { id: "region2", x: 965, y: 10, width: 945, height: 1060, zIndex: 1 },
+          ],
+        },
+        {
+          name: "ヘッダー付きレイアウト",
+          orientation: "landscape" as const,
+          regions: [
+            { id: "region1", x: 10, y: 10, width: 1900, height: 200, zIndex: 1 },
+            { id: "region2", x: 10, y: 220, width: 1900, height: 850, zIndex: 1 },
+          ],
+        },
+      ];
+
+      const createdLayouts: LayoutItem[] = [];
+      for (const layout of layoutData) {
+        try {
+          const createdLayout = await createLayout({
+            name: layout.name,
+            orientation: layout.orientation,
+            regions: layout.regions,
+          });
+          createdLayouts.push(createdLayout);
+          results.success++;
+        } catch (error) {
+          logger.error("TestData", `Failed to create test layout: ${layout.name}`, error);
+          results.failed.push(`レイアウト: ${layout.name}`);
+        }
+      }
+
+      // 8. プレイリストデータを作成（作成したレイアウトを使用）
+      if (createdLayouts.length > 0) {
+        // コンテンツ一覧を取得
+        const contents = await getContentsIndex();
+        const imageContents = contents.filter((c) => c.type === "image").slice(0, 4);
+        const textContents = contents.filter((c) => c.type === "text").slice(0, 4);
+        const youtubeContents = contents.filter((c) => c.type === "youtube").slice(0, 4);
+
+        const playlistData = [
+          {
+            name: "画像プレイリスト",
+            device: "ディスプレイA",
+            layoutIndex: 0, // シンプルレイアウト
+            contentIds: imageContents.map((c) => c.id),
+          },
+          {
+            name: "ミックスプレイリスト",
+            device: "ディスプレイB",
+            layoutIndex: 1, // 2分割レイアウト
+            contentIds: [...textContents.slice(0, 2).map((c) => c.id), ...youtubeContents.slice(0, 2).map((c) => c.id)],
+          },
+          {
+            name: "ニュースプレイリスト",
+            device: "ディスプレイC",
+            layoutIndex: 2, // ヘッダー付きレイアウト
+            contentIds: textContents.map((c) => c.id),
+          },
+        ];
+
+        const createdPlaylists: PlaylistItem[] = [];
+        for (const playlist of playlistData) {
+          if (playlist.layoutIndex < createdLayouts.length) {
+            try {
+              const layout = createdLayouts[playlist.layoutIndex];
+              const contentAssignments = layout.regions.map((region, index) => ({
+                regionId: region.id,
+                contentIds: index === 0 ? playlist.contentIds : [],
+                contentDurations: [],
+              }));
+
+              const createdPlaylist = await createPlaylist({
+                name: playlist.name,
+                device: playlist.device,
+                layoutId: layout.id,
+                contentAssignments,
+              });
+              createdPlaylists.push(createdPlaylist);
+              results.success++;
+            } catch (error) {
+              logger.error("TestData", `Failed to create test playlist: ${playlist.name}`, error);
+              results.failed.push(`プレイリスト: ${playlist.name}`);
+            }
+          }
+        }
+
+        // 9. スケジュールデータを作成（作成したプレイリストを使用）
+        if (createdPlaylists.length > 0) {
+          const scheduleData = {
+            name: "平日朝のスケジュール",
+            time: "08:00",
+            weekdays: ["monday", "tuesday", "wednesday", "thursday", "friday"] as Weekday[],
+            playlistId: createdPlaylists[0].id,
+          };
+
+          try {
+            await createSchedule({
+              name: scheduleData.name,
+              time: scheduleData.time,
+              weekdays: scheduleData.weekdays,
+              event: {
+                type: "playlist",
+                playlistId: scheduleData.playlistId,
+              },
+              enabled: true,
+            });
+            results.success++;
+          } catch (error) {
+            logger.error("TestData", `Failed to create test schedule: ${scheduleData.name}`, error);
+            results.failed.push(`スケジュール: ${scheduleData.name}`);
+          }
+        }
+      }
+
       return results;
     } catch (error) {
       logger.error("TestData", "Failed to create test data", error);
@@ -297,6 +436,10 @@ export const useTestData = () => {
     createFileContent,
     createWeatherContent,
     createCsvContent,
+    createLayout,
+    createPlaylist,
+    createSchedule,
+    getContentsIndex,
   ]);
 
   return {
