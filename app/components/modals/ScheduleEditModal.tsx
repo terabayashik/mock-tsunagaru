@@ -37,13 +37,13 @@ export function ScheduleEditModal({ opened, onClose, schedule, onSuccess }: Sche
       enabled: true,
     },
     validate: {
-      name: (value) => (value.trim().length === 0 ? "名前は必須です" : null),
-      time: (value) => {
+      name: (value: string) => (value.trim().length === 0 ? "名前は必須です" : null),
+      time: (value: string) => {
         const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
         return !timeRegex.test(value) ? "時刻は HH:MM 形式で入力してください" : null;
       },
-      weekdays: (value) => (value.length === 0 ? "少なくとも1つの曜日を選択してください" : null),
-      playlistId: (value, values) => {
+      weekdays: (value: Weekday[]) => (value.length === 0 ? "少なくとも1つの曜日を選択してください" : null),
+      playlistId: (value: string | undefined, values: FormValues) => {
         return values.eventType === "playlist" && !value ? "プレイリストを選択してください" : null;
       },
     },
