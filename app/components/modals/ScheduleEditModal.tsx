@@ -73,6 +73,7 @@ export function ScheduleEditModal({ opened, onClose, schedule, onSuccess }: Sche
   }, [opened, getPlaylistsIndex]);
 
   // スケジュール情報をフォームに反映
+  // biome-ignore lint/correctness/useExhaustiveDependencies: form methods are stable
   useEffect(() => {
     if (schedule) {
       form.setValues({
@@ -86,7 +87,7 @@ export function ScheduleEditModal({ opened, onClose, schedule, onSuccess }: Sche
     } else {
       form.reset();
     }
-  }, [schedule, form]);
+  }, [schedule]);
 
   const handleSubmit = useCallback(
     async (values: FormValues) => {
