@@ -1,4 +1,5 @@
 import {
+  Badge,
   Box,
   Button,
   Divider,
@@ -18,6 +19,7 @@ import {
   IconArrowLeft,
   IconArrowRight,
   IconBrandYoutube,
+  IconCalendarEvent,
   IconDeviceFloppy,
   IconFile,
   IconFileText,
@@ -34,10 +36,13 @@ import { SelectedContentList } from "~/components/content/SelectedContentList";
 import { InteractiveLayoutPreview } from "~/components/layout/InteractiveLayoutPreview";
 import { useContent } from "~/hooks/useContent";
 import { useLayout } from "~/hooks/useLayout";
+import { useSchedule } from "~/hooks/useSchedule";
 import type { ContentIndex, ContentType } from "~/types/content";
 import { extractYouTubeVideoId } from "~/types/content";
 import type { LayoutItem } from "~/types/layout";
 import type { ContentAssignment, ContentDuration, PlaylistItem } from "~/types/playlist";
+import type { ScheduleIndex } from "~/types/schedule";
+import { WEEKDAY_LABELS } from "~/types/schedule";
 import { logger } from "~/utils/logger";
 import { getYouTubeVideoDurationCached } from "~/utils/youtubePlayer";
 import { ContentAddHandler } from "../content/ContentAddHandler";
@@ -93,9 +98,11 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
   // フィルター状態
   const [contentTypeFilter, setContentTypeFilter] = useState<ContentType | "all">("all");
   const [contentSearchQuery, setContentSearchQuery] = useState("");
+  const [schedules, setSchedules] = useState<ScheduleIndex[]>([]);
 
   const { getLayoutById } = useLayout();
   const { getContentsIndex, getContentById } = useContent();
+  const { getSchedulesIndex } = useSchedule();
 
   const steps: StepInfo[] = [
     { key: "basic", title: "基本情報", description: "プレイリスト名とデバイスを編集" },
@@ -125,6 +132,15 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
     }
   }, [getContentsIndex]);
 
+  const loadSchedules = useCallback(async () => {
+    try {
+      const schedulesData = await getSchedulesIndex();
+      setSchedules(schedulesData);
+    } catch (error) {
+      logger.error("PlaylistEditModal", "Failed to load schedules", error);
+    }
+  }, [getSchedulesIndex]);
+
   // プレイリストデータが変更されたときにフォームを初期化
   useEffect(() => {
     if (playlist && opened) {
@@ -132,8 +148,9 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
       setSelectedRegionId(null);
       loadPlaylistLayout();
       loadContents();
+      loadSchedules();
     }
-  }, [playlist, opened, loadPlaylistLayout, loadContents]);
+  }, [playlist, opened, loadPlaylistLayout, loadContents, loadSchedules]);
 
   // レイアウトが読み込まれたらcontentAssignmentsを初期化
   useEffect(() => {
@@ -540,6 +557,65 @@ export const PlaylistEditModal = ({ opened, onClose, onSubmit, playlist }: Playl
                 <Text size="xs" c="dimmed" mt="xs">
                   ※ レイアウトの変更はできません。新しいプレイリストを作成してください。
                 </Text>
+              </Paper>
+            )}
+
+            {/* スケジュール登録状況表示 */}
+            {playlist && (
+              <Paper p="md" withBorder bg={colorScheme === "dark" ? "dark.6" : "gray.0"}>
+                <Group gap="xs" mb="sm">
+                  <IconCalendarEvent size={18} />
+                  <Text size="sm" fw={500}>
+                    スケジュール登録状況
+                  </Text>
+                </Group>
+                {(() => {
+                  const playlistSchedules = schedules.filter(
+                    (schedule) => schedule.eventType === "playlist" && schedule.playlistId === playlist.id,
+                  );
+
+                  if (playlistSchedules.length === 0) {
+                    return (
+                      <Text size="sm" c="dimmed">
+                        このプレイリストはスケジュールに登録されていません
+                      </Text>
+                    );
+                  }
+
+                  return (
+                    <Stack gap="xs">
+                      {playlistSchedules.map((schedule) => (
+                        <Paper key={schedule.id} p="xs" withBorder>
+                          <Group justify="space-between" wrap="nowrap">
+                            <Box>
+                              <Text size="sm" fw={500}>
+                                {schedule.name}
+                              </Text>
+                              <Group gap="xs" mt={4}>
+                                <Text size="xs" c="dimmed">
+                                  {schedule.time}
+                                </Text>
+                                <Group gap={4}>
+                                  {schedule.weekdays.map((day) => (
+                                    <Badge key={day} size="xs" variant="dot">
+                                      {WEEKDAY_LABELS[day]}
+                                    </Badge>
+                                  ))}
+                                </Group>
+                              </Group>
+                            </Box>
+                            <Badge color={schedule.enabled ? "green" : "gray"} variant="filled" size="sm">
+                              {schedule.enabled ? "有効" : "無効"}
+                            </Badge>
+                          </Group>
+                        </Paper>
+                      ))}
+                      <Text size="xs" c="dimmed" ta="center" mt="xs">
+                        {playlistSchedules.length}件のスケジュールに登録されています
+                      </Text>
+                    </Stack>
+                  );
+                })()}
               </Paper>
             )}
           </Stack>
