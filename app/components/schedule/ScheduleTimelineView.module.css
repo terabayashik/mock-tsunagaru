@@ -1,0 +1,30 @@
+.stickyColumn {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background-color: light-dark(var(--mantine-color-white), var(--mantine-color-dark-7));
+}
+
+.timeCell {
+  height: 80px;
+  position: relative;
+  border-top: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-5));
+  transition: background-color 0.2s ease;
+}
+
+.currentHourCell {
+  background-color: light-dark(var(--mantine-color-blue-0), var(--mantine-color-dark-6));
+}
+
+.scheduleCard {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.scheduleCard:hover {
+  box-shadow: var(--mantine-shadow-sm);
+}
+
+.gridContainer {
+  min-width: 900px;
+}

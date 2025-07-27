@@ -19,7 +19,8 @@ export default function SchedulePage() {
   const [editModalOpened, setEditModalOpened] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<ScheduleItem | null>(null);
   const [viewMode, setViewMode] = useState<"day" | "week">("week");
-  const [isLoading, setIsLoading] = useState(true);
+  const [_isLoading, setIsLoading] = useState(true);
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   // データの読み込み
   const loadData = useCallback(async () => {
@@ -28,7 +29,7 @@ export default function SchedulePage() {
       const [schedulesData, playlistsData] = await Promise.all([getSchedulesIndex(), getPlaylistsIndex()]);
       setSchedules(schedulesData);
       setPlaylists(playlistsData);
-    } catch (error) {
+    } catch (_error) {
       notifications.show({
         title: "エラー",
         message: "データの読み込みに失敗しました",
@@ -58,7 +59,7 @@ export default function SchedulePage() {
           setEditingSchedule(fullSchedule);
           setEditModalOpened(true);
         }
-      } catch (error) {
+      } catch (_error) {
         notifications.show({
           title: "エラー",
           message: "スケジュールの読み込みに失敗しました",
@@ -86,7 +87,7 @@ export default function SchedulePage() {
               color: "green",
             });
             await loadData();
-          } catch (error) {
+          } catch (_error) {
             notifications.show({
               title: "エラー",
               message: "スケジュールの削除に失敗しました",
@@ -105,7 +106,7 @@ export default function SchedulePage() {
       try {
         await toggleScheduleEnabled(schedule.id);
         await loadData();
-      } catch (error) {
+      } catch (_error) {
         notifications.show({
           title: "エラー",
           message: "スケジュールの更新に失敗しました",
@@ -131,6 +132,8 @@ export default function SchedulePage() {
           playlists={playlists}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
+          currentDate={currentDate}
+          onDateChange={setCurrentDate}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onToggleEnabled={handleToggleEnabled}

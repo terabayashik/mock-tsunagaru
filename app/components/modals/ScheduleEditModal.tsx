@@ -86,7 +86,7 @@ export function ScheduleEditModal({ opened, onClose, schedule, onSuccess }: Sche
     } else {
       form.reset();
     }
-  }, [schedule]);
+  }, [schedule, form]);
 
   const handleSubmit = useCallback(
     async (values: FormValues) => {

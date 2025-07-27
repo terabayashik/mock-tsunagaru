@@ -22,15 +22,21 @@ export const useSchedule = () => {
         }
 
         // 古い形式のデータの移行処理
-        const migrated = (indexData as any[]).map((item) => {
-          if (!item.weekdays) {
+        interface MigrationItem {
+          weekdays?: string[];
+          [key: string]: unknown;
+        }
+
+        const migrated = (indexData as unknown[]).map((item) => {
+          const migrationItem = item as MigrationItem;
+          if (!migrationItem.weekdays) {
             // 古い形式の場合、全曜日に設定
             return {
-              ...item,
+              ...migrationItem,
               weekdays: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
             };
           }
-          return item;
+          return migrationItem;
         });
 
         // Zodでバリデーション
