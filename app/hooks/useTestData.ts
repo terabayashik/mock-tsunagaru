@@ -160,28 +160,28 @@ export const useTestData = () => {
       // 4. URLデータを作成
       const urlData = [
         {
-          name: "Google",
-          url: "https://www.google.com",
-          title: "Google",
-          description: "検索エンジン",
+          name: "Wikipedia - 日本",
+          url: "https://ja.wikipedia.org/wiki/日本",
+          title: "日本 - Wikipedia",
+          description: "日本についてのWikipedia記事",
         },
         {
-          name: "GitHub",
-          url: "https://github.com",
-          title: "GitHub",
-          description: "開発者向けプラットフォーム",
+          name: "OpenStreetMap - 東京",
+          url: "https://www.openstreetmap.org/export/embed.html?bbox=139.5503,35.6262,139.7503,35.7262&layer=mapnik",
+          title: "OpenStreetMap - 東京",
+          description: "東京の地図",
         },
         {
-          name: "MDN Web Docs",
-          url: "https://developer.mozilla.org",
-          title: "MDN Web Docs",
-          description: "Web開発者向けリソース",
+          name: "Archive.org",
+          url: "https://archive.org",
+          title: "Internet Archive",
+          description: "デジタルライブラリー",
         },
         {
-          name: "Stack Overflow",
-          url: "https://stackoverflow.com",
-          title: "Stack Overflow",
-          description: "プログラミング質問サイト",
+          name: "Wikipedia - コンピュータ",
+          url: "https://ja.wikipedia.org/wiki/コンピュータ",
+          title: "コンピュータ - Wikipedia",
+          description: "コンピュータについてのWikipedia記事",
         },
       ];
 

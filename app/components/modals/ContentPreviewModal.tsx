@@ -1,6 +1,7 @@
 import {
   ActionIcon,
   Alert,
+  AspectRatio,
   Box,
   Button,
   Divider,
@@ -19,13 +20,13 @@ import {
   IconEdit,
   IconExclamationCircle,
   IconFile,
-  IconLink,
   IconTrash,
 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useContent } from "~/hooks/useContent";
 import type { ContentIndex, ContentItem } from "~/types/content";
 import { OPFSManager } from "~/utils/storage/opfs";
+import { getIframeSandboxAttributes } from "~/utils/urlValidator";
 
 interface ContentPreviewModalProps {
   opened: boolean;
@@ -302,22 +303,70 @@ export const ContentPreviewModal = ({
       );
     }
 
-    // その他のタイプ（テキスト、URL等）
+    // URLプレビュー（iframe埋め込み）
+    if (content.type === "url" && content.urlInfo?.url) {
+      return (
+        <AspectRatio ratio={16 / 9} maw="100%">
+          <Box
+            style={{
+              width: "100%",
+              height: "100%",
+              position: "relative",
+              overflow: "hidden",
+              border: "1px solid #e5e5e5",
+              borderRadius: "var(--mantine-radius-md)",
+              backgroundColor: "#ffffff",
+            }}
+          >
+            <Box
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                overflow: "hidden",
+              }}
+            >
+              <iframe
+                src={content.urlInfo.url}
+                title={content.name}
+                width="1920"
+                height="1080"
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  width: "1920px",
+                  height: "1080px",
+                  transform: "translate(-50%, -50%) scale(var(--scale-factor))",
+                  transformOrigin: "center",
+                  border: "none",
+                  backgroundColor: "white",
+                  pointerEvents: "none",
+                  // CSS変数でスケールファクターを設定
+                  ["--scale-factor" as string]: "0.47", // 900px幅の場合: 900 / 1920 ≈ 0.47
+                }}
+                sandbox={getIframeSandboxAttributes()}
+                loading="lazy"
+              />
+            </Box>
+          </Box>
+        </AspectRatio>
+      );
+    }
+
+    // その他のタイプ
     return (
       <Box h="400px" display="flex" style={{ alignItems: "center", justifyContent: "center" }}>
         <Stack align="center" gap="md">
-          {content.type === "url" ? <IconLink size={48} /> : <IconFile size={48} />}
+          <IconFile size={48} />
           <Text size="lg" fw={500}>
             {content.name}
           </Text>
           <Text size="sm" c="dimmed">
             このコンテンツタイプはプレビューできません
           </Text>
-          {content.urlInfo?.url && (
-            <Text size="sm" style={{ wordBreak: "break-all" }}>
-              {content.urlInfo.url}
-            </Text>
-          )}
         </Stack>
       </Box>
     );

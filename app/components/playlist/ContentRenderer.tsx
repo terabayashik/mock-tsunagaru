@@ -171,11 +171,33 @@ export const ContentRenderer = memo(function ContentRenderer({
       case "url":
         if (!content.urlInfo?.url) return null;
         return (
-          <iframe
-            src={content.urlInfo.url}
-            style={{ width: "100%", height: "100%", border: "none" }}
-            title={content.name}
-          />
+          <Box
+            style={{
+              width: "100%",
+              height: "100%",
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            <iframe
+              src={content.urlInfo.url}
+              width="1920"
+              height="1080"
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                width: "1920px",
+                height: "1080px",
+                transform: `translate(-50%, -50%) scale(${Math.min(width / 1920, height / 1080)})`,
+                transformOrigin: "center",
+                border: "none",
+                backgroundColor: "white",
+                pointerEvents: "none",
+              }}
+              title={content.name}
+            />
+          </Box>
         );
 
       case "weather": {

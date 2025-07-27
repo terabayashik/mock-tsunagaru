@@ -1,4 +1,4 @@
-import { ActionIcon, Box, Flex, Group, Image, Paper, Text, Tooltip } from "@mantine/core";
+import { ActionIcon, AspectRatio, Box, Flex, Group, Image, Paper, Text, Tooltip } from "@mantine/core";
 import {
   IconBrandYoutube,
   IconCloud,
@@ -15,6 +15,7 @@ import {
 import { memo, useCallback, useEffect, useState } from "react";
 import { useContent } from "~/hooks/useContent";
 import type { ContentIndex, ContentType } from "~/types/content";
+import { checkIframeEmbeddability, getIframeSandboxAttributes } from "~/utils/urlValidator";
 
 // HTMLエスケープ関数
 const escapeHtml = (str: string): string => {
@@ -64,6 +65,7 @@ interface PreviewState {
     width?: number;
     height?: number;
     duration?: number;
+    isIframe?: boolean;
   };
 }
 
@@ -156,32 +158,48 @@ export const ContentPreview = memo(
 
     const generateUrlPreview = useCallback(async () => {
       try {
-        // URL用のプレースホルダープレビュー
-        const svgContent = `
-          <svg width="320" height="180" xmlns="http://www.w3.org/2000/svg">
-            <rect width="100%" height="100%" fill="#7950f2"/>
-            <text x="50%" y="30%" text-anchor="middle" dy=".3em" fill="white" font-size="12">
-              Webページ
-            </text>
-            <text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="white" font-size="10">
-              ${escapeHtml(new URL(content.url || "").hostname)}
-            </text>
-            <text x="50%" y="70%" text-anchor="middle" dy=".3em" fill="white" font-size="8">
-              クリックしてアクセス
-            </text>
-          </svg>
-        `;
+        if (!content.url) {
+          throw new Error("URLが見つかりません");
+        }
 
-        const encodedSvg = btoa(
-          encodeURIComponent(svgContent).replace(/%([0-9A-F]{2})/g, (_match, p1) => {
-            return String.fromCharCode(Number.parseInt(p1, 16));
-          }),
-        );
+        // URLのiframe埋め込み可能性をチェック
+        const { embeddable } = await checkIframeEmbeddability(content.url);
 
-        setPreviewState({
-          loading: false,
-          previewUrl: `data:image/svg+xml;base64,${encodedSvg}`,
-        });
+        if (!embeddable) {
+          // 埋め込み不可能な場合はプレースホルダーを表示
+          const svgContent = `
+            <svg width="320" height="180" xmlns="http://www.w3.org/2000/svg">
+              <rect width="100%" height="100%" fill="#7950f2"/>
+              <text x="50%" y="30%" text-anchor="middle" dy=".3em" fill="white" font-size="12">
+                Webページ
+              </text>
+              <text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="white" font-size="10">
+                ${escapeHtml(new URL(content.url || "").hostname)}
+              </text>
+              <text x="50%" y="70%" text-anchor="middle" dy=".3em" fill="white" font-size="8">
+                iframe埋め込み不可
+              </text>
+            </svg>
+          `;
+
+          const encodedSvg = btoa(
+            encodeURIComponent(svgContent).replace(/%([0-9A-F]{2})/g, (_match, p1) => {
+              return String.fromCharCode(Number.parseInt(p1, 16));
+            }),
+          );
+
+          setPreviewState({
+            loading: false,
+            previewUrl: `data:image/svg+xml;base64,${encodedSvg}`,
+          });
+        } else {
+          // 埋め込み可能な場合はiframeのURLを設定
+          setPreviewState({
+            loading: false,
+            previewUrl: content.url,
+            metadata: { isIframe: true }, // iframeであることを示すフラグ
+          });
+        }
       } catch (_error) {
         setPreviewState({
           loading: false,
@@ -675,14 +693,50 @@ export const ContentPreview = memo(
         <Box pos="relative">
           {/* プレビュー画像 */}
           <Flex h={imageHeight} w="100%" style={{ overflow: "hidden" }} align="center" justify="center" bg="gray.0">
-            <Image
-              src={previewState.previewUrl}
-              alt={content.name}
-              maw="100%"
-              mah="100%"
-              fit="contain"
-              fallbackSrc="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjFmM2Y0Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIiBmaWxsPSIjOWNhM2FmIiBmb250LXNpemU9IjE0Ij5ObyBQcmV2aWV3PC90ZXh0Pjwvc3ZnPg=="
-            />
+            {content.type === "url" && previewState.metadata?.isIframe ? (
+              <AspectRatio ratio={16 / 9} w="100%" h="100%">
+                <Box
+                  style={{
+                    position: "relative",
+                    width: "100%",
+                    height: "100%",
+                    overflow: "hidden",
+                  }}
+                >
+                  <iframe
+                    src={previewState.previewUrl}
+                    title={content.name}
+                    width="1920"
+                    height="1080"
+                    sandbox={getIframeSandboxAttributes()}
+                    loading="lazy"
+                    style={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "50%",
+                      width: "1920px",
+                      height: "1080px",
+                      transform: "translate(-50%, -50%) scale(var(--scale-factor))",
+                      transformOrigin: "center",
+                      border: "none",
+                      backgroundColor: "white",
+                      pointerEvents: "none",
+                      // グリッドビューの場合のスケールファクター
+                      ["--scale-factor" as string]: `${BASE_WIDTH / 1920}`, // 200px幅の場合: 200 / 1920 ≈ 0.104
+                    }}
+                  />
+                </Box>
+              </AspectRatio>
+            ) : (
+              <Image
+                src={previewState.previewUrl}
+                alt={content.name}
+                maw="100%"
+                mah="100%"
+                fit="contain"
+                fallbackSrc="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjFmM2Y0Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIiBmaWxsPSIjOWNhM2FmIiBmb250LXNpemU9IjE0Ij5ObyBQcmV2aWV3PC90ZXh0Pjwvc3ZnPg=="
+              />
+            )}
           </Flex>
 
           {/* オーバーレイアイコン */}

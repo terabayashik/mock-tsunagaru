@@ -1,4 +1,5 @@
 import {
+  Alert,
   Box,
   Button,
   ColorInput,
@@ -15,6 +16,7 @@ import {
 } from "@mantine/core";
 import { Dropzone, type FileWithPath } from "@mantine/dropzone";
 import {
+  IconAlertCircle,
   IconCloud,
   IconCloudUpload,
   IconDeviceFloppy,
@@ -35,6 +37,7 @@ import {
   type TextContent,
   type WeatherContent,
 } from "~/types/content";
+import { checkIframeEmbeddability, normalizeUrl } from "~/utils/urlValidator";
 
 type ContentMode = "file" | "url" | "text" | "weather" | "csv";
 
@@ -87,6 +90,8 @@ export const ContentAddModal = memo(
     const [name, setName] = useState("");
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
+    const [urlValidationError, setUrlValidationError] = useState<string | null>(null);
+    const [isValidatingUrl, setIsValidatingUrl] = useState(false);
 
     // テキスト関連の状態
     const [textName, setTextName] = useState("");
@@ -123,6 +128,8 @@ export const ContentAddModal = memo(
       setName("");
       setTitle("");
       setDescription("");
+      setUrlValidationError(null);
+      setIsValidatingUrl(false);
       setTextName("");
       setTextContent("");
       setWritingMode("horizontal");
@@ -184,10 +191,24 @@ export const ContentAddModal = memo(
     const handleUrlSubmit = async () => {
       if (!url.trim()) return;
 
-      setLoading(true);
+      // URLの正規化
+      const normalizedUrl = normalizeUrl(url.trim());
+
+      // iframe埋め込み可能性チェック
+      setIsValidatingUrl(true);
+      setUrlValidationError(null);
+
       try {
+        const { embeddable, reason } = await checkIframeEmbeddability(normalizedUrl);
+
+        if (!embeddable) {
+          setUrlValidationError(reason || "このURLはiframeに埋め込めません");
+          return;
+        }
+
+        setLoading(true);
         await onUrlSubmit({
-          url: url.trim(),
+          url: normalizedUrl,
           name: name.trim() || undefined,
           title: title.trim() || undefined,
           description: description.trim() || undefined,
@@ -195,8 +216,10 @@ export const ContentAddModal = memo(
         handleClose();
       } catch (error) {
         console.error("URL content creation failed:", error);
+        setUrlValidationError("URL登録中にエラーが発生しました");
       } finally {
         setLoading(false);
+        setIsValidatingUrl(false);
       }
     };
 
@@ -461,11 +484,20 @@ export const ContentAddModal = memo(
                 label="URL *"
                 placeholder="https://example.com"
                 value={url}
-                onChange={(event) => setUrl(event.currentTarget.value)}
+                onChange={(event) => {
+                  setUrl(event.currentTarget.value);
+                  setUrlValidationError(null);
+                }}
                 required
+                error={urlValidationError}
                 aria-required="true"
                 aria-label="URL入力"
               />
+              {urlValidationError && (
+                <Alert icon={<IconAlertCircle size={16} />} color="red" variant="light">
+                  {urlValidationError}
+                </Alert>
+              )}
               <TextInput
                 label="表示名"
                 placeholder="カスタム表示名（省略可）"
@@ -764,8 +796,8 @@ export const ContentAddModal = memo(
                         ? handleWeatherSubmit
                         : handleCsvSubmit
               }
-              loading={loading}
-              disabled={!canSubmit}
+              loading={loading || isValidatingUrl}
+              disabled={!canSubmit || !!urlValidationError}
             >
               {isFileMode
                 ? "アップロード"

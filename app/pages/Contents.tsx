@@ -199,11 +199,12 @@ export default function ContentsPage() {
   };
 
   const handleContentClick = (contentId: string, contentType: ContentType) => {
-    // 動画、画像、YouTube、テキスト、気象情報、CSVでプレビューモーダルを開く
+    // 動画、画像、YouTube、URL、テキスト、気象情報、CSVでプレビューモーダルを開く
     if (
       contentType === "video" ||
       contentType === "image" ||
       contentType === "youtube" ||
+      contentType === "url" ||
       contentType === "text" ||
       contentType === "weather" ||
       contentType === "csv"
@@ -383,8 +384,10 @@ export default function ContentsPage() {
                   content.type === "video" ||
                   content.type === "image" ||
                   content.type === "youtube" ||
+                  content.type === "url" ||
                   content.type === "text" ||
-                  content.type === "weather";
+                  content.type === "weather" ||
+                  content.type === "csv";
                 return (
                   <Table.Tr
                     key={content.id}
