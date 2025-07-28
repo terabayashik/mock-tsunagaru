@@ -1,87 +1,98 @@
-# Welcome to React Router!
+# Tsunagaru - デジタルサイネージシステム
 
-A modern, production-ready template for building full-stack React applications using React Router.
+デジタルサイネージ用のコンテンツ管理・配信システムです。
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+## 技術スタック
 
-## Features
+- React Router v7 (SSR無効、プリレンダリング有効)
+- TypeScript
+- Mantine UI
+- TailwindCSS
+- OPFS (Origin Private File System) for データ永続化
+- Biome (リンター/フォーマッター)
+- pnpm (パッケージマネージャー)
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+## 主な機能
 
-## Getting Started
+### コンテンツ管理
+- 画像・動画ファイルのアップロード
+- テキストコンテンツの作成
+- YouTube動画の埋め込み
+- URLコンテンツ（Webページ）の表示
+- 気象情報の表示
+- CSVデータの視覚化
 
-### Installation
+### レイアウト管理
+- ドラッグ&ドロップによるリージョン作成
+- リサイズ可能なリージョン
+- 横向き・縦向き対応
 
-Install the dependencies:
+### プレイリスト管理
+- レイアウトとコンテンツの組み合わせ
+- リージョンごとのコンテンツ割り当て
+- コンテンツの再生時間設定
 
-```bash
-npm install
-```
+### スケジュール管理
+- 時刻指定によるプレイリスト再生
+- 曜日ごとの実行設定
+- 電源管理（オン/オフ/再起動）
 
-### Development
+## 開発環境のセットアップ
 
-Start the development server with HMR:
+### 必要な環境
+- Node.js 18以上
+- pnpm
 
-```bash
-npm run dev
-```
-
-Your application will be available at `http://localhost:5173`.
-
-## Building for Production
-
-Create a production build:
-
-```bash
-npm run build
-```
-
-## Deployment
-
-### Docker Deployment
-
-To build and run using Docker:
+### インストール
 
 ```bash
-docker build -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
+pnpm install
 ```
 
-The containerized application can be deployed to any platform that supports Docker, including:
+### 開発サーバーの起動
 
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
+```bash
+pnpm dev
 ```
 
-## Styling
+アプリケーションは `http://localhost:5173` で利用可能です。
 
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
+### ビルド
 
----
+```bash
+pnpm build
+```
 
-Built with ❤️ using React Router.
+### 型チェック
+
+```bash
+pnpm typecheck
+```
+
+### リント/フォーマット
+
+```bash
+pnpm check
+```
+
+## プロジェクト構成
+
+```
+app/
+├── components/     # UIコンポーネント
+├── hooks/         # カスタムフック
+├── pages/         # ページコンポーネント
+├── routes/        # ルーティング定義
+├── types/         # TypeScript型定義
+├── utils/         # ユーティリティ関数
+└── states/        # グローバル状態管理
+```
+
+## データ永続化
+
+ブラウザのOPFS (Origin Private File System) を使用してデータを保存します。
+- コンテンツファイル
+- レイアウト設定
+- プレイリスト設定
+- スケジュール設定
+- アプリケーション設定
