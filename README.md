@@ -7,7 +7,6 @@
 - React Router v7 (SSR無効、プリレンダリング有効)
 - TypeScript
 - Mantine UI
-- TailwindCSS
 - OPFS (Origin Private File System) for データ永続化
 - Biome (リンター/フォーマッター)
 - pnpm (パッケージマネージャー)

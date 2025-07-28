@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a React Router v7 application with SSR disabled and prerendering enabled. It uses Mantine for UI components, TailwindCSS for styling, TypeScript, and Biome for linting/formatting. The project uses pnpm as the package manager.
+This is a React Router v7 application with SSR disabled and prerendering enabled. It uses Mantine for UI components, TypeScript, and Biome for linting/formatting. The project uses pnpm as the package manager.
 
 ## Development Commands
 
@@ -18,8 +18,8 @@ This is a React Router v7 application with SSR disabled and prerendering enabled
 
 - **App Structure**: Single-page application (SPA) with prerendering
 - **Routing**: Uses React Router v7 with file-based routing in `app/routes/`
-- **UI Framework**: Mantine components with TailwindCSS for styling
-- **Styling**: Global styles from Mantine, Inter font from Google Fonts
+- **UI Framework**: Mantine components
+- **Styling**: Mantine theme system, CSS Modules, Inter font from Google Fonts
 - **Type Safety**: Full TypeScript with strict configuration
 - **Path Aliases**: `~/*` maps to `./app/*`
 
