@@ -1,5 +1,5 @@
 import { Anchor, AppShell, Avatar, Button, Group, Menu, Text, Title, UnstyledButton } from "@mantine/core";
-import { IconDoorExit, IconHome, IconMenu2, IconSettings, IconUser } from "@tabler/icons-react";
+import { IconDoorExit, IconHome, IconMenu2, IconSettings } from "@tabler/icons-react";
 import { useAtom } from "jotai";
 import { Link, useLocation } from "react-router";
 import { useAuth } from "~/hooks/useAuth";
@@ -82,8 +82,6 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
                 ))}
                 <Menu.Divider />
                 <Menu.Label>アカウント</Menu.Label>
-                <Menu.Item leftSection={<IconUser size={16} />}>プロフィール</Menu.Item>
-                <Menu.Item leftSection={<IconSettings size={16} />}>設定</Menu.Item>
                 <Menu.Item leftSection={<IconDoorExit size={16} />} color="red" onClick={handleLogout}>
                   ログアウト
                 </Menu.Item>
@@ -109,8 +107,6 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
 
               <Menu.Dropdown>
                 <Menu.Label>アカウント</Menu.Label>
-                <Menu.Item leftSection={<IconUser size={16} />}>プロフィール</Menu.Item>
-                <Menu.Item leftSection={<IconSettings size={16} />}>設定</Menu.Item>
                 <Menu.Divider />
                 <Menu.Item leftSection={<IconDoorExit size={16} />} color="red" onClick={handleLogout}>
                   ログアウト
