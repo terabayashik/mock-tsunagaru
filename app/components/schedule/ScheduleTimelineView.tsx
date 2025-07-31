@@ -175,6 +175,10 @@ export function ScheduleTimelineView({
         ? playlists.find((p) => p.id === schedule.playlistId)
         : null;
 
+    // 表示名を動的に生成
+    const displayName =
+      schedule.eventType === "playlist" && playlist ? playlist.name : EVENT_TYPE_LABELS[schedule.eventType];
+
     return (
       <HoverCard key={schedule.id} width={280} shadow="md" position="top">
         <HoverCard.Target>
@@ -206,7 +210,7 @@ export function ScheduleTimelineView({
                     {schedule.time}
                   </Text>
                   <Text size="xs" lineClamp={1}>
-                    {schedule.name}
+                    {displayName}
                   </Text>
                 </Stack>
               </Group>
@@ -233,7 +237,7 @@ export function ScheduleTimelineView({
             </Group>
             <div>
               <Text size="sm" fw={600}>
-                {schedule.name}
+                {displayName}
               </Text>
               <Text size="xs" c="dimmed">
                 {schedule.time} に実行

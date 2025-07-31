@@ -9,6 +9,7 @@ import { usePlaylist } from "~/hooks/usePlaylist";
 import { useSchedule } from "~/hooks/useSchedule";
 import type { PlaylistIndex } from "~/types/playlist";
 import type { ScheduleIndex, ScheduleItem } from "~/types/schedule";
+import { EVENT_TYPE_LABELS } from "~/types/schedule";
 
 export default function SchedulePage() {
   const { getSchedulesIndex, getScheduleById, deleteSchedule, toggleScheduleEnabled } = useSchedule();
@@ -73,9 +74,17 @@ export default function SchedulePage() {
   // スケジュールの削除
   const handleDelete = useCallback(
     (schedule: ScheduleIndex) => {
+      // 表示名を動的に生成
+      const playlist =
+        schedule.eventType === "playlist" && schedule.playlistId
+          ? playlists.find((p) => p.id === schedule.playlistId)
+          : null;
+      const displayName =
+        schedule.eventType === "playlist" && playlist ? playlist.name : EVENT_TYPE_LABELS[schedule.eventType];
+
       modals.openConfirmModal({
         title: "スケジュールの削除",
-        children: `「${schedule.name}」を削除してもよろしいですか？`,
+        children: `「${displayName}」を削除してもよろしいですか？`,
         labels: { confirm: "削除", cancel: "キャンセル" },
         confirmProps: { color: "red" },
         onConfirm: async () => {
@@ -97,7 +106,7 @@ export default function SchedulePage() {
         },
       });
     },
-    [deleteSchedule, loadData],
+    [deleteSchedule, loadData, playlists],
   );
 
   // スケジュールの有効/無効切り替え

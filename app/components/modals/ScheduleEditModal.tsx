@@ -1,4 +1,4 @@
-import { Button, Group, Modal, MultiSelect, Select, Stack, Switch, TextInput } from "@mantine/core";
+import { Button, Group, Modal, MultiSelect, Select, Stack, Switch } from "@mantine/core";
 import { TimeInput } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -15,7 +15,6 @@ interface ScheduleEditModalProps {
 }
 
 type FormValues = {
-  name: string;
   time: string;
   weekdays: Weekday[];
   eventType: EventType;
@@ -29,7 +28,6 @@ export function ScheduleEditModal({ opened, onClose, schedule, onSuccess }: Sche
 
   const form = useForm<FormValues>({
     initialValues: {
-      name: "",
       time: "00:00",
       weekdays: [] as Weekday[],
       eventType: "playlist",
@@ -37,7 +35,6 @@ export function ScheduleEditModal({ opened, onClose, schedule, onSuccess }: Sche
       enabled: true,
     },
     validate: {
-      name: (value: string) => (value.trim().length === 0 ? "名前は必須です" : null),
       time: (value: string) => {
         const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
         return !timeRegex.test(value) ? "時刻は HH:MM 形式で入力してください" : null;
@@ -77,7 +74,6 @@ export function ScheduleEditModal({ opened, onClose, schedule, onSuccess }: Sche
   useEffect(() => {
     if (schedule) {
       form.setValues({
-        name: schedule.name,
         time: schedule.time,
         weekdays: schedule.weekdays,
         eventType: schedule.event.type,
@@ -92,8 +88,17 @@ export function ScheduleEditModal({ opened, onClose, schedule, onSuccess }: Sche
   const handleSubmit = useCallback(
     async (values: FormValues) => {
       try {
+        // 名前を自動生成
+        let name: string;
+        if (values.eventType === "playlist" && values.playlistId) {
+          const playlist = playlists.find((p) => p.value === values.playlistId);
+          name = playlist ? playlist.label : "プレイリスト";
+        } else {
+          name = EVENT_TYPE_LABELS[values.eventType];
+        }
+
         const scheduleData = {
-          name: values.name,
+          name,
           time: values.time,
           weekdays: values.weekdays,
           event:
@@ -120,7 +125,7 @@ export function ScheduleEditModal({ opened, onClose, schedule, onSuccess }: Sche
         console.error("スケジュールの保存に失敗しました:", error);
       }
     },
-    [schedule, createSchedule, updateSchedule, onSuccess, onClose, form],
+    [schedule, createSchedule, updateSchedule, onSuccess, onClose, form, playlists],
   );
 
   const eventTypeOptions = useMemo(
@@ -145,8 +150,6 @@ export function ScheduleEditModal({ opened, onClose, schedule, onSuccess }: Sche
     <Modal opened={opened} onClose={onClose} title={schedule ? "スケジュールを編集" : "スケジュールを作成"} size="md">
       <form onSubmit={form.onSubmit(handleSubmit)}>
         <Stack gap="md">
-          <TextInput label="スケジュール名" placeholder="毎朝のお知らせ" required {...form.getInputProps("name")} />
-
           <TimeInput label="実行時刻" required {...form.getInputProps("time")} />
 
           <MultiSelect
