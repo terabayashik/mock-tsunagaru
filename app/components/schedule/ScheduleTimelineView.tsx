@@ -277,6 +277,25 @@ export function ScheduleTimelineView({
   };
 
   if (viewMode === "week") {
+    // 各時間帯の最大イベント数を計算
+    const maxEventsPerHour = useMemo(() => {
+      const maxEvents: Record<number, number> = {};
+      hours.forEach((hour) => {
+        let maxCount = 0;
+        weekdayKeys.forEach((weekday) => {
+          const key = `${hour}-${weekday}`;
+          const count = groupedSchedules[key]?.length || 0;
+          maxCount = Math.max(maxCount, count);
+        });
+        maxEvents[hour] = maxCount;
+      });
+      return maxEvents;
+    }, [groupedSchedules]);
+
+    // 基本の高さとイベントごとの追加高さ
+    const baseHeight = 80;
+    const eventHeight = 70;
+
     return (
       <Stack gap="lg">
         <Group justify="space-between">
@@ -314,13 +333,17 @@ export function ScheduleTimelineView({
             <Grid gutter="xs" className={classes.gridContainer}>
               <Grid.Col span={1} className={classes.stickyColumn}>
                 <Box style={{ height: 50 }} />
-                {hours.map((hour) => (
-                  <Center key={hour} style={{ height: 80 }}>
-                    <Text size="sm" fw={600} c="dimmed">
-                      {hour.toString().padStart(2, "0")}:00
-                    </Text>
-                  </Center>
-                ))}
+                {hours.map((hour) => {
+                  const eventCount = maxEventsPerHour[hour] || 0;
+                  const rowHeight = eventCount === 0 ? baseHeight : baseHeight + (eventCount - 1) * eventHeight;
+                  return (
+                    <Center key={hour} style={{ height: rowHeight }}>
+                      <Text size="sm" fw={600} c="dimmed">
+                        {hour.toString().padStart(2, "0")}:00
+                      </Text>
+                    </Center>
+                  );
+                })}
               </Grid.Col>
 
               {weekdayKeys.map((weekday, dayIndex) => {
@@ -346,12 +369,15 @@ export function ScheduleTimelineView({
                       const key = `${hour}-${weekday}`;
                       const isCurrentHour = hour === currentHour;
                       const scheduleItems = groupedSchedules[key] || [];
+                      const eventCount = maxEventsPerHour[hour] || 0;
+                      const rowHeight = eventCount === 0 ? baseHeight : baseHeight + (eventCount - 1) * eventHeight;
 
                       return (
                         <Box
                           key={hour}
                           className={`${classes.timeCell} ${isCurrentHour ? classes.currentHourCell : ""}`}
                           p="xs"
+                          style={{ height: rowHeight }}
                         >
                           <Stack gap="xs">{scheduleItems.map((schedule) => renderScheduleCard(schedule))}</Stack>
                         </Box>
