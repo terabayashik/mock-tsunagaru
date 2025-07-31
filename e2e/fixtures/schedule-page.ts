@@ -1,19 +1,15 @@
-import { Page, Locator } from '@playwright/test';
-import { BasePage } from './base-page';
+import { expect, type Locator } from "@playwright/test";
+import { BasePage } from "./base-page";
 
 export class SchedulePage extends BasePage {
-  constructor(page: Page) {
-    super(page);
-  }
-
   async navigate() {
-    await this.goto('/schedule');
+    await this.goto("/schedule");
     await this.waitForPageLoad();
-    
+
     // スケジュールタブが選択されていない場合はクリック
-    const scheduleTab = this.page.getByRole('tab', { name: 'スケジュール' });
-    const isSelected = await scheduleTab.getAttribute('aria-selected');
-    if (isSelected !== 'true') {
+    const scheduleTab = this.page.getByRole("tab", { name: "スケジュール" });
+    const isSelected = await scheduleTab.getAttribute("aria-selected");
+    if (isSelected !== "true") {
       await scheduleTab.click();
       await this.page.waitForTimeout(500);
     }
@@ -22,16 +18,16 @@ export class SchedulePage extends BasePage {
   // 日付ナビゲーション
   get previousWeekButton(): Locator {
     // 左矢印のSVGを含むボタンを探す（ActionIcon）
-    return this.page.locator('button:has(svg)').nth(4);
+    return this.page.locator("button:has(svg)").nth(4);
   }
 
   get nextWeekButton(): Locator {
     // 右矢印のSVGを含むボタンを探す（ActionIcon）
-    return this.page.locator('button:has(svg)').nth(5);
+    return this.page.locator("button:has(svg)").nth(5);
   }
 
   get todayButton(): Locator {
-    return this.page.getByRole('button', { name: '今週' });
+    return this.page.getByRole("button", { name: "今週" });
   }
 
   get currentWeekText(): Locator {
@@ -46,32 +42,32 @@ export class SchedulePage extends BasePage {
   }
 
   getScheduleItem(playlistName: string): Locator {
-    return this.page.locator('.schedule-item').filter({ hasText: playlistName });
+    return this.page.locator(".schedule-item").filter({ hasText: playlistName });
   }
 
   // スケジュール編集モーダルの操作
   async selectPlaylist(playlistName: string) {
-    await this.page.getByLabel('プレイリスト').click();
-    await this.page.getByRole('option', { name: playlistName }).click();
+    await this.page.getByLabel("プレイリスト").click();
+    await this.page.getByRole("option", { name: playlistName }).click();
   }
 
   async setStartTime(time: string) {
-    await this.page.getByLabel('開始時刻').clear();
-    await this.page.getByLabel('開始時刻').fill(time);
+    await this.page.getByLabel("開始時刻").clear();
+    await this.page.getByLabel("開始時刻").fill(time);
   }
 
   async setEndTime(time: string) {
-    await this.page.getByLabel('終了時刻').clear();
-    await this.page.getByLabel('終了時刻').fill(time);
+    await this.page.getByLabel("終了時刻").clear();
+    await this.page.getByLabel("終了時刻").fill(time);
   }
 
   async enableRepeat() {
-    await this.page.getByLabel('繰り返し').click();
+    await this.page.getByLabel("繰り返し").click();
   }
 
-  async selectRepeatType(type: '毎日' | '毎週' | '毎月') {
-    await this.page.getByLabel('繰り返しタイプ').click();
-    await this.page.getByRole('option', { name: type }).click();
+  async selectRepeatType(type: "毎日" | "毎週" | "毎月") {
+    await this.page.getByLabel("繰り返しタイプ").click();
+    await this.page.getByRole("option", { name: type }).click();
   }
 
   async selectRepeatDays(days: string[]) {
@@ -81,32 +77,32 @@ export class SchedulePage extends BasePage {
   }
 
   async setRepeatEndDate(date: string) {
-    await this.page.getByLabel('終了日').fill(date);
+    await this.page.getByLabel("終了日").fill(date);
   }
 
   async saveSchedule() {
-    await this.page.getByRole('button', { name: '保存' }).click();
+    await this.page.getByRole("button", { name: "保存" }).click();
   }
 
   async updateSchedule() {
-    await this.page.getByRole('button', { name: '更新' }).click();
+    await this.page.getByRole("button", { name: "更新" }).click();
   }
 
   async deleteSchedule() {
-    await this.page.getByRole('button', { name: '削除' }).click();
+    await this.page.getByRole("button", { name: "削除" }).click();
   }
 
   async confirmDelete() {
-    await this.page.getByRole('button', { name: '削除', exact: true }).click();
+    await this.page.getByRole("button", { name: "削除", exact: true }).click();
   }
 
   // 週ビューと月ビューの切り替え
   get weekViewButton(): Locator {
-    return this.page.getByRole('button', { name: '週表示' });
+    return this.page.getByRole("button", { name: "週表示" });
   }
 
   get monthViewButton(): Locator {
-    return this.page.getByRole('button', { name: '月表示' });
+    return this.page.getByRole("button", { name: "月表示" });
   }
 
   // ドラッグアンドドロップ操作

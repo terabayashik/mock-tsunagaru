@@ -154,6 +154,21 @@ export function ScheduleTimelineView({
     }
   };
 
+  // 各時間帯の最大イベント数を計算
+  const maxEventsPerHour = useMemo(() => {
+    const maxEvents: Record<number, number> = {};
+    hours.forEach((hour) => {
+      let maxCount = 0;
+      weekdayKeys.forEach((weekday) => {
+        const key = `${hour}-${weekday}`;
+        const count = groupedSchedules[key]?.length || 0;
+        maxCount = Math.max(maxCount, count);
+      });
+      maxEvents[hour] = maxCount;
+    });
+    return maxEvents;
+  }, [groupedSchedules, hours]);
+
   const renderScheduleCard = (schedule: ScheduleIndex) => {
     const playlist =
       schedule.eventType === "playlist" && schedule.playlistId
@@ -277,21 +292,6 @@ export function ScheduleTimelineView({
   };
 
   if (viewMode === "week") {
-    // 各時間帯の最大イベント数を計算
-    const maxEventsPerHour = useMemo(() => {
-      const maxEvents: Record<number, number> = {};
-      hours.forEach((hour) => {
-        let maxCount = 0;
-        weekdayKeys.forEach((weekday) => {
-          const key = `${hour}-${weekday}`;
-          const count = groupedSchedules[key]?.length || 0;
-          maxCount = Math.max(maxCount, count);
-        });
-        maxEvents[hour] = maxCount;
-      });
-      return maxEvents;
-    }, [groupedSchedules]);
-
     // 基本の高さとイベントごとの追加高さ
     const baseHeight = 80;
     const eventHeight = 70;

@@ -1,71 +1,77 @@
-import { Page, Locator } from '@playwright/test';
-import { BasePage } from './base-page';
+import type { Locator } from "@playwright/test";
+import { BasePage } from "./base-page";
 
-export type ContentType = 'video' | 'image' | 'text' | 'youtube' | 'url' | 'weather' | 'csv';
+export type ContentType = "video" | "image" | "text" | "youtube" | "url" | "weather" | "csv";
 
 export class ContentPage extends BasePage {
-  constructor(page: Page) {
-    super(page);
-  }
-
   async navigate() {
-    await this.goto('/contents');
+    await this.goto("/contents");
     await this.waitForPageLoad();
   }
 
   // フィルター要素
   get searchInput(): Locator {
-    return this.page.getByPlaceholder('コンテンツを検索');
+    return this.page.getByPlaceholder("コンテンツを検索");
   }
 
   get allFilter(): Locator {
-    return this.page.getByRole('radiogroup', { name: 'コンテンツタイプフィルター' }).locator('label:has-text("すべて")');
+    return this.page
+      .getByRole("radiogroup", { name: "コンテンツタイプフィルター" })
+      .locator('label:has-text("すべて")');
   }
 
   get videoFilter(): Locator {
-    return this.page.getByRole('radiogroup', { name: 'コンテンツタイプフィルター' }).locator('label:has-text("動画")');
+    return this.page.getByRole("radiogroup", { name: "コンテンツタイプフィルター" }).locator('label:has-text("動画")');
   }
 
   get imageFilter(): Locator {
-    return this.page.getByRole('radiogroup', { name: 'コンテンツタイプフィルター' }).locator('label:has-text("画像")');
+    return this.page.getByRole("radiogroup", { name: "コンテンツタイプフィルター" }).locator('label:has-text("画像")');
   }
 
   get textFilter(): Locator {
-    return this.page.getByRole('radiogroup', { name: 'コンテンツタイプフィルター' }).locator('label:has-text("テキスト")');
+    return this.page
+      .getByRole("radiogroup", { name: "コンテンツタイプフィルター" })
+      .locator('label:has-text("テキスト")');
   }
 
   get youtubeFilter(): Locator {
-    return this.page.getByRole('radiogroup', { name: 'コンテンツタイプフィルター' }).locator('label:has-text("YouTube")');
+    return this.page
+      .getByRole("radiogroup", { name: "コンテンツタイプフィルター" })
+      .locator('label:has-text("YouTube")');
   }
 
   get urlFilter(): Locator {
-    return this.page.getByRole('radiogroup', { name: 'コンテンツタイプフィルター' }).locator('label:has-text("URL")');
+    return this.page.getByRole("radiogroup", { name: "コンテンツタイプフィルター" }).locator('label:has-text("URL")');
   }
 
   get weatherFilter(): Locator {
-    return this.page.getByRole('radiogroup', { name: 'コンテンツタイプフィルター' }).locator('label:has-text("気象情報")');
+    return this.page
+      .getByRole("radiogroup", { name: "コンテンツタイプフィルター" })
+      .locator('label:has-text("気象情報")');
   }
 
   get csvFilter(): Locator {
-    return this.page.getByRole('radiogroup', { name: 'コンテンツタイプフィルター' }).locator('label:has-text("CSV")');
+    return this.page.getByRole("radiogroup", { name: "コンテンツタイプフィルター" }).locator('label:has-text("CSV")');
   }
 
   get unusedFilter(): Locator {
-    return this.page.getByRole('radiogroup', { name: 'コンテンツタイプフィルター' }).locator('label:has-text("未使用")');
+    return this.page
+      .getByRole("radiogroup", { name: "コンテンツタイプフィルター" })
+      .locator('label:has-text("未使用")');
   }
 
   // ビュー切り替え
   get tableViewButton(): Locator {
-    return this.page.getByRole('button', { name: 'テーブルビュー' });
+    return this.page.getByRole("button", { name: "テーブルビュー" });
   }
 
   get gridViewButton(): Locator {
-    return this.page.getByRole('button', { name: 'グリッドビュー' });
+    return this.page.getByRole("button", { name: "グリッドビュー" });
   }
 
   // アクションボタン
   get addContentButton(): Locator {
-    return this.page.getByRole('button', { name: 'コンテンツを追加' });
+    return this.page.getByRole("button", { name: "コンテンツを追加" });
   }
 
   // コンテンツアイテムの取得
@@ -75,59 +81,59 @@ export class ContentPage extends BasePage {
 
   // コンテンツアイテムの編集ボタン
   getEditButton(contentName: string): Locator {
-    return this.getContentItem(contentName).getByRole('button', { name: '編集' });
+    return this.getContentItem(contentName).getByRole("button", { name: "編集" });
   }
 
   // コンテンツアイテムの削除ボタン
   getDeleteButton(contentName: string): Locator {
-    return this.getContentItem(contentName).getByRole('button', { name: '削除' });
+    return this.getContentItem(contentName).getByRole("button", { name: "削除" });
   }
 
   // コンテンツ追加モーダルの操作
   async selectContentType(type: ContentType) {
     const typeMap: Record<ContentType, string> = {
-      video: '動画',
-      image: '画像',
-      text: 'テキスト',
-      youtube: 'YouTube',
-      url: 'URL',
-      weather: '気象情報',
-      csv: 'CSV'
+      video: "動画",
+      image: "画像",
+      text: "テキスト",
+      youtube: "YouTube",
+      url: "URL",
+      weather: "気象情報",
+      csv: "CSV",
     };
-    
-    await this.page.getByRole('dialog').locator(`label:has-text("${typeMap[type]}")`).click();
+
+    await this.page.getByRole("dialog").locator(`label:has-text("${typeMap[type]}")`).click();
   }
 
   async clickNext() {
-    await this.page.getByRole('button', { name: '次へ' }).click();
+    await this.page.getByRole("button", { name: "次へ" }).click();
   }
 
   async fillContentName(name: string) {
-    await this.page.getByLabel('コンテンツ名').fill(name);
+    await this.page.getByLabel("コンテンツ名").fill(name);
   }
 
   async selectFile(filePath: string) {
-    await this.page.getByLabel('ファイルを選択').setInputFiles(filePath);
+    await this.page.getByLabel("ファイルを選択").setInputFiles(filePath);
   }
 
   async fillYouTubeUrl(url: string) {
-    await this.page.getByLabel('YouTube URL').fill(url);
+    await this.page.getByLabel("YouTube URL").fill(url);
   }
 
   async fillUrl(url: string) {
-    await this.page.getByLabel('URL').fill(url);
+    await this.page.getByLabel("URL").fill(url);
   }
 
   async fillTextContent(text: string) {
-    await this.page.getByLabel('テキストコンテンツ').fill(text);
+    await this.page.getByLabel("テキストコンテンツ").fill(text);
   }
 
   async clickUpload() {
-    await this.page.getByRole('button', { name: 'アップロード' }).click();
+    await this.page.getByRole("button", { name: "アップロード" }).click();
   }
 
   async clickSave() {
-    await this.page.getByRole('button', { name: '保存' }).click();
+    await this.page.getByRole("button", { name: "保存" }).click();
   }
 
   // プレビューモーダルの操作
@@ -136,19 +142,19 @@ export class ContentPage extends BasePage {
   }
 
   get previewEditButton(): Locator {
-    return this.page.getByLabel('テスト画像').getByRole('button', { name: '編集' });
+    return this.page.getByLabel("テスト画像").getByRole("button", { name: "編集" });
   }
 
   get previewDeleteButton(): Locator {
-    return this.page.getByLabel('テスト画像').getByRole('button', { name: '削除' });
+    return this.page.getByLabel("テスト画像").getByRole("button", { name: "削除" });
   }
 
   // 削除確認モーダル
   async confirmDelete() {
-    await this.page.getByRole('button', { name: '削除', exact: true }).click();
+    await this.page.getByRole("button", { name: "削除", exact: true }).click();
   }
 
   async cancelDelete() {
-    await this.page.getByRole('button', { name: 'キャンセル' }).click();
+    await this.page.getByRole("button", { name: "キャンセル" }).click();
   }
 }
