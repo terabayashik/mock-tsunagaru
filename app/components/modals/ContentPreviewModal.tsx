@@ -1,18 +1,4 @@
-import {
-  ActionIcon,
-  Alert,
-  AspectRatio,
-  Box,
-  Button,
-  Divider,
-  Group,
-  List,
-  Modal,
-  Stack,
-  Text,
-  Textarea,
-  TextInput,
-} from "@mantine/core";
+import { ActionIcon, Alert, AspectRatio, Box, Button, Divider, Group, List, Modal, Stack, Text } from "@mantine/core";
 import { modals } from "@mantine/modals";
 import {
   IconChevronLeft,
@@ -24,9 +10,10 @@ import {
 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useContent } from "~/hooks/useContent";
-import type { ContentIndex, ContentItem } from "~/types/content";
+import type { ContentIndex, ContentItem, CsvContent, TextContent, WeatherContent } from "~/types/content";
 import { OPFSManager } from "~/utils/storage/opfs";
 import { getIframeSandboxAttributes } from "~/utils/urlValidator";
+import { ContentEditModal } from "./ContentEditModal";
 
 interface ContentPreviewModalProps {
   opened: boolean;
@@ -50,14 +37,7 @@ export const ContentPreviewModal = ({
   const [content, setContent] = useState<ContentItem | null>(null);
   const [loading, setLoading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({
-    name: "",
-    url: "",
-    title: "",
-    description: "",
-    textContent: "",
-  });
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { getContentById, updateContent, deleteContent, deleteContentForced, checkContentUsageStatus } = useContent();
 
   useEffect(() => {
@@ -72,17 +52,6 @@ export const ContentPreviewModal = ({
       try {
         const contentData = await getContentById(contentId);
         setContent(contentData);
-
-        // 編集フォームの初期値設定
-        if (contentData) {
-          setEditForm({
-            name: contentData.name,
-            url: contentData.urlInfo?.url || "",
-            title: contentData.urlInfo?.title || "",
-            description: contentData.urlInfo?.description || "",
-            textContent: contentData.textInfo?.content || "",
-          });
-        }
 
         // プレビューURL生成
         if (contentData?.type === "image" || contentData?.type === "video") {
@@ -409,56 +378,64 @@ export const ContentPreviewModal = ({
   };
 
   const handleEditStart = () => {
-    setIsEditing(true);
+    setIsEditModalOpen(true);
   };
 
-  const handleEditCancel = () => {
-    setIsEditing(false);
-    if (content) {
-      setEditForm({
-        name: content.name,
-        url: content.urlInfo?.url || "",
-        title: content.urlInfo?.title || "",
-        description: content.urlInfo?.description || "",
-        textContent: content.textInfo?.content || "",
-      });
-    }
+  const handleEditModalClose = () => {
+    setIsEditModalOpen(false);
   };
 
-  const handleEditSave = async () => {
-    if (!content) return;
-
+  const handleEditSubmit = async (data: {
+    id: string;
+    name: string;
+    tags: string[];
+    textInfo?: TextContent;
+    urlInfo?: { title?: string; description?: string };
+    weatherInfo?: WeatherContent;
+    csvInfo?: Partial<CsvContent> & { regenerateImage?: boolean };
+    csvBackgroundFile?: File | null;
+    csvFile?: File | null;
+  }) => {
     try {
-      const updateData: Partial<ContentItem> = {
-        name: editForm.name,
+      // 更新データを構築
+      const updateData: Parameters<typeof updateContent>[1] = {
+        name: data.name,
+        tags: data.tags,
+        updatedAt: new Date().toISOString(),
       };
 
-      // URL系コンテンツの場合はurlInfoも更新
-      if (content.type === "youtube" || content.type === "url") {
-        updateData.urlInfo = {
-          url: editForm.url,
-          title: editForm.title || undefined,
-          description: editForm.description || undefined,
-        };
+      // コンテンツタイプに応じて追加情報を設定
+      if (data.textInfo) {
+        updateData.textInfo = data.textInfo;
+      }
+      if (data.urlInfo && content) {
+        // 既存のurlInfo取得のためコンテンツを再取得
+        const existingContent = await getContentById(data.id);
+        if (existingContent?.urlInfo) {
+          updateData.urlInfo = {
+            ...existingContent.urlInfo,
+            ...data.urlInfo,
+          };
+        }
+      }
+      if (data.weatherInfo) {
+        updateData.weatherInfo = data.weatherInfo;
+      }
+      if (data.csvInfo) {
+        updateData.csvInfo = data.csvInfo as CsvContent;
       }
 
-      // テキストコンテンツの場合はtextInfoも更新
-      if (content.type === "text" && content.textInfo) {
-        updateData.textInfo = {
-          ...content.textInfo,
-          content: editForm.textContent,
-        };
-      }
-
-      await updateContent(content.id, updateData);
-      setIsEditing(false);
+      await updateContent(data.id, updateData);
       onContentUpdated?.();
 
       // コンテンツを再読み込み
-      const updatedContent = await getContentById(content.id);
+      const updatedContent = await getContentById(data.id);
       setContent(updatedContent);
+
+      setIsEditModalOpen(false);
     } catch (error) {
       console.error("Failed to update content:", error);
+      throw error; // ContentEditModalでエラーをキャッチできるように再throw
     }
   };
 
@@ -572,70 +549,7 @@ export const ContentPreviewModal = ({
     );
   };
 
-  const renderEditForm = () => {
-    if (!isEditing || !content) return null;
-
-    return (
-      <Stack gap="sm">
-        <Text size="sm" fw={600}>
-          コンテンツ情報を編集
-        </Text>
-
-        <TextInput
-          label="名前"
-          value={editForm.name}
-          onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
-          required
-        />
-
-        {(content.type === "youtube" || content.type === "url") && (
-          <>
-            <TextInput
-              label="URL"
-              value={editForm.url}
-              onChange={(e) => setEditForm((prev) => ({ ...prev, url: e.target.value }))}
-              required
-            />
-            <TextInput
-              label="タイトル"
-              value={editForm.title}
-              onChange={(e) => setEditForm((prev) => ({ ...prev, title: e.target.value }))}
-            />
-            <Textarea
-              label="説明"
-              value={editForm.description}
-              onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
-              rows={3}
-            />
-          </>
-        )}
-
-        {content.type === "text" && (
-          <Textarea
-            label="テキストコンテンツ"
-            value={editForm.textContent}
-            onChange={(e) => setEditForm((prev) => ({ ...prev, textContent: e.target.value }))}
-            rows={6}
-            placeholder="表示したいテキストを入力してください"
-            required
-          />
-        )}
-
-        <Group gap="sm" mt="sm">
-          <Button size="sm" onClick={handleEditSave}>
-            保存
-          </Button>
-          <Button size="sm" variant="light" onClick={handleEditCancel}>
-            キャンセル
-          </Button>
-        </Group>
-      </Stack>
-    );
-  };
-
   const renderActionButtons = () => {
-    if (isEditing) return null;
-
     return (
       <Group justify="space-between">
         <Button variant="light" leftSection={<IconEdit size={16} />} onClick={handleEditStart}>
@@ -697,15 +611,22 @@ export const ContentPreviewModal = ({
 
         <Divider />
 
-        {/* 編集フォーム */}
-        {renderEditForm()}
-
         {/* コンテンツ情報 */}
-        {!isEditing && getContentInfo()}
+        {getContentInfo()}
 
         {/* アクションボタン */}
         {renderActionButtons()}
       </Stack>
+
+      {/* ContentEditModal */}
+      {content && (
+        <ContentEditModal
+          opened={isEditModalOpen}
+          onClose={handleEditModalClose}
+          content={content as ContentIndex}
+          onSubmit={handleEditSubmit}
+        />
+      )}
     </Modal>
   );
 };

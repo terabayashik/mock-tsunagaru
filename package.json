@@ -9,7 +9,11 @@
     "start": "react-router-serve ./build/server/index.js",
     "check": "biome check --write .",
     "typecheck": "react-router typegen && tsc",
-    "preinstall": "npx only-allow pnpm"
+    "preinstall": "npx only-allow pnpm",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:debug": "DEBUG=1 playwright test --debug",
+    "test:report": "playwright show-report"
   },
   "dependencies": {
     "@mantine/core": "^8.2.1",
@@ -33,6 +37,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.1.2",
+    "@playwright/test": "^1.54.1",
     "@react-router/dev": "^7.7.1",
     "@types/node": "^24.1.0",
     "@types/react": "^19.1.8",

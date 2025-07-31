@@ -5,4 +5,11 @@
 /.react-router/
 /build/
 
+# Test content
 test-content/
+
+# Playwright
+/test-results/
+/playwright-report/
+/e2e/test-data/
+/e2e/screenshots/
