@@ -3,6 +3,7 @@ import { IconDoorExit, IconHome, IconMenu2, IconSettings } from "@tabler/icons-r
 import { useAtom } from "jotai";
 import { Link, useLocation } from "react-router";
 import { useAuth } from "~/hooks/useAuth";
+import { useLastTab } from "~/hooks/useLastTab";
 import { headerColorAtom, logoutAtom } from "~/states";
 import { ThemeToggle } from "../common/ThemeToggle";
 import { LoginLayout } from "./LoginLayout";
@@ -12,8 +13,8 @@ interface AppLayoutProps {
 }
 
 const navigationItems = [
-  { label: "ホーム", href: "/", icon: <IconHome size={16} /> },
-  { label: "設定", href: "/settings", icon: <IconSettings size={16} /> },
+  { label: "ホーム", href: "/", icon: <IconHome size={16} />, isHome: true },
+  { label: "設定", href: "/settings", icon: <IconSettings size={16} />, isHome: false },
 ];
 
 export const AppLayout = ({ children }: AppLayoutProps) => {
@@ -21,9 +22,15 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
   const [, logout] = useAtom(logoutAtom);
   const [headerColor] = useAtom(headerColorAtom);
   const location = useLocation();
+  const { navigateToLastTab } = useLastTab();
 
   const handleLogout = () => {
     logout();
+  };
+
+  const handleHomeClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigateToLastTab();
   };
 
   // 初期化中は何も表示しない
@@ -40,7 +47,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
       <AppShell.Header bg={headerColor}>
         <Group h="100%" px="md" justify="space-between">
           <Group>
-            <Anchor component={Link} to="/" td="none">
+            <Anchor component={Link} to="/" td="none" onClick={handleHomeClick}>
               <Title order={3} c="white">
                 もっく！つながる
               </Title>
@@ -60,6 +67,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
                   variant={location.pathname === item.href ? "outline" : "subtle"}
                   leftSection={item.icon}
                   size="sm"
+                  onClick={item.isHome ? handleHomeClick : undefined}
                 >
                   {item.label}
                 </Button>
@@ -76,7 +84,13 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
               <Menu.Dropdown>
                 <Menu.Label>ナビゲーション</Menu.Label>
                 {navigationItems.map((item) => (
-                  <Menu.Item key={item.href} component={Link} to={item.href} leftSection={item.icon}>
+                  <Menu.Item
+                    key={item.href}
+                    component={Link}
+                    to={item.href}
+                    leftSection={item.icon}
+                    onClick={item.isHome ? handleHomeClick : undefined}
+                  >
                     {item.label}
                   </Menu.Item>
                 ))}
