@@ -8,7 +8,7 @@ const TAB_PATHS = {
   "/playlist": /^\/playlist/,
   "/schedule": /^\/schedule/,
   "/layout": /^\/layout/,
-  "/content": /^\/content/,
+  "/contents": /^\/contents/,
 };
 
 export function useLastTab() {
